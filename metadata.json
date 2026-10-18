@@ -1,0 +1,6 @@
+{
+  "name": "Campus Feedback Assistant",
+  "description": "Apple-inspired Student Feedback & Campus Request Assistant featuring a 3-pane dashboard, BCA month purple-pink aesthetic, issue reporting, initiative proposals, student upvoting, and administrative triage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
