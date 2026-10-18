@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuthUser } from '../types';
+import { AuthUser, RoleMode } from '../types';
 import { signInWithGoogleReal, isFirebaseConfigured } from '../firebase';
 import { X, AlertCircle, ShieldCheck } from 'lucide-react';
 
@@ -7,12 +7,14 @@ interface GoogleAccountPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectAccount: (user: AuthUser) => void;
+  targetRole?: RoleMode; // NEW: Allows us to specify if they are logging in as admin
 }
 
 export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> = ({
   isOpen,
   onClose,
   onSelectAccount,
+  targetRole = 'student',
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -35,13 +37,12 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
     try {
       const firebaseUser = await signInWithGoogleReal();
       
-      // We force the user to be a student, but they can toggle to admin later
       const userProfile: AuthUser = {
         id: firebaseUser.uid,
         name: firebaseUser.displayName || 'Google User',
         email: firebaseUser.email || '',
-        role: 'student',
-        title: 'Verified Student',
+        role: targetRole,
+        title: targetRole === 'admin' ? 'Campus Administrator' : 'Verified Student',
         photo: firebaseUser.photoURL || undefined,
         provider: 'google',
       };
@@ -64,13 +65,13 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
           <div className="space-y-1">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-purple-600" />
-              Verify Student Account
+              {targetRole === 'admin' ? 'Admin Verification' : 'Student Verification'}
             </h2>
             <p className="text-xs text-purple-900/70">
               You must sign in with a verified Google account to access the portal.
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200/60 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200/60 transition-colors cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -86,7 +87,7 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
           {!firebaseActive && (
              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-             <span>Firebase credentials are missing. Add them to your `.env` file and GitHub Secrets to enable real login.</span>
+             <span>Firebase credentials are missing. Add them to your `.env` file and GitHub Secrets.</span>
            </div>
           )}
 
