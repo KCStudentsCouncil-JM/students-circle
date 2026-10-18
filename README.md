@@ -69,21 +69,27 @@ npm run preview
 
 ---
 
-## 🌐 Deploying to GitHub Pages
+## 🌐 Deploying to GitHub Pages (Fixing "Setup Node.js" & White Screen)
 
-This repository is pre-configured with `base: './'` in `vite.config.ts` and includes an automated GitHub Actions deployment workflow:
+### Step 1: Enable GitHub Actions as the Pages Source (Prevents White Screen)
+1. In your GitHub repository, open **Settings** → **Pages** (under the "Code and automation" section).
+2. Under **Build and deployment** → **Source**, change the dropdown from *"Deploy from a branch"* to **`GitHub Actions`**.
+   > ⚠️ **Important**: Do **not** select "Deploy from a branch (main /root)". Static web servers cannot run Vite `.tsx` source files directly in the browser; selecting GitHub Actions runs `vite build` to bundle your app into production JavaScript.
 
-1. Push your changes to the `main` (or `master`) branch:
-   ```bash
-   git add .
-   git commit -m "Deploy to GitHub"
-   git push origin main
-   ```
-2. In your GitHub repository:
-   - Go to **Settings** > **Pages**.
-   - Under **Build and deployment** > **Source**, select **GitHub Actions**.
-3. The included workflow (`.github/workflows/deploy.yml`) will automatically build and publish your site at:
-   `https://<your-username>.github.io/<repository-name>/`
+### Step 2: Push Your Code
+Ensure `package-lock.json` and `.github/workflows/deploy.yml` are included:
+```bash
+git add .
+git commit -m "Fix GitHub Pages deployment and base paths"
+git push origin main
+```
+
+### Step 3: Automated Build & Deploy
+- Go to the **Actions** tab in your GitHub repository.
+- You will see the **Deploy to GitHub Pages** workflow run.
+- The workflow will run `actions/setup-node@v4` with Node 20, install dependencies with `--legacy-peer-deps`, bundle the app with `vite build`, generate `dist/404.html` and `dist/.nojekyll`, and deploy cleanly.
+- When finished, your live site will be accessible at:
+  `https://<your-username>.github.io/<repository-name>/`
 
 ---
 

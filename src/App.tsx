@@ -549,8 +549,8 @@ export default function App() {
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping shrink-0" />
             <span className="font-semibold text-white">Campus Administrator Triage Active:</span>
-            <span className="hidden md:inline">Authorized as {currentUser.name}. You have permissions to reclassify urgencies, update ticket statuses, and publish official university replies.</span>
-            <span className="md:hidden text-purple-200">Staff: {currentUser.name}</span>
+            <span className="hidden md:inline">Authorized as {currentUser?.name || 'Staff'}. You have permissions to reclassify urgencies, update ticket statuses, and publish official university replies.</span>
+            <span className="md:hidden text-purple-200">Staff: {currentUser?.name || 'Staff'}</span>
           </div>
           <button
             onClick={() => setRole('student')}
