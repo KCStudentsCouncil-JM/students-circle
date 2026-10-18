@@ -14,12 +14,21 @@ import {
   CampusEvent
 } from './types';
 import { isBirthdayToday } from './types';
-import { INITIAL_REPORTS, INITIAL_EVENTS } from './mockData';
 import { 
   matchesExactWords, 
-  safeLocalStorageSet, 
   exportCampusDataBackup 
 } from './utils';
+// Import Firebase Firestore functions
+import { 
+  subscribeToReports, 
+  subscribeToEvents, 
+  saveReportToDb, 
+  updateReportInDb, 
+  deleteReportFromDb, 
+  saveEventToDb, 
+  updateEventInDb 
+} from './firebase';
+
 import { TopBar } from './components/TopBar';
 import { Sidebar } from './components/Sidebar';
 import { FeedbackList } from './components/FeedbackList';
@@ -31,9 +40,6 @@ import { GoogleAccountPickerModal } from './components/GoogleAccountPickerModal'
 import { PortalPage } from './components/PortalPage';
 import { 
   CheckCircle2, 
-  Sparkles, 
-  Cake, 
-  Layers, 
   Calendar, 
   Plus, 
   User as UserIcon, 
@@ -41,27 +47,8 @@ import {
   Inbox
 } from 'lucide-react';
 
-const getInitialTodayBirthday = () => {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `2004-${m}-${day}`;
-};
-
-const DEFAULT_STUDENT_PROFILE: AuthUser = {
-  id: 'usr-student-01',
-  name: 'Dylon Ocha',
-  email: 'dylonnnaocha@gmail.com',
-  role: 'student',
-  title: "Engineering Researcher · Class of '26",
-  photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
-  birthday: getInitialTodayBirthday(), // Birthday highlight active!
-  classYear: "Class of '26 (Junior)",
-  major: 'Engineering',
-  provider: 'google',
-};
-
 export default function App() {
+  // 1. Force Login: Defaults to null. Only loads if saved in localStorage.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('campus_auth_user');
@@ -69,56 +56,26 @@ export default function App() {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.name) return parsed;
       }
-    } catch {
-      // fallback
-    }
-    return DEFAULT_STUDENT_PROFILE;
+    } catch { /* fallback */ }
+    return null;
   });
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
 
-  // Fix #10 & #3: Safe localStorage loading and resilient seed fallback
-  const [reports, setReports] = useState<FeedbackReport[]>(() => {
-    try {
-      const saved = localStorage.getItem('campus_feedback_reports');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
-    return INITIAL_REPORTS;
-  });
+  // 2. Clean Slate: Start with empty arrays instead of Mock Data
+  const [reports, setReports] = useState<FeedbackReport[]>([]);
+  const [events, setEvents] = useState<CampusEvent[]>([]);
 
-  const [events, setEvents] = useState<CampusEvent[]>(() => {
-    try {
-      const saved = localStorage.getItem('campus_events');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      // fallback
-    }
-    return INITIAL_EVENTS;
-  });
-
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    return INITIAL_REPORTS[0]?.id || null;
-  });
-
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [role, setRole] = useState<RoleMode>('student');
   const [currentFilter, setCurrentFilter] = useState<NavFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [pageView, setPageView] = useState<'main' | 'detail'>('main');
+  
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 1024;
@@ -126,7 +83,20 @@ export default function App() {
     return true;
   });
 
-  // Fix #15: Virtual keyboard detection to hide mobile bottom bar while typing
+  // 3. Connect to Firestore (Global Database) when user is logged in
+  useEffect(() => {
+    if (!currentUser) return; // Don't fetch data if not logged in
+
+    // Listen to live updates from the internet
+    const unsubReports = subscribeToReports((data) => setReports(data));
+    const unsubEvents = subscribeToEvents((data) => setEvents(data));
+
+    return () => {
+      unsubReports();
+      unsubEvents();
+    };
+  }, [currentUser]);
+
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -134,19 +104,31 @@ export default function App() {
         setIsKeyboardActive(true);
       }
     };
-
-    const handleFocusOut = () => {
-      setIsKeyboardActive(false);
-    };
-
+    const handleFocusOut = () => setIsKeyboardActive(false);
     window.addEventListener('focusin', handleFocusIn);
     window.addEventListener('focusout', handleFocusOut);
-
     return () => {
       window.removeEventListener('focusin', handleFocusIn);
       window.removeEventListener('focusout', handleFocusOut);
     };
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('campus_auth_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('campus_auth_user');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const showToast = (msg: string) => setToastMessage(msg);
 
   const handleSignIn = (user: AuthUser, initialSelectedId?: string) => {
     setCurrentUser(user);
@@ -157,140 +139,66 @@ export default function App() {
     } else {
       setPageView('main');
     }
-    showToast(`Signed in as ${user.name} (${user.role === 'admin' ? 'Campus Admin' : 'Student'})`);
+    showToast(`Verified and signed in as ${user.name}`);
   };
 
   const handleSignOut = () => {
     setCurrentUser(null);
+    setReports([]);
+    setEvents([]);
     setPageView('main');
-    showToast('Signed out. You can sign in with your Google account at any time.');
+    showToast('Signed out securely.');
   };
 
-  useEffect(() => {
-    if (currentUser) {
-      try {
-        localStorage.setItem('campus_auth_user', JSON.stringify(currentUser));
-      } catch (e) {
-        console.warn('Could not save user to localStorage', e);
-      }
-    } else {
-      localStorage.removeItem('campus_auth_user');
-    }
-  }, [currentUser]);
-
-  // Fix #3: Safe localStorage persistence that catches QuotaExceededError
-  useEffect(() => {
-    safeLocalStorageSet('campus_feedback_reports', reports);
-  }, [reports]);
-
-  useEffect(() => {
-    safeLocalStorageSet('campus_events', events);
-  }, [events]);
-
-  // Toast auto-dismiss
-  useEffect(() => {
-    if (toastMessage) {
-      const timer = setTimeout(() => {
-        setToastMessage(null);
-      }, 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [toastMessage]);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-  };
-
-  // Fix #10: Export & Import backup handlers
   const handleExportBackup = () => {
     exportCampusDataBackup(reports, events, currentUser);
-    showToast('Campus data vault backup downloaded (.json).');
+    showToast('Campus data backup downloaded.');
   };
 
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // --- DATABASE ACTIONS ---
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.reports && Array.isArray(parsed.reports)) {
-          setReports(parsed.reports);
-          safeLocalStorageSet('campus_feedback_reports', parsed.reports);
-        }
-        if (parsed.events && Array.isArray(parsed.events)) {
-          setEvents(parsed.events);
-          safeLocalStorageSet('campus_events', parsed.events);
-        }
-        if (parsed.user) {
-          setCurrentUser(parsed.user);
-        }
-        showToast('All campus reports and profile restored successfully from backup!');
-      } catch (err) {
-        showToast('Failed to parse backup file. Please select a valid JSON backup.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  // Fix #5: Student/Admin Delete Report Handler
-  const handleDeleteReport = (id: string) => {
-    setReports((prev) => prev.filter((r) => r.id !== id));
-    showToast(`Report #${id} has been permanently deleted.`);
+  const handleDeleteReport = async (id: string) => {
+    await deleteReportFromDb(id);
+    showToast(`Report #${id} deleted from cloud.`);
     setPageView('main');
   };
 
-  // Fix #12: Admin Bulk Update Status Handler
-  const handleBulkUpdateStatus = (ids: string[], newStatus: FeedbackStatus) => {
-    const nowIso = new Date().toISOString();
+  const handleBulkUpdateStatus = async (ids: string[], newStatus: FeedbackStatus) => {
     const idSet = new Set(ids);
+    const nowIso = new Date().toISOString();
 
-    setReports((prev) =>
-      prev.map((r) => {
-        if (idSet.has(r.id)) {
-          const statusAct: ActivityItem = {
-            id: `act-${Date.now()}-${r.id}`,
-            author: currentUser?.name || 'Campus Administrator',
-            role: 'admin',
-            message: `Ticket status bulk-updated to ${newStatus.toUpperCase()} during triage review.`,
-            timestamp: nowIso,
-            statusChange: newStatus,
-            badgeText: 'Official Campus Administrator',
-          };
-          return {
-            ...r,
-            status: newStatus,
-            activities: [...r.activities, statusAct],
-          };
-        }
-        return r;
-      })
-    );
-
-    showToast(`Bulk updated status of ${ids.length} reports to "${newStatus}".`);
+    for (const r of reports) {
+      if (idSet.has(r.id)) {
+        const statusAct: ActivityItem = {
+          id: `act-${Date.now()}-${r.id}`,
+          author: currentUser?.name || 'Campus Administrator',
+          role: 'admin',
+          message: `Ticket status bulk-updated to ${newStatus.toUpperCase()}.`,
+          timestamp: nowIso,
+          statusChange: newStatus,
+          badgeText: 'Official Campus Administrator',
+        };
+        await updateReportInDb(r.id, {
+          status: newStatus,
+          activities: [...r.activities, statusAct],
+        });
+      }
+    }
+    showToast(`Bulk updated ${ids.length} reports globally.`);
   };
 
-  const handleToggleEventRsvp = (id: string) => {
-    setEvents((prev) =>
-      prev.map((evt) => {
-        if (evt.id === id) {
-          const nextHasRsvpd = !evt.hasRsvpd;
-          const nextCount = nextHasRsvpd ? evt.rsvps + 1 : Math.max(0, evt.rsvps - 1);
-          showToast(nextHasRsvpd ? `RSVP confirmed for "${evt.title}"` : `RSVP cancelled for "${evt.title}"`);
-          return {
-            ...evt,
-            rsvps: nextCount,
-            hasRsvpd: nextHasRsvpd,
-          };
-        }
-        return evt;
-      })
-    );
+  const handleToggleEventRsvp = async (id: string) => {
+    const evt = events.find((e) => e.id === id);
+    if (!evt) return;
+
+    const nextHasRsvpd = !evt.hasRsvpd;
+    const nextCount = nextHasRsvpd ? evt.rsvps + 1 : Math.max(0, evt.rsvps - 1);
+    
+    await updateEventInDb(id, { rsvps: nextCount, hasRsvpd: nextHasRsvpd });
+    showToast(nextHasRsvpd ? `RSVP confirmed` : `RSVP cancelled`);
   };
 
-  const handleAddEvent = (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
+  const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
     const newId = `EVT-${Math.floor(210 + Math.random() * 780)}`;
     const created: CampusEvent = {
       ...newEventData,
@@ -298,159 +206,102 @@ export default function App() {
       rsvps: 1,
       hasRsvpd: true,
     };
-    setEvents((prev) => [created, ...prev]);
-    showToast(`Event "${created.title}" published to campus roster!`);
+    await saveEventToDb(created);
+    showToast(`Event "${created.title}" published globally!`);
   };
 
-  // Fix #8: Filtered reports with exact-word matching instead of partial letters
-  const filteredReports = useMemo(() => {
-    return reports.filter((item) => {
-      // 1. Sidebar Filter
-      if (currentFilter === 'open' && item.status !== 'open') return false;
-      if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
-      if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
-      if (currentFilter === 'drafts' && item.status !== 'draft') return false;
-      if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
-      if (currentFilter === 'technology' && item.category !== 'technology') return false;
-      if (currentFilter === 'academics' && item.category !== 'academics') return false;
-      if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
-      if (currentFilter === 'safety' && item.category !== 'safety') return false;
-
-      // 2. Exact-Word Search Matching
-      if (searchQuery.trim()) {
-        const textToSearch = `${item.title} ${item.description} ${item.location} ${item.category} ${item.author} ${item.id} ${item.department || ''}`;
-        if (!matchesExactWords(textToSearch, searchQuery)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [reports, currentFilter, searchQuery]);
-
-  // Ensure a report is selected if available
-  useEffect(() => {
-    if (filteredReports.length > 0) {
-      const exists = filteredReports.some((r) => r.id === selectedId);
-      if (!exists) {
-        setSelectedId(filteredReports[0].id);
-      }
-    } else {
-      setSelectedId(null);
-    }
-  }, [filteredReports, selectedId]);
-
-  const selectedReport = useMemo(() => {
-    return reports.find((r) => r.id === selectedId) || null;
-  }, [reports, selectedId]);
-
-  // Fix #6: Upvote with clean Undo
-  const handleToggleUpvote = (id: string, e: React.MouseEvent) => {
+  const handleToggleUpvote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          const nextHasUpvoted = !r.hasUpvoted;
-          const nextCount = nextHasUpvoted ? r.upvotes + 1 : Math.max(0, r.upvotes - 1);
+    const r = reports.find((rep) => rep.id === id);
+    if (!r) return;
 
-          let updatedEndorsers = r.endorsers ? [...r.endorsers] : [];
-          const currentUserName = currentUser?.name || 'Verified Student';
-          const currentUserEmail = currentUser?.email || 'student@campus.edu';
-          const currentUserTitle = currentUser?.title || 'Campus Student';
+    const nextHasUpvoted = !r.hasUpvoted;
+    const nextCount = nextHasUpvoted ? r.upvotes + 1 : Math.max(0, r.upvotes - 1);
+    let updatedEndorsers = r.endorsers ? [...r.endorsers] : [];
+    
+    const currentUserName = currentUser?.name || 'Verified Student';
+    const currentUserEmail = currentUser?.email || 'student@campus.edu';
+    const currentUserTitle = currentUser?.title || 'Campus Student';
 
-          if (nextHasUpvoted) {
-            const exists = updatedEndorsers.some((end) => end.name === currentUserName);
-            if (!exists) {
-              updatedEndorsers = [
-                {
-                  id: `end-${Date.now()}`,
-                  name: currentUserName,
-                  role: currentUserTitle,
-                  email: currentUserEmail,
-                  studentId: `STU-${Math.floor(2000 + Math.random() * 7900)}`,
-                  timestamp: new Date().toISOString(),
-                },
-                ...updatedEndorsers,
-              ];
-            }
-            showToast(`Endorsement added for #${id}.`);
-          } else {
-            updatedEndorsers = updatedEndorsers.filter((end) => end.name !== currentUserName && end.email !== currentUserEmail);
-            showToast(`Endorsement retracted for #${id}.`);
-          }
-
-          return {
-            ...r,
-            upvotes: nextCount,
-            hasUpvoted: nextHasUpvoted,
-            endorsers: updatedEndorsers,
-          };
-        }
-        return r;
-      })
-    );
-  };
-
-  const handleUpdateStatus = (id: string, newStatus: FeedbackStatus) => {
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          const statusActivity: ActivityItem = {
-            id: `act-${Date.now()}`,
-            author: role === 'admin' ? 'Campus Administration' : 'System',
-            role: role === 'admin' ? 'admin' : 'system',
-            message: `Ticket status manually changed from ${r.status} to ${newStatus}.`,
+    if (nextHasUpvoted) {
+      const exists = updatedEndorsers.some((end) => end.name === currentUserName);
+      if (!exists) {
+        updatedEndorsers = [
+          {
+            id: `end-${Date.now()}`,
+            name: currentUserName,
+            role: currentUserTitle,
+            email: currentUserEmail,
+            studentId: `STU-${Math.floor(2000 + Math.random() * 7900)}`,
             timestamp: new Date().toISOString(),
-            statusChange: newStatus,
-          };
-          return {
-            ...r,
-            status: newStatus,
-            activities: [...r.activities, statusActivity],
-          };
-        }
-        return r;
-      })
-    );
-    showToast(`Status updated to "${newStatus}" for #${id}`);
+          },
+          ...updatedEndorsers,
+        ];
+      }
+      showToast(`Endorsement added.`);
+    } else {
+      updatedEndorsers = updatedEndorsers.filter((end) => end.name !== currentUserName && end.email !== currentUserEmail);
+      showToast(`Endorsement retracted.`);
+    }
+
+    await updateReportInDb(id, {
+      upvotes: nextCount,
+      hasUpvoted: nextHasUpvoted,
+      endorsers: updatedEndorsers,
+    });
   };
 
-  const handleAddActivity = (
+  const handleUpdateStatus = async (id: string, newStatus: FeedbackStatus) => {
+    const r = reports.find((rep) => rep.id === id);
+    if (!r) return;
+
+    const statusActivity: ActivityItem = {
+      id: `act-${Date.now()}`,
+      author: role === 'admin' ? 'Campus Administration' : 'System',
+      role: role === 'admin' ? 'admin' : 'system',
+      message: `Ticket status manually changed from ${r.status} to ${newStatus}.`,
+      timestamp: new Date().toISOString(),
+      statusChange: newStatus,
+    };
+
+    await updateReportInDb(id, {
+      status: newStatus,
+      activities: [...r.activities, statusActivity],
+    });
+    showToast(`Status updated to "${newStatus}".`);
+  };
+
+  const handleAddActivity = async (
     id: string, 
     message: string, 
     activityRole: 'admin' | 'student', 
     statusChange?: FeedbackStatus
   ) => {
-    setReports((prev) =>
-      prev.map((r) => {
-        if (r.id === id) {
-          const authorDisplay = activityRole === 'admin'
-            ? (currentUser?.name || 'Dean of Students Operations')
-            : (currentUser?.name || 'Student Reporter');
+    const r = reports.find((rep) => rep.id === id);
+    if (!r) return;
 
-          const newAct: ActivityItem = {
-            id: `act-${Date.now()}`,
-            author: authorDisplay,
-            role: activityRole,
-            message,
-            timestamp: new Date().toISOString(),
-            statusChange,
-            badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined,
-          };
+    const authorDisplay = activityRole === 'admin'
+      ? (currentUser?.name || 'Dean of Students Operations')
+      : (currentUser?.name || 'Student Reporter');
 
-          return {
-            ...r,
-            status: statusChange || r.status,
-            activities: [...r.activities, newAct],
-          };
-        }
-        return r;
-      })
-    );
+    const newAct: ActivityItem = {
+      id: `act-${Date.now()}`,
+      author: authorDisplay,
+      role: activityRole,
+      message,
+      timestamp: new Date().toISOString(),
+      statusChange,
+      badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined,
+    };
+
+    await updateReportInDb(id, {
+      status: statusChange || r.status,
+      activities: [...r.activities, newAct],
+    });
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Student reply posted.');
   };
 
-  const handleCreateReport = (
+  const handleCreateReport = async (
     newReportData: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>
   ) => {
     const randomNum = Math.floor(1050 + Math.random() * 8900);
@@ -497,17 +348,50 @@ export default function App() {
           id: `act-${Date.now() + 1}`,
           author: 'System Automated Router',
           role: 'system',
-          message: `Assigned routing category: ${newReportData.category.toUpperCase()} -> Department: ${newReportData.department || 'Campus Operations'}. Status set to Open.`,
+          message: `Assigned routing category: ${newReportData.category.toUpperCase()} -> Status set to Open.`,
           timestamp: nowIso,
         }
       ],
     };
 
-    setReports((prev) => [createdReport, ...prev]);
+    await saveReportToDb(createdReport);
     setSelectedId(newId);
     setPageView('detail');
-    showToast(`Feedback #${newId} submitted successfully!`);
+    showToast(`Feedback #${newId} submitted globally!`);
   };
+
+  const filteredReports = useMemo(() => {
+    return reports.filter((item) => {
+      if (currentFilter === 'open' && item.status !== 'open') return false;
+      if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
+      if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
+      if (currentFilter === 'drafts' && item.status !== 'draft') return false;
+      if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
+      if (currentFilter === 'technology' && item.category !== 'technology') return false;
+      if (currentFilter === 'academics' && item.category !== 'academics') return false;
+      if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
+      if (currentFilter === 'safety' && item.category !== 'safety') return false;
+
+      if (searchQuery.trim()) {
+        const textToSearch = `${item.title} ${item.description} ${item.location} ${item.category} ${item.author} ${item.id} ${item.department || ''}`;
+        if (!matchesExactWords(textToSearch, searchQuery)) return false;
+      }
+      return true;
+    });
+  }, [reports, currentFilter, searchQuery]);
+
+  useEffect(() => {
+    if (filteredReports.length > 0) {
+      const exists = filteredReports.some((r) => r.id === selectedId);
+      if (!exists) setSelectedId(filteredReports[0].id);
+    } else {
+      setSelectedId(null);
+    }
+  }, [filteredReports, selectedId]);
+
+  const selectedReport = useMemo(() => {
+    return reports.find((r) => r.id === selectedId) || null;
+  }, [reports, selectedId]);
 
   const activeFilterTitle = useMemo(() => {
     switch (currentFilter) {
@@ -526,9 +410,19 @@ export default function App() {
     }
   }, [currentFilter]);
 
+  // 4. BLOCK ACCESS UNTIL LOGGED IN
+  if (!currentUser) {
+    return (
+      <PortalPage 
+        reports={reports} 
+        events={events} 
+        onSignIn={handleSignIn} 
+      />
+    );
+  }
+
   return (
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] text-slate-800 antialiased overflow-hidden select-none">
-      {/* Top Bar Navigation */}
       <TopBar
         role={role}
         onRoleChange={setRole}
@@ -545,7 +439,6 @@ export default function App() {
         onOpenGoogleSignIn={() => setIsGoogleModalOpen(true)}
       />
 
-      {/* Birthday Celebration Banner when today is the student's birthday */}
       {isBirthdayToday(currentUser?.birthday) && (
         <div className="bg-gradient-to-r from-pink-600 via-amber-400 to-purple-700 text-white text-xs px-3 sm:px-5 py-2 flex items-center justify-between gap-2 shadow-xs shrink-0 select-none animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
@@ -556,9 +449,6 @@ export default function App() {
               </span>
               <span className="font-semibold text-xs sm:text-sm truncate">
                 Happy Birthday, <strong className="font-black text-amber-100">{currentUser?.name}</strong>!
-              </span>
-              <span className="hidden md:inline text-purple-100 text-[11px]">
-                Enjoy complimentary BCA month solidarity treats & student wellness perks on campus today.
               </span>
             </div>
           </div>
@@ -571,14 +461,12 @@ export default function App() {
         </div>
       )}
 
-      {/* Role Banner / Sub-Bar when Admin mode is active */}
       {role === 'admin' && (
         <div className="bg-purple-900 text-purple-100 text-[11px] px-3 sm:px-4 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-purple-800 shrink-0">
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-pink-400 animate-ping shrink-0" />
             <span className="font-semibold text-white">Campus Administrator Triage Active:</span>
             <span className="hidden md:inline">Authorized as {currentUser?.name || 'Staff'}. You have permissions to reclassify urgencies, update ticket statuses, and publish official university replies.</span>
-            <span className="md:hidden text-purple-200">Staff: {currentUser?.name || 'Staff'}</span>
           </div>
           <button
             onClick={() => setRole('student')}
@@ -589,9 +477,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main App Workspace: Collapsible Sidebar + Master Page vs Next Page Detail View */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Navigation Sidebar */}
         {isSidebarOpen && (
           <Sidebar
             currentFilter={currentFilter}
@@ -609,7 +495,6 @@ export default function App() {
           />
         )}
 
-        {/* Master-Detail Page Navigation: Events Section vs Campus Reports Main Page vs Detail Next Page */}
         {currentFilter === 'events' ? (
           <EventsSection
             events={events}
@@ -656,7 +541,6 @@ export default function App() {
         )}
       </div>
 
-      {/* Fix #1 & #15: Mobile Bottom Navigation Bar with auto-hide when virtual keyboard is active */}
       {!isKeyboardActive && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-purple-100 px-3 py-2 flex items-center justify-around shadow-lg">
           <button
@@ -673,9 +557,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => {
-              setCurrentFilter('events');
-            }}
+            onClick={() => setCurrentFilter('events')}
             className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
               currentFilter === 'events' ? 'text-pink-600' : 'text-purple-400'
             }`}
@@ -687,7 +569,6 @@ export default function App() {
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-md active:scale-95 transition-transform cursor-pointer"
-            title="Create new feedback"
           >
             <Plus className="w-5 h-5" />
           </button>
@@ -703,7 +584,6 @@ export default function App() {
           <button
             onClick={handleSignOut}
             className="flex flex-col items-center gap-1 text-[10px] font-semibold text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
-            title="Sign out of portal"
           >
             <LogOut className="w-4 h-4" />
             <span>Logout</span>
@@ -711,7 +591,6 @@ export default function App() {
         </div>
       )}
 
-      {/* New Feedback Submission Modal */}
       <NewFeedbackModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -723,7 +602,6 @@ export default function App() {
         }}
       />
 
-      {/* Student Profile & Birthday Settings Modal */}
       {currentUser && (
         <UserProfileModal
           user={currentUser}
@@ -731,19 +609,13 @@ export default function App() {
           onClose={() => setIsProfileModalOpen(false)}
           onSave={(updated) => {
             setCurrentUser(updated);
-            showToast(
-              isBirthdayToday(updated.birthday)
-                ? `Profile updated! 🎂 Happy Birthday, ${updated.name}!`
-                : `Profile updated successfully.`
-            );
+            showToast(`Profile updated successfully.`);
           }}
           onSignOut={handleSignOut}
           onExportBackup={handleExportBackup}
-          onImportBackup={handleImportBackup}
         />
       )}
 
-      {/* Google Sign In & Account Modal */}
       <GoogleAccountPickerModal
         isOpen={isGoogleModalOpen}
         onClose={() => setIsGoogleModalOpen(false)}
@@ -753,7 +625,6 @@ export default function App() {
         }}
       />
 
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-16 md:bottom-5 right-5 z-50 bg-purple-950 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />

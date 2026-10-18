@@ -5,18 +5,10 @@
  */
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut as firebaseSignOut, 
-  onAuthStateChanged,
-  User as FirebaseUser,
-  Auth
-} from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User as FirebaseUser, Auth } from 'firebase/auth';
+import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { FeedbackReport, CampusEvent } from './types';
 
-// Configuration loaded from standard Vite environment variables
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
@@ -27,12 +19,7 @@ export const firebaseConfig = {
 };
 
 export const isFirebaseConfigured = (): boolean => {
-  return Boolean(
-    firebaseConfig.apiKey && 
-    firebaseConfig.apiKey !== 'your-api-key' &&
-    firebaseConfig.projectId &&
-    firebaseConfig.projectId !== 'your-project-id'
-  );
+  return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
 };
 
 let app: FirebaseApp | null = null;
@@ -46,44 +33,67 @@ if (typeof window !== 'undefined' && isFirebaseConfigured()) {
     auth = getAuth(app);
     db = getFirestore(app);
     googleProvider = new GoogleAuthProvider();
-    googleProvider.setCustomParameters({
-      prompt: 'select_account',
-    });
   } catch (error) {
-    console.warn('Firebase initialization skipped or encountered error:', error);
+    console.warn('Firebase init error:', error);
   }
 }
 
-export { app, auth, db, googleProvider };
+export { app, auth, db };
 
-/**
- * Sign in with real Google Account popup via Firebase Auth
- */
 export async function signInWithGoogleReal(): Promise<FirebaseUser> {
-  if (!auth || !googleProvider) {
-    throw new Error('Firebase credentials are not configured yet. Please configure your Firebase environment variables in .env');
-  }
-
+  if (!auth || !googleProvider) throw new Error('Firebase not configured');
   const result = await signInWithPopup(auth, googleProvider);
   return result.user;
 }
 
-/**
- * Sign out from Firebase Auth
- */
-export async function logOutFromFirebase(): Promise<void> {
-  if (auth) {
-    await firebaseSignOut(auth);
-  }
+// --- FIRESTORE SYNC FUNCTIONS ---
+
+export function subscribeToReports(callback: (reports: FeedbackReport[]) => void) {
+  if (!db) return () => {};
+  const reportsRef = collection(db, 'reports');
+  return onSnapshot(reportsRef, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as FeedbackReport));
+    // Sort newest first
+    data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    callback(data);
+  });
 }
 
-/**
- * Listen for Firebase Auth state changes
- */
-export function subscribeToAuthChanges(callback: (user: FirebaseUser | null) => void) {
-  if (!auth) {
-    callback(null);
-    return () => {};
-  }
-  return onAuthStateChanged(auth, callback);
+export function subscribeToEvents(callback: (events: CampusEvent[]) => void) {
+  if (!db) return () => {};
+  const eventsRef = collection(db, 'events');
+  return onSnapshot(eventsRef, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as CampusEvent));
+    callback(data);
+  });
+}
+
+export async function saveReportToDb(report: FeedbackReport) {
+  if (!db) return;
+  const docRef = doc(db, 'reports', report.id);
+  await setDoc(docRef, report);
+}
+
+export async function updateReportInDb(id: string, updates: Partial<FeedbackReport>) {
+  if (!db) return;
+  const docRef = doc(db, 'reports', id);
+  await updateDoc(docRef, updates);
+}
+
+export async function deleteReportFromDb(id: string) {
+  if (!db) return;
+  const docRef = doc(db, 'reports', id);
+  await deleteDoc(docRef);
+}
+
+export async function saveEventToDb(event: CampusEvent) {
+  if (!db) return;
+  const docRef = doc(db, 'events', event.id);
+  await setDoc(docRef, event);
+}
+
+export async function updateEventInDb(id: string, updates: Partial<CampusEvent>) {
+  if (!db) return;
+  const docRef = doc(db, 'events', id);
+  await updateDoc(docRef, updates);
 }
