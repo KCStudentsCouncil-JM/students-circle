@@ -21,21 +21,9 @@ export default defineConfig(({ command }) => {
     };
   }
 
-  // Support custom base path, GitHub Actions repository deployment (e.g. /<repo>/), or relative path for build
-  let base = process.env.BASE_PATH || './';
-  if (!process.env.BASE_PATH && process.env.GITHUB_REPOSITORY) {
-    const parts = process.env.GITHUB_REPOSITORY.split('/');
-    const repo = parts[1];
-    const owner = parts[0];
-    if (repo && repo.toLowerCase() === `${owner.toLowerCase()}.github.io`) {
-      base = '/';
-    } else if (repo) {
-      base = `/${repo}/`;
-    }
-  }
-
+  // For GitHub Pages production build, hardcode your repository name
   return {
-    base,
+    base: '/students-circle/', 
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
