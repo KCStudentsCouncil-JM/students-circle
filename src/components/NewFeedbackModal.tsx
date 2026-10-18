@@ -229,7 +229,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         {/* Quick Pre-fill Template Strip */}
         <div className="px-4 sm:px-6 py-2 bg-purple-50/50 border-b border-purple-100/80 flex items-center justify-between gap-2 text-xs overflow-x-auto no-scrollbar shrink-0">
           <span className="text-[10px] sm:text-[11px] font-semibold text-purple-900 flex items-center gap-1 shrink-0">
-            <span>⚡ Demo Pre-fills:</span>
+            <span>✨ Quick Templates:</span>
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
             <button

@@ -27,6 +27,7 @@ import { FeedbackDetail } from './components/FeedbackDetail';
 import { EventsSection } from './components/EventsSection';
 import { NewFeedbackModal } from './components/NewFeedbackModal';
 import { UserProfileModal } from './components/UserProfileModal';
+import { GoogleAccountPickerModal } from './components/GoogleAccountPickerModal';
 import { PortalPage } from './components/PortalPage';
 import { 
   CheckCircle2, 
@@ -40,9 +41,41 @@ import {
   Inbox
 } from 'lucide-react';
 
+const getInitialTodayBirthday = () => {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `2004-${m}-${day}`;
+};
+
+const DEFAULT_STUDENT_PROFILE: AuthUser = {
+  id: 'usr-student-01',
+  name: 'Dylon Ocha',
+  email: 'dylonnnaocha@gmail.com',
+  role: 'student',
+  title: "Engineering Researcher · Class of '26",
+  photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
+  birthday: getInitialTodayBirthday(), // Birthday highlight active!
+  classYear: "Class of '26 (Junior)",
+  major: 'Engineering',
+  provider: 'google',
+};
+
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('campus_auth_user');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.name) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    return DEFAULT_STUDENT_PROFILE;
+  });
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
 
   // Fix #10 & #3: Safe localStorage loading and resilient seed fallback
@@ -130,8 +163,20 @@ export default function App() {
   const handleSignOut = () => {
     setCurrentUser(null);
     setPageView('main');
-    showToast('Returned to Campus Portal.');
+    showToast('Signed out. You can sign in with your Google account at any time.');
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      try {
+        localStorage.setItem('campus_auth_user', JSON.stringify(currentUser));
+      } catch (e) {
+        console.warn('Could not save user to localStorage', e);
+      }
+    } else {
+      localStorage.removeItem('campus_auth_user');
+    }
+  }, [currentUser]);
 
   // Fix #3: Safe localStorage persistence that catches QuotaExceededError
   useEffect(() => {
@@ -481,24 +526,6 @@ export default function App() {
     }
   }, [currentFilter]);
 
-  if (!currentUser) {
-    return (
-      <>
-        <PortalPage
-          reports={reports}
-          events={events}
-          onSignIn={handleSignIn}
-        />
-        {toastMessage && (
-          <div className="fixed bottom-5 right-5 z-50 bg-purple-950 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
-            <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
-      </>
-    );
-  }
-
   return (
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] text-slate-800 antialiased overflow-hidden select-none">
       {/* Top Bar Navigation */}
@@ -515,6 +542,7 @@ export default function App() {
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenGoogleSignIn={() => setIsGoogleModalOpen(true)}
       />
 
       {/* Birthday Celebration Banner when today is the student's birthday */}
@@ -714,6 +742,16 @@ export default function App() {
           onImportBackup={handleImportBackup}
         />
       )}
+
+      {/* Google Sign In & Account Modal */}
+      <GoogleAccountPickerModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSelectAccount={(user) => {
+          handleSignIn(user);
+          setIsGoogleModalOpen(false);
+        }}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (
