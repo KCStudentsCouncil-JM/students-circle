@@ -3,7 +3,8 @@ import {
   FeedbackType, 
   Category, 
   UrgencyLevel, 
-  FeedbackReport 
+  FeedbackReport,
+  UserProfile // <--- ADDED
 } from '../types';
 import { 
   isValidImageFile, 
@@ -32,6 +33,7 @@ interface NewFeedbackModalProps {
   onSubmit: (report: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>) => void;
   existingReports?: FeedbackReport[];
   onSelectExistingReport?: (id: string) => void;
+  currentUser: UserProfile | null; // <--- ADDED
 }
 
 export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
@@ -40,6 +42,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   onSubmit,
   existingReports = [],
   onSelectExistingReport,
+  currentUser, // <--- ADDED
 }) => {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('issue');
   const [title, setTitle] = useState('');
@@ -48,7 +51,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [authorName] = useState('Dylon Ocha');
+  
+  // REMOVED: const [authorName] = useState('Dylon Ocha');
+
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
@@ -61,7 +66,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Fix #14: Strict validation preventing whitespace-only submissions
+  // Strict validation preventing whitespace-only submissions
   const validate = () => {
     const newErrors: Record<string, string> = {};
 
@@ -90,7 +95,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Fix #3 & #11: File type validation and canvas-based compression to prevent localStorage crashes
+  // File type validation and canvas-based compression to prevent localStorage crashes
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
     const files = e.target.files;
@@ -158,8 +163,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         ? 'Academic Affairs Office' 
         : 'Student Affairs & Leadership',
       isAnonymous,
-      author: isAnonymous ? 'Anonymous Student' : authorName,
-      authorRole: isAnonymous ? 'Enrolled Student' : 'Undergraduate Student',
+      // UPDATED: Uses the logged-in user's real name instead of hardcoded text
+      author: isAnonymous ? 'Anonymous Student' : (currentUser?.name || 'Student'),
+      authorRole: isAnonymous ? 'Enrolled Student' : (currentUser?.title || 'Undergraduate Student'),
     });
 
     onClose();
@@ -256,9 +262,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
           </div>
         </div>
 
-        {/* Form Body: Scrollable with safe bottom padding for mobile virtual keyboard */}
+        {/* Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-3.5 sm:space-y-4 text-xs select-text pb-20 sm:pb-6 overscroll-contain">
-          {/* Fix #9: Duplicate Warning Notification (only triggers on >= 2 distinct keywords, ignoring stop-words) */}
+          
           {potentialDuplicates.length > 0 && (
             <div className="p-3 bg-amber-50/90 border border-amber-300 rounded-xl space-y-2 animate-in slide-in-from-top-1">
               <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
@@ -354,7 +360,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Title / Summary with space-only validation */}
+          {/* 2. Title / Summary */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold uppercase tracking-wider text-purple-950/70 block">
@@ -387,7 +393,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
 
           {/* 3 & 4. Category & Urgency */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Category Dropdown */}
             <div className="space-y-1">
               <label className="text-[11px] font-bold uppercase tracking-wider text-purple-950/70 block">
                 3. Category *
@@ -405,7 +410,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               </select>
             </div>
 
-            {/* Urgency Level */}
             <div className="space-y-1">
               <label className="text-[11px] font-bold uppercase tracking-wider text-purple-950/70 block">
                 4. Urgency Level *
@@ -480,7 +484,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             )}
           </div>
 
-          {/* Fix #3 & #11: Evidence Photo Uploads with validation and compression */}
+          {/* 7. Photo Evidence Attachments */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold uppercase tracking-wider text-purple-950/70 block">
@@ -497,7 +501,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               </p>
             )}
 
-            {/* Photo Thumbnails */}
             {photos.length > 0 && (
               <div className="flex items-center gap-2.5 flex-wrap">
                 {photos.map((src, idx) => (
