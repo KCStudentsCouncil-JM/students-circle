@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode } from '../types';
+import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, AuthUser } from '../types';
 import { calculateSlaInfo } from '../utils';
 import { 
   ThumbsUp, 
@@ -28,6 +28,7 @@ interface FeedbackListProps {
   onNavigateToEvents?: () => void;
   eventsCount?: number;
   role?: RoleMode;
+  currentUser?: AuthUser | null; // <--- ADDED
   onBulkUpdateStatus?: (ids: string[], newStatus: FeedbackStatus) => void;
 }
 
@@ -40,6 +41,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
   onNavigateToEvents,
   eventsCount = 6,
   role = 'student',
+  currentUser, // <--- ADDED
   onBulkUpdateStatus,
 }) => {
   const [urgencyFilter, setUrgencyFilter] = useState<'all' | UrgencyLevel>('all');
@@ -305,7 +307,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
         </div>
       )}
 
-      {/* Main Page Cards Grid: Fix #1 added pb-28 sm:pb-12 to prevent mobile bottom nav overlapping last card */}
+      {/* Main Page Cards Grid */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 pb-28 sm:pb-12">
         {sorted.length === 0 ? (
           <div className="p-8 sm:p-12 text-center text-purple-950/60 flex flex-col items-center justify-center min-h-[250px] sm:min-h-[300px]">
@@ -322,6 +324,11 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
             {sorted.map((item) => {
               const sla = calculateSlaInfo(item.createdAt, item.urgency, item.status);
               const isBulkSelected = selectedIds.has(item.id);
+              
+              // Check if the current user is in the endorsers array
+              const hasUserUpvoted = currentUser?.email 
+                ? item.endorsers?.some((e) => e.email === currentUser.email) 
+                : false;
 
               return (
                 <div
@@ -334,7 +341,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                   }`}
                 >
                   <div>
-                    {/* Top Meta Line: ID, Checkbox (Admin), Category, Relative Time */}
+                    {/* Top Meta Line */}
                     <div className="flex items-center justify-between text-xs text-purple-900/70 mb-2 flex-wrap gap-1">
                       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                         {role === 'admin' && (
@@ -395,7 +402,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                     </div>
                   </div>
 
-                  {/* Bottom Strip: Status, Urgency, SLA badge, Endorsements (with Undo) & CTA */}
+                  {/* Bottom Strip */}
                   <div className="pt-3 border-t border-purple-50 space-y-2">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -420,19 +427,19 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0 ml-auto">
-                        {/* Fix #6: Upvote with clear Undo indicator */}
+                        {/* UPDATED: Upvote button uses hasUserUpvoted */}
                         <button
                           onClick={(e) => onToggleUpvote(item.id, e)}
-                          title={item.hasUpvoted ? "Click to undo/retract endorsement" : "Endorse this report"}
+                          title={hasUserUpvoted ? "Click to undo/retract endorsement" : "Endorse this report"}
                           className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[32px] rounded-lg text-xs font-mono tabular-nums transition-colors cursor-pointer touch-manipulation ${
-                            item.hasUpvoted
+                            hasUserUpvoted
                               ? 'bg-pink-100/90 text-pink-800 font-bold border border-pink-300 hover:bg-pink-200'
                               : 'bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-100'
                           }`}
                         >
-                          <ThumbsUp className={`w-3 h-3 ${item.hasUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600'}`} />
+                          <ThumbsUp className={`w-3 h-3 ${hasUserUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600'}`} />
                           <span>{item.upvotes}</span>
-                          {item.hasUpvoted && <span className="text-[9px] uppercase font-bold text-pink-700">Undo</span>}
+                          {hasUserUpvoted && <span className="text-[9px] uppercase font-bold text-pink-700">Undo</span>}
                         </button>
 
                         {/* Go to details link */}

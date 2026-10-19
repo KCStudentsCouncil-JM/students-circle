@@ -26,7 +26,7 @@ import {
   deleteReportFromDb, 
   saveEventToDb, 
   updateEventInDb,
-  deleteEventFromDb // <-- NEW IMPORT
+  deleteEventFromDb 
 } from './firebase';
 
 import { TopBar } from './components/TopBar';
@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  // 1. Force Login: Defaults to null. Only loads if saved in localStorage.
+  // 1. Force Login: Defaults to null.
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('campus_auth_user');
@@ -64,7 +64,7 @@ export default function App() {
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
 
-  // 2. Clean Slate: Start with empty arrays instead of Mock Data
+  // 2. Clean Slate
   const [reports, setReports] = useState<FeedbackReport[]>([]);
   const [events, setEvents] = useState<CampusEvent[]>([]);
 
@@ -83,7 +83,7 @@ export default function App() {
     return true;
   });
 
-  // 3. Connect to Firestore (Global Database) when user is logged in
+  // 3. Connect to Firestore
   useEffect(() => {
     if (!currentUser) return;
 
@@ -162,7 +162,6 @@ export default function App() {
     setPageView('main');
   };
 
-  // NEW: Handle Event Deletion
   const handleDeleteEvent = async (id: string) => {
     if (role !== 'admin') return;
     await deleteEventFromDb(id);
@@ -193,66 +192,87 @@ export default function App() {
     showToast(`Bulk updated ${ids.length} reports globally.`);
   };
 
+  // --- NEW RSVP LOGIC ---
   const handleToggleEventRsvp = async (id: string) => {
+    if (!currentUser?.email) return; 
     const evt = events.find((e) => e.id === id);
     if (!evt) return;
 
-    const nextHasRsvpd = !evt.hasRsvpd;
-    const nextCount = nextHasRsvpd ? evt.rsvps + 1 : Math.max(0, evt.rsvps - 1);
-    
-    await updateEventInDb(id, { rsvps: nextCount, hasRsvpd: nextHasRsvpd });
-    showToast(nextHasRsvpd ? `RSVP confirmed` : `RSVP cancelled`);
+    const attendees = evt.attendees || [];
+    const hasUserRsvpd = attendees.includes(currentUser.email);
+
+    let updatedAttendees;
+    let nextCount;
+
+    if (hasUserRsvpd) {
+      updatedAttendees = attendees.filter(email => email !== currentUser.email);
+      nextCount = Math.max(0, evt.rsvps - 1);
+      showToast(`RSVP cancelled`);
+    } else {
+      updatedAttendees = [...attendees, currentUser.email];
+      nextCount = evt.rsvps + 1;
+      showToast(`RSVP confirmed`);
+    }
+
+    await updateEventInDb(id, { 
+      rsvps: nextCount, 
+      attendees: updatedAttendees 
+    });
   };
 
+  // --- NEW EVENT CREATION ---
   const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
     const newId = `EVT-${Math.floor(210 + Math.random() * 780)}`;
     const created: CampusEvent = {
       ...newEventData,
       id: newId,
-      rsvps: 1,
-      hasRsvpd: true,
+      rsvps: currentUser?.email ? 1 : 0,
+      attendees: currentUser?.email ? [currentUser.email] : [], 
     };
     await saveEventToDb(created);
     showToast(`Event "${created.title}" published globally!`);
   };
 
+  // --- NEW UPVOTE LOGIC ---
   const handleToggleUpvote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!currentUser) return;
+
     const r = reports.find((rep) => rep.id === id);
     if (!r) return;
 
-    const nextHasUpvoted = !r.hasUpvoted;
-    const nextCount = nextHasUpvoted ? r.upvotes + 1 : Math.max(0, r.upvotes - 1);
-    let updatedEndorsers = r.endorsers ? [...r.endorsers] : [];
-    
-    const currentUserName = currentUser?.name || 'Verified Student';
-    const currentUserEmail = currentUser?.email || 'student@campus.edu';
-    const currentUserTitle = currentUser?.title || 'Campus Student';
+    const currentUserEmail = currentUser.email;
+    const currentUserName = currentUser.name;
+    const currentUserTitle = currentUser.title || 'Campus Student';
 
-    if (nextHasUpvoted) {
-      const exists = updatedEndorsers.some((end) => end.name === currentUserName);
-      if (!exists) {
-        updatedEndorsers = [
-          {
-            id: `end-${Date.now()}`,
-            name: currentUserName,
-            role: currentUserTitle,
-            email: currentUserEmail,
-            studentId: `STU-${Math.floor(2000 + Math.random() * 7900)}`,
-            timestamp: new Date().toISOString(),
-          },
-          ...updatedEndorsers,
-        ];
-      }
-      showToast(`Endorsement added.`);
-    } else {
-      updatedEndorsers = updatedEndorsers.filter((end) => end.name !== currentUserName && end.email !== currentUserEmail);
+    const existingEndorsers = r.endorsers || [];
+    const isAlreadyEndorsed = existingEndorsers.some((end) => end.email === currentUserEmail);
+
+    let updatedEndorsers;
+    let nextCount;
+
+    if (isAlreadyEndorsed) {
+      updatedEndorsers = existingEndorsers.filter((end) => end.email !== currentUserEmail);
+      nextCount = Math.max(0, r.upvotes - 1);
       showToast(`Endorsement retracted.`);
+    } else {
+      updatedEndorsers = [
+        {
+          id: `end-${Date.now()}`,
+          name: currentUserName,
+          role: currentUserTitle,
+          email: currentUserEmail,
+          studentId: `STU-${Math.floor(2000 + Math.random() * 7900)}`,
+          timestamp: new Date().toISOString(),
+        },
+        ...existingEndorsers,
+      ];
+      nextCount = r.upvotes + 1;
+      showToast(`Endorsement added.`);
     }
 
     await updateReportInDb(id, {
       upvotes: nextCount,
-      hasUpvoted: nextHasUpvoted,
       endorsers: updatedEndorsers,
     });
   };
@@ -307,7 +327,8 @@ export default function App() {
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Student reply posted.');
   };
 
-    const handleCreateReport = async (
+  // --- NEW REPORT CREATION ---
+  const handleCreateReport = async (
     newReportData: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>
   ) => {
     const randomNum = Math.floor(1050 + Math.random() * 8900);
@@ -331,7 +352,6 @@ export default function App() {
       authorStudentId: studentIdGen,
       createdAt: nowIso,
       upvotes: 1,
-      hasUpvoted: true,
       endorsers: [
         {
           id: `end-${Date.now()}`,
@@ -361,18 +381,13 @@ export default function App() {
     };
 
     try {
-      // 1. Save to global cloud database
       await saveReportToDb(createdReport);
-      
-      // 2. Optimistic UI Update: Immediately show the new report in the UI 
-      // so the user doesn't have to wait for the database to sync.
       setReports((prev) => [createdReport, ...prev]);
       setSelectedId(newId);
       setPageView('detail');
       showToast(`Feedback #${newId} submitted globally!`);
     } catch (error: any) {
       console.error("Submission failed:", error);
-      // Show the exact error so you know if it's a permissions issue
       showToast(`Failed to submit: ${error.message || 'Check your database rules'}`);
     }
   };
@@ -440,8 +455,6 @@ export default function App() {
   return (
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] text-slate-800 antialiased overflow-hidden select-none">
       <TopBar
-        role={role}
-        onRoleChange={setRole}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenNewModal={() => setIsModalOpen(true)}
@@ -484,12 +497,6 @@ export default function App() {
             <span className="font-semibold text-white">Campus Administrator Triage Active:</span>
             <span className="hidden md:inline">Authorized as {currentUser?.name || 'Staff'}. You have permissions to reclassify urgencies, update ticket statuses, and publish official university replies.</span>
           </div>
-          <button
-            onClick={() => setRole('student')}
-            className="text-pink-300 hover:text-white underline font-semibold text-[10px] cursor-pointer self-start sm:self-auto"
-          >
-            Switch to Student View
-          </button>
         </div>
       )}
 
@@ -515,9 +522,10 @@ export default function App() {
           <EventsSection
             events={events}
             role={role}
+            currentUser={currentUser} 
             onToggleRsvp={handleToggleEventRsvp}
             onAddEvent={handleAddEvent}
-            onDeleteEvent={handleDeleteEvent} // <--- NEW PROP ADDED HERE
+            onDeleteEvent={handleDeleteEvent} 
             onSelectFeedbackReport={(fbId) => {
               setSelectedId(fbId);
               setCurrentFilter('all');
@@ -529,6 +537,7 @@ export default function App() {
           <FeedbackList
             reports={filteredReports}
             selectedId={selectedId}
+            currentUser={currentUser} 
             onSelectReport={(id) => {
               setSelectedId(id);
               setPageView('detail');

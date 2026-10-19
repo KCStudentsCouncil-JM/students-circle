@@ -53,7 +53,7 @@ export interface FeedbackReport {
   authorStudentId?: string;
   createdAt: string;
   upvotes: number;
-  hasUpvoted?: boolean;
+  hasUpvoted?: boolean; // Deprecated: We now check the endorsers array
   photos?: string[];
   endorsers?: Endorser[];
   activities: ActivityItem[];
@@ -80,13 +80,14 @@ export interface CampusEvent {
   organizer: string;
   category: EventCategory;
   rsvps: number;
-  hasRsvpd?: boolean;
+  hasRsvpd?: boolean; // Deprecated: We now check the attendees array
+  attendees?: string[]; // <--- NEW: Stores the emails of everyone who RSVP'd
   linkedFeedbackId?: string;
   tags: string[];
   capacity?: number;
   isOfficialUniversityEvent: boolean;
   featured?: boolean;
-  videoUrl?: string; // <--- ADD THIS LINE
+  videoUrl?: string;
 }
 
 export type NavFilter = 
@@ -139,5 +140,3 @@ export function isBirthdayToday(birthday?: string): boolean {
     return false;
   }
 }
-
-

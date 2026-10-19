@@ -1,22 +1,14 @@
-import { RoleMode, AuthUser, isBirthdayToday } from '../types';
+import { AuthUser, isBirthdayToday } from '../types';
 import { 
   Search, 
   Plus, 
-  ShieldCheck, 
-  GraduationCap, 
   X, 
   Ribbon, 
   LogOut, 
-  User, 
-  PanelLeft, 
-  Menu,
-  Sparkles,
-  Cake
+  PanelLeft
 } from 'lucide-react';
 
 interface TopBarProps {
-  role: RoleMode;
-  onRoleChange: (newRole: RoleMode) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
   onOpenNewModal: () => void;
@@ -31,13 +23,9 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
-  role,
-  onRoleChange,
   searchQuery,
   onSearchChange,
   onOpenNewModal,
-  totalCount,
-  openCount,
   currentUser,
   onSignOut,
   isSidebarOpen,
@@ -49,7 +37,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     <header className="h-14 sm:h-16 bg-white/95 backdrop-blur-md border-b border-purple-100/90 px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4 select-none shrink-0 z-30">
       {/* Left Zone: Menu Bar Toggle & Brand */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Menu bar toggle replacing the red, yellow, green circles */}
+        {/* Menu bar toggle */}
         <button
           onClick={onToggleSidebar}
           title={isSidebarOpen ? "Hide sidebar navigation" : "Show sidebar navigation"}
@@ -64,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden xl:inline text-xs font-semibold">Sidebar</span>
         </button>
 
-        {/* Clickable Brand Marker that redirects to Sign In Page */}
+        {/* Brand Marker */}
         <button
           onClick={onSignOut}
           title="Click to return to Sign In Portal"
@@ -91,7 +79,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </button>
       </div>
 
-      {/* Middle Zone: Search Bar (Adaptive width for mobile & tablet) */}
+      {/* Middle Zone: Search Bar */}
       <div className="flex-1 min-w-[70px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2">
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 text-purple-400 pointer-events-none" />
@@ -114,36 +102,8 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Right Zone: Role Switcher, New Feedback & Sign Out */}
+      {/* Right Zone: New Feedback & Sign Out */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        {/* Role Switcher */}
-        <div className="bg-purple-100/70 p-0.5 rounded-lg border border-purple-200/60 flex items-center gap-0.5">
-          <button
-            onClick={() => onRoleChange('student')}
-            className={`flex items-center justify-center gap-1 p-1 sm:px-2 sm:py-1 text-xs font-medium rounded-md transition-all cursor-pointer touch-manipulation ${
-              role === 'student'
-                ? 'bg-white text-purple-900 shadow-2xs font-semibold'
-                : 'text-purple-700/80 hover:text-purple-950'
-            }`}
-            title="Student Submitter Mode"
-          >
-            <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
-            <span className="hidden md:inline">Student</span>
-          </button>
-          <button
-            onClick={() => onRoleChange('admin')}
-            className={`flex items-center justify-center gap-1 p-1 sm:px-2 sm:py-1 text-xs font-medium rounded-md transition-all cursor-pointer touch-manipulation ${
-              role === 'admin'
-                ? 'bg-purple-900 text-white shadow-2xs font-semibold'
-                : 'text-purple-700/80 hover:text-purple-950'
-            }`}
-            title="Campus Administrator Mode"
-          >
-            <ShieldCheck className={`w-3.5 h-3.5 ${role === 'admin' ? 'text-pink-300' : 'text-purple-600'}`} />
-            <span className="hidden md:inline">Admin</span>
-          </button>
-        </div>
-
         {/* Primary CTA */}
         <button
           onClick={onOpenNewModal}
@@ -206,7 +166,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
             </button>
 
-            {/* Fix #13: Portal Exit / Sign Out Button resilient to small screen squishing */}
             <button
               onClick={onSignOut}
               title={`Signed in as ${currentUser.name}. Return to Guest`}

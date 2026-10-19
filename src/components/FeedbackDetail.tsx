@@ -108,6 +108,11 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
     (currentUser?.email && report.authorEmail === currentUser.email);
   const canDelete = role === 'admin' || isAuthor;
 
+  // NEW: Calculate if the current user is in the endorsers array
+  const hasUserUpvoted = currentUser?.email 
+    ? report.endorsers?.some((e) => e.email === currentUser.email) 
+    : false;
+
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyMessage.trim()) return;
@@ -207,18 +212,18 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
         {/* Toolbar Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-wrap">
-          {/* Fix #6: Upvote with explicit Undo option */}
+          {/* Fix #6: Upvote button using hasUserUpvoted */}
           <button
             onClick={(e) => onToggleUpvote(report.id, e)}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[36px] rounded-lg text-xs font-semibold transition-all border cursor-pointer touch-manipulation ${
-              report.hasUpvoted
+              hasUserUpvoted
                 ? 'bg-pink-100/90 border-pink-400 text-pink-800 shadow-xs hover:bg-pink-200'
                 : 'bg-white border-purple-200 text-purple-800 hover:bg-purple-50'
             }`}
-            title={report.hasUpvoted ? "Click to undo/retract your endorsement" : "Endorse this report"}
+            title={hasUserUpvoted ? "Click to undo/retract your endorsement" : "Endorse this report"}
           >
-            <ThumbsUp className={`w-3.5 h-3.5 ${report.hasUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600'}`} />
-            <span>{report.hasUpvoted ? 'Endorsed (Undo)' : 'Endorse'} ({report.upvotes})</span>
+            <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600'}`} />
+            <span>{hasUserUpvoted ? 'Endorsed (Undo)' : 'Endorse'} ({report.upvotes})</span>
           </button>
 
           {/* Fix #5: Student/Admin Delete button */}
@@ -518,7 +523,6 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                           </div>
                         </div>
 
-                        {/* Fix #6: Explicit Undo button right next to user's endorsement in the roster */}
                         {isCurrentUserEndorser && (
                           <button
                             type="button"

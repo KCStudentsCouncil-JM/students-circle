@@ -24,7 +24,7 @@ interface EventsSectionProps {
   role: RoleMode;
   onToggleRsvp: (id: string) => void;
   onAddEvent: (newEvent: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => void;
-  onDeleteEvent?: (id: string) => void; // NEW: Passed from App.tsx
+  onDeleteEvent?: (id: string) => void;
   onSelectFeedbackReport?: (feedbackId: string) => void;
   onBackToReports: () => void;
 }
@@ -52,8 +52,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [newCategory, setNewCategory] = useState<EventCategory>('student-life');
   const [newTags, setNewTags] = useState('Campus, Student Life');
   const [newCapacity, setNewCapacity] = useState('250');
-  const [newVideoUrl, setNewVideoUrl] = useState(''); // NEW: Video URL state
+  const [newVideoUrl, setNewVideoUrl] = useState(''); 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  
+  // NEW: State for delete confirmation
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
 
   // Filtered events
   const filteredEvents = useMemo(() => {
@@ -128,7 +131,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       capacity: parseInt(newCapacity, 10) || 200,
       isOfficialUniversityEvent: true,
       featured: false,
-      videoUrl: newVideoUrl.trim() || undefined, // Add video URL
+      videoUrl: newVideoUrl.trim() || undefined, 
     });
 
     setIsAddModalOpen(false);
@@ -345,10 +348,13 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         </div>
                       </div>
 
-                      {/* ADMIN DELETE BUTTON */}
+                      {/* ADMIN DELETE BUTTON (Now opens modal) */}
                       {role === 'admin' && onDeleteEvent && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onDeleteEvent(evt.id); }}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setEventToDelete(evt.id); // <--- UPDATED
+                          }}
                           className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-md transition-colors"
                           title="Delete Event permanently"
                         >
@@ -547,6 +553,51 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* NEW: Delete Confirmation Modal */}
+      {eventToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/50 backdrop-blur-xs select-none">
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full border border-rose-200 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">Delete Event?</h3>
+                <p className="text-xs text-slate-500">
+                  This action is permanent and will remove this event from the campus calendar.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-100 text-xs text-rose-800 font-medium">
+              Are you sure you want to delete this event?
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setEventToDelete(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeleteEvent && eventToDelete) {
+                    onDeleteEvent(eventToDelete);
+                  }
+                  setEventToDelete(null);
+                }}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+              >
+                Confirm Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
