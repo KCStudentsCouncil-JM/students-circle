@@ -28,30 +28,30 @@ export const PortalPage: React.FC<PortalPageProps> = ({
   const [previewEvent, setPreviewEvent] = useState<CampusEvent | null>(null);
   const [previewItem, setPreviewItem] = useState<FeedbackReport | null>(null);
   
-  // Google Login Modal State
+  // Login State
+  const [activeLoginTab, setActiveLoginTab] = useState<'student' | 'admin'>('student');
   const [isGooglePickerOpen, setIsGooglePickerOpen] = useState(false);
-  const [loginTargetRole, setLoginTargetRole] = useState<'student' | 'admin'>('student');
-
+  
   // Admin Secret Key State
-  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
+  const [showAdminPrompt, setShowAdminPrompt] = useState(true); // Show prompt by default on admin tab
   const [adminSecret, setAdminSecret] = useState('');
   const [adminError, setAdminError] = useState('');
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
   const ADMIN_KEY = "CAMPUS2026"; 
 
-  const openLogin = (role: 'student' | 'admin') => {
-    setLoginTargetRole(role);
-    setIsGooglePickerOpen(true);
-  };
-
-  const handleAdminVerify = () => {
+  const handleAdminVerify = (e: React.FormEvent) => {
+    e.preventDefault();
     if (adminSecret === ADMIN_KEY) {
-      setShowAdminPrompt(false);
       setAdminError('');
-      setAdminSecret('');
-      openLogin('admin'); 
+      setIsAdminVerified(true);
+      setIsGooglePickerOpen(true); // Automatically open Google login after verifying key
     } else {
       setAdminError('Invalid Secret Key. Access Denied.');
     }
+  };
+
+  const handleOpenGoogle = () => {
+    setIsGooglePickerOpen(true);
   };
 
   const urgentReports = reports.filter((r) => r.urgency === 'high' || r.status === 'open');
@@ -93,98 +93,120 @@ export const PortalPage: React.FC<PortalPageProps> = ({
             Sign In to Report, Endorse, or Triage Campus Feedback
           </h1>
           <p className="text-xs sm:text-sm text-purple-900/70 max-w-xl mx-auto leading-relaxed">
-            Submit facility reports, track proposals, or triage urgent student matters. All accounts require Google verification.
+            Choose your portal below. All accounts require Google verification and Administrator accounts require a secure access key.
           </p>
         </div>
 
         {/* 2-Column Gateway Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Column 1: Role Authentication Gateway */}
-          <div className="lg:col-span-5 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-purple-950/70 pb-1">
-              Select Your Campus Role
-            </h2>
-
-            {/* Student Role Card */}
-            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-purple-200/90 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-700 to-pink-600 flex items-center justify-center text-white shadow-xs shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm sm:text-base text-purple-950 tracking-tight">
-                    Sign In as Enrolled Student
-                  </h3>
-                  <p className="text-[11px] text-purple-700/80">
-                    Report defects, pitch initiatives, endorse ideas & RSVP to events
-                  </p>
-                </div>
-              </div>
-
+          {/* Column 1: Authentication Gateway (Tabbed) */}
+          <div className="lg:col-span-5 bg-white rounded-3xl p-1.5 border border-purple-200/90 shadow-lg overflow-hidden">
+            
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-1 p-1 bg-purple-50 rounded-2xl">
               <button
-                onClick={() => openLogin('student')}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-800 to-pink-700 hover:from-purple-900 hover:to-pink-800 text-white text-xs font-semibold py-3 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99] border border-purple-900 cursor-pointer touch-manipulation"
+                onClick={() => { setActiveLoginTab('student'); setIsAdminVerified(false); setAdminSecret(''); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeLoginTab === 'student' ? 'bg-white text-purple-950 shadow-sm' : 'text-purple-600 hover:text-purple-900'
+                }`}
               >
-                <span>Verify & Enter as Student</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <GraduationCap className="w-4 h-4" />
+                Student Portal
+              </button>
+              <button
+                onClick={() => { setActiveLoginTab('admin'); }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  activeLoginTab === 'admin' ? 'bg-white text-purple-950 shadow-sm' : 'text-purple-600 hover:text-purple-900'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin Portal
               </button>
             </div>
 
-            {/* Campus Administrator Role Card */}
-            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-purple-200/90 shadow-sm hover:shadow-md transition-all">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-700 shadow-xs shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-purple-950">
-                    Sign In as Campus Administrator
-                  </h3>
-                  <p className="text-[11px] text-purple-700/70">
-                    Triage queue, assign crews & publish official updates
-                  </p>
-                </div>
-              </div>
+            <div className="p-5 sm:p-6">
+              {/* STUDENT PORTAL CONTENT */}
+              {activeLoginTab === 'student' && (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="text-center space-y-1 mb-2">
+                    <h3 className="font-bold text-lg text-purple-950">Student Access</h3>
+                    <p className="text-xs text-purple-700/80">Sign in to file reports, endorse peers, and RSVP to events.</p>
+                  </div>
 
-              {/* ADMIN SECRET KEY LOGIC */}
-              {showAdminPrompt ? (
-                <div className="space-y-2 mb-2 animate-in fade-in slide-in-from-top-2">
-                  <div className="relative">
-                    <KeyRound className="w-4 h-4 text-purple-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="password"
-                      placeholder="Enter Admin Secret Key..."
-                      value={adminSecret}
-                      onChange={(e) => setAdminSecret(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-purple-300 focus:outline-none focus:ring-2 focus:ring-pink-500 bg-slate-50"
-                      onKeyDown={(e) => e.key === 'Enter' && handleAdminVerify()}
-                    />
-                  </div>
-                  {adminError && <p className="text-[10px] text-rose-600 font-bold px-1">{adminError}</p>}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAdminVerify}
-                      className="flex-1 bg-purple-900 hover:bg-purple-950 text-white text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Verify Key
-                    </button>
-                    <button
-                      onClick={() => { setShowAdminPrompt(false); setAdminError(''); setAdminSecret(''); }}
-                      className="px-3 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-semibold py-2 rounded-lg transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
+                  <button
+                    onClick={handleOpenGoogle}
+                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm transition active:scale-[0.99] cursor-pointer"
+                  >
+                    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                      <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                      <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                    </svg>
+                    <span>Verify as Student with Google</span>
+                  </button>
+
+                  <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 flex items-start gap-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-purple-800 leading-relaxed">
+                      <strong>First time here?</strong> You will be asked to submit your details for Admin approval before accessing the main campus dashboard.
+                    </p>
                   </div>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setShowAdminPrompt(true)}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-900 to-slate-900 hover:from-purple-950 hover:to-black text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-xs transition-all active:scale-[0.99] border border-purple-950 cursor-pointer touch-manipulation"
-                >
-                  <span>Enter Admin Secret Key</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-pink-400" />
-                </button>
+              )}
+
+              {/* ADMIN PORTAL CONTENT */}
+              {activeLoginTab === 'admin' && (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="text-center space-y-1 mb-2">
+                    <h3 className="font-bold text-lg text-purple-950">Administrator Access</h3>
+                    <p className="text-xs text-purple-700/80">Authorized staff only. Requires secret key and Google verification.</p>
+                  </div>
+
+                  {!isAdminVerified ? (
+                    <form onSubmit={handleAdminVerify} className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-purple-900 block">Admin Secret Key</label>
+                        <div className="relative">
+                          <KeyRound className="w-4 h-4 text-purple-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="password"
+                            placeholder="Enter Admin Secret Key..."
+                            value={adminSecret}
+                            onChange={(e) => setAdminSecret(e.target.value)}
+                            className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-purple-300 focus:outline-none focus:ring-2 focus:ring-pink-500 bg-slate-50 font-mono"
+                          />
+                        </div>
+                        {adminError && <p className="text-[10px] text-rose-600 font-bold px-1">{adminError}</p>}
+                      </div>
+                      <button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-purple-900 to-slate-900 hover:from-purple-950 hover:to-black text-white text-xs font-semibold py-3 rounded-xl shadow-xs transition-all"
+                      >
+                        Verify Key & Proceed
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                       <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-xs text-center font-medium">
+                        Key Verified. Please authenticate with your staff Google account.
+                      </div>
+                      <button
+                        onClick={handleOpenGoogle}
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm shadow-sm transition active:scale-[0.99] cursor-pointer"
+                      >
+                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                        </svg>
+                        <span>Sign in as Admin</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -303,7 +325,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
               <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-48 overflow-y-auto">{previewItem.description}</p>
               <div className="pt-2 border-t border-purple-100 flex justify-end gap-2">
                 <button onClick={() => setPreviewItem(null)} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-100 text-purple-900 hover:bg-purple-200">Close</button>
-                <button onClick={() => { setPreviewItem(null); openLogin('student'); }} className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-900 text-white hover:bg-purple-950">Sign In to View</button>
+                <button onClick={() => { setPreviewItem(null); setActiveLoginTab('student'); handleOpenGoogle(); }} className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-900 text-white hover:bg-purple-950">Sign In to View</button>
               </div>
             </div>
           </div>
@@ -323,7 +345,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
               <p className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-48 overflow-y-auto">{previewEvent.description}</p>
               <div className="pt-2 border-t border-purple-100 flex justify-end gap-2">
                 <button onClick={() => setPreviewEvent(null)} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple-100 text-purple-900 hover:bg-purple-200">Close</button>
-                <button onClick={() => { setPreviewEvent(null); openLogin('student'); }} className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-900 text-white hover:bg-purple-950">Sign In to RSVP</button>
+                <button onClick={() => { setPreviewEvent(null); setActiveLoginTab('student'); handleOpenGoogle(); }} className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-purple-900 text-white hover:bg-purple-950">Sign In to RSVP</button>
               </div>
             </div>
           </div>
@@ -333,7 +355,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
         <GoogleAccountPickerModal
           isOpen={isGooglePickerOpen}
           onClose={() => setIsGooglePickerOpen(false)}
-          targetRole={loginTargetRole}
+          targetRole={activeLoginTab} // Passes 'student' or 'admin' correctly
           onSelectAccount={(acc) => {
             onSignIn(acc);
             setIsGooglePickerOpen(false);
