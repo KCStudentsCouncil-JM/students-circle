@@ -36,7 +36,7 @@ export interface Endorser {
 }
 
 export interface FeedbackReport {
-  id: string; // e.g., 'FB-1042'
+  id: string; // e.g., 'KCIS-1042'
   title: string;
   type: FeedbackType;
   category: Category;
@@ -71,7 +71,7 @@ export type EventCategory =
   | 'arts';
 
 export interface CampusEvent {
-  id: string;
+  id: string; // e.g., 'KCEV-210'
   title: string;
   description: string;
   date: string;
@@ -81,7 +81,7 @@ export interface CampusEvent {
   category: EventCategory;
   rsvps: number;
   hasRsvpd?: boolean; // Deprecated: We now check the attendees array
-  attendees?: string[]; // <--- NEW: Stores the emails of everyone who RSVP'd
+  attendees?: string[]; // Stores the emails of everyone who RSVP'd
   linkedFeedbackId?: string;
   tags: string[];
   capacity?: number;
@@ -139,4 +139,24 @@ export function isBirthdayToday(birthday?: string): boolean {
   } catch (e) {
     return false;
   }
+}
+
+// --- NEW: ADMIN APPROVAL SYSTEM TYPES ---
+
+export interface ApprovedStudent {
+  id: string; // Using email as the ID
+  name: string;
+  email: string;
+  major?: string;
+  classYear?: string;
+  approvedAt: string;
+}
+
+export interface PendingStudent {
+  id: string; // Using email as the ID
+  name: string;
+  email: string;
+  major?: string;
+  classYear?: string;
+  requestedAt: string;
 }

@@ -11,12 +11,16 @@ import {
   FeedbackStatus,
   ActivityItem,
   AuthUser,
-  CampusEvent
+  CampusEvent,
+  ApprovedStudent,
+  PendingStudent
 } from './types';
 import { isBirthdayToday } from './types';
 import { 
   matchesExactWords, 
-  exportCampusDataBackup 
+  exportCampusDataBackup,
+  formatReportId,
+  formatEventId
 } from './utils';
 import { 
   subscribeToReports, 
@@ -26,7 +30,13 @@ import {
   deleteReportFromDb, 
   saveEventToDb, 
   updateEventInDb,
-  deleteEventFromDb 
+  deleteEventFromDb,
+  subscribeToApprovedStudents,
+  subscribeToPendingStudents,
+  submitPendingStudent,
+  approveStudentInDb,
+  rejectStudentInDb,
+  removeApprovedStudentInDb
 } from './firebase';
 
 import { TopBar } from './components/TopBar';
@@ -38,6 +48,8 @@ import { NewFeedbackModal } from './components/NewFeedbackModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { GoogleAccountPickerModal } from './components/GoogleAccountPickerModal';
 import { PortalPage } from './components/PortalPage';
+import { PendingApprovalScreen } from './components/PendingApprovalScreen';
+import { AdminStudentList } from './components/AdminStudentList';
 import { 
   CheckCircle2, 
   Calendar, 
@@ -48,7 +60,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  // 1. Force Login: Defaults to null.
+  // 1. Force Login
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('campus_auth_user');
@@ -64,9 +76,13 @@ export default function App() {
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
 
-  // 2. Clean Slate
+  // 2. Core Data
   const [reports, setReports] = useState<FeedbackReport[]>([]);
   const [events, setEvents] = useState<CampusEvent[]>([]);
+  
+  // 3. Admin Approval Data
+  const [approvedStudents, setApprovedStudents] = useState<ApprovedStudent[]>([]);
+  const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [role, setRole] = useState<RoleMode>('student');
@@ -74,7 +90,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [pageView, setPageView] = useState<'main' | 'detail'>('main');
+  const [pageView, setPageView] = useState<'main' | 'detail' | 'student-list'>('main');
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -83,16 +99,20 @@ export default function App() {
     return true;
   });
 
-  // 3. Connect to Firestore
+  // 4. Connect to Firestore
   useEffect(() => {
     if (!currentUser) return;
 
     const unsubReports = subscribeToReports((data) => setReports(data));
     const unsubEvents = subscribeToEvents((data) => setEvents(data));
+    const unsubApp = subscribeToApprovedStudents(setApprovedStudents);
+    const unsubPend = subscribeToPendingStudents(setPendingStudents);
 
     return () => {
       unsubReports();
       unsubEvents();
+      unsubApp();
+      unsubPend();
     };
   }, [currentUser]);
 
@@ -158,7 +178,7 @@ export default function App() {
 
   const handleDeleteReport = async (id: string) => {
     await deleteReportFromDb(id);
-    showToast(`Report #${id} deleted from cloud.`);
+    showToast(`Report deleted from cloud.`);
     setPageView('main');
   };
 
@@ -192,7 +212,7 @@ export default function App() {
     showToast(`Bulk updated ${ids.length} reports globally.`);
   };
 
-  // --- NEW RSVP LOGIC ---
+  // --- EVENT RSVP & CREATION ---
   const handleToggleEventRsvp = async (id: string) => {
     if (!currentUser?.email) return; 
     const evt = events.find((e) => e.id === id);
@@ -220,9 +240,9 @@ export default function App() {
     });
   };
 
-  // --- NEW EVENT CREATION ---
   const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
-    const newId = `EVT-${Math.floor(210 + Math.random() * 780)}`;
+    // Generate KCEV prefix
+    const newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
     const created: CampusEvent = {
       ...newEventData,
       id: newId,
@@ -230,10 +250,10 @@ export default function App() {
       attendees: currentUser?.email ? [currentUser.email] : [], 
     };
     await saveEventToDb(created);
-    showToast(`Event "${created.title}" published globally!`);
+    showToast(`Event ${formatEventId(created.id)} published globally!`);
   };
 
-  // --- NEW UPVOTE LOGIC ---
+  // --- UPVOTE LOGIC ---
   const handleToggleUpvote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentUser) return;
@@ -327,12 +347,21 @@ export default function App() {
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Student reply posted.');
   };
 
-  // --- NEW REPORT CREATION ---
+  // --- REPORT CREATION ---
   const handleCreateReport = async (
     newReportData: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>
   ) => {
     const randomNum = Math.floor(1050 + Math.random() * 8900);
-    const newId = `FB-${randomNum}`;
+    
+    // Generate prefix based on type and status
+    let prefix = 'KCIS';
+    if (newReportData.type === 'initiative') prefix = 'KCIS';
+    else if (newReportData.status === 'open') prefix = 'KCOI';
+    else if (newReportData.status === 'in-review') prefix = 'KCIRV';
+    else if (newReportData.status === 'resolved') prefix = 'KCRS';
+    else if (newReportData.status === 'draft') prefix = 'KCDRF';
+    
+    const newId = `${prefix}-${randomNum}`;
     const nowIso = new Date().toISOString();
 
     const authorFinal = newReportData.isAnonymous
@@ -385,7 +414,7 @@ export default function App() {
       setReports((prev) => [createdReport, ...prev]);
       setSelectedId(newId);
       setPageView('detail');
-      showToast(`Feedback #${newId} submitted globally!`);
+      showToast(`Feedback ${formatReportId(newId, createdReport.type, createdReport.status)} submitted globally!`);
     } catch (error: any) {
       console.error("Submission failed:", error);
       showToast(`Failed to submit: ${error.message || 'Check your database rules'}`);
@@ -442,12 +471,31 @@ export default function App() {
     }
   }, [currentFilter]);
 
+  // --- RENDER LOGIC ---
+
   if (!currentUser) {
     return (
       <PortalPage 
         reports={reports} 
         events={events} 
         onSignIn={handleSignIn} 
+      />
+    );
+  }
+
+  // Check approval status
+  const isApproved = currentUser.role === 'admin' || approvedStudents.some(s => s.email === currentUser.email);
+
+  if (!isApproved) {
+    return (
+      <PendingApprovalScreen 
+        currentUser={currentUser} 
+        pendingStudents={pendingStudents} 
+        onSubmit={(student) => {
+          submitPendingStudent(student);
+          showToast('Approval request sent to admins.');
+        }} 
+        onSignOut={handleSignOut} 
       />
     );
   }
@@ -515,10 +563,21 @@ export default function App() {
             onClose={() => setIsSidebarOpen(false)}
             onSignOut={handleSignOut}
             onExportBackup={handleExportBackup}
+            onOpenStudentList={() => setPageView('student-list')} // <--- NEW PROP
           />
         )}
 
-        {currentFilter === 'events' ? (
+        {/* VIEW ROUTER */}
+        {pageView === 'student-list' && role === 'admin' ? (
+          <AdminStudentList 
+            pendingStudents={pendingStudents}
+            approvedStudents={approvedStudents}
+            onApprove={approveStudentInDb}
+            onReject={rejectStudentInDb}
+            onRemove={removeApprovedStudentInDb}
+            onBack={() => setPageView('main')}
+          />
+        ) : currentFilter === 'events' ? (
           <EventsSection
             events={events}
             role={role}

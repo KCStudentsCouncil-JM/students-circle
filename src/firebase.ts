@@ -4,7 +4,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, User as FirebaseUser, Auth } from 'firebase/auth';
 import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { FeedbackReport, CampusEvent } from './types';
+import { FeedbackReport, CampusEvent, ApprovedStudent, PendingStudent } from './types';
 
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -129,4 +129,48 @@ export async function deleteEventFromDb(id: string) {
   if (!db) throw new Error('Firebase database is not configured.');
   const docRef = doc(db, 'events', id);
   await deleteDoc(docRef);
+}
+
+// --- NEW: ADMIN APPROVAL SYSTEM FUNCTIONS ---
+
+export function subscribeToApprovedStudents(callback: (students: ApprovedStudent[]) => void) {
+  if (!db) return () => {};
+  return onSnapshot(collection(db, 'approved_students'), (snap) => {
+    callback(snap.docs.map(d => ({ ...d.data(), id: d.id } as ApprovedStudent)));
+  }, (error) => {
+    console.error("Error listening to approved students:", error);
+  });
+}
+
+export function subscribeToPendingStudents(callback: (students: PendingStudent[]) => void) {
+  if (!db) return () => {};
+  return onSnapshot(collection(db, 'pending_students'), (snap) => {
+    callback(snap.docs.map(d => ({ ...d.data(), id: d.id } as PendingStudent)));
+  }, (error) => {
+    console.error("Error listening to pending students:", error);
+  });
+}
+
+export async function submitPendingStudent(student: PendingStudent) {
+  if (!db) throw new Error('Firebase database is not configured.');
+  await setDoc(doc(db, 'pending_students', student.email), sanitizeData(student));
+}
+
+export async function approveStudentInDb(student: PendingStudent) {
+  if (!db) throw new Error('Firebase database is not configured.');
+  const approved: ApprovedStudent = { ...student, approvedAt: new Date().toISOString() };
+  // Add to approved list
+  await setDoc(doc(db, 'approved_students', student.email), sanitizeData(approved));
+  // Remove from pending list
+  await deleteDoc(doc(db, 'pending_students', student.email));
+}
+
+export async function rejectStudentInDb(email: string) {
+  if (!db) throw new Error('Firebase database is not configured.');
+  await deleteDoc(doc(db, 'pending_students', email));
+}
+
+export async function removeApprovedStudentInDb(email: string) {
+  if (!db) throw new Error('Firebase database is not configured.');
+  await deleteDoc(doc(db, 'approved_students', email));
 }

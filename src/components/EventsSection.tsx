@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { CampusEvent, EventCategory, RoleMode } from '../types';
+import { CampusEvent, EventCategory, RoleMode, AuthUser } from '../types';
+import { formatEventId } from '../utils';
 import { 
   Calendar, 
   Clock, 
@@ -22,6 +23,7 @@ import {
 interface EventsSectionProps {
   events: CampusEvent[];
   role: RoleMode;
+  currentUser?: AuthUser | null; // <--- NEW
   onToggleRsvp: (id: string) => void;
   onAddEvent: (newEvent: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => void;
   onDeleteEvent?: (id: string) => void;
@@ -32,6 +34,7 @@ interface EventsSectionProps {
 export const EventsSection: React.FC<EventsSectionProps> = ({
   events,
   role,
+  currentUser, // <--- NEW
   onToggleRsvp,
   onAddEvent,
   onDeleteEvent,
@@ -55,7 +58,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [newVideoUrl, setNewVideoUrl] = useState(''); 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
-  // NEW: State for delete confirmation
+  // State for delete confirmation
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
 
   // Filtered events
@@ -78,11 +81,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     });
   }, [events, selectedCategory, searchQuery]);
 
-  // Featured event
-  const featuredEvent = useMemo(() => {
-    return events.find((e) => e.featured) || events[0] || null;
-  }, [events]);
-
   const handleDownloadIcs = (event: CampusEvent) => {
     const icsData = [
       'BEGIN:VCALENDAR',
@@ -101,7 +99,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${event.id}_${event.title.replace(/\s+/g, '_')}.ics`);
+    link.setAttribute('download', `${formatEventId(event.id)}_${event.title.replace(/\s+/g, '_')}.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -318,9 +316,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {filteredEvents.map((evt) => {
               const cal = formatCalendarSquare(evt.date);
+              const hasUserRsvpd = currentUser?.email ? evt.attendees?.includes(currentUser.email) : false;
+              
               return (
                 <div
                   key={evt.id}
@@ -340,6 +340,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-mono text-purple-500 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                              {formatEventId(evt.id)}
+                            </span>
                             {getCategoryBadge(evt.category)}
                           </div>
                           <span className="text-[10px] text-purple-400 font-mono block mt-0.5">
@@ -348,12 +351,12 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         </div>
                       </div>
 
-                      {/* ADMIN DELETE BUTTON (Now opens modal) */}
+                      {/* ADMIN DELETE BUTTON (Opens modal) */}
                       {role === 'admin' && onDeleteEvent && (
                         <button
                           onClick={(e) => { 
                             e.stopPropagation(); 
-                            setEventToDelete(evt.id); // <--- UPDATED
+                            setEventToDelete(evt.id); 
                           }}
                           className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-md transition-colors"
                           title="Delete Event permanently"
@@ -406,13 +409,13 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                       <button
                         onClick={() => onToggleRsvp(evt.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1 ${
-                          evt.hasRsvpd
+                          hasUserRsvpd
                             ? 'bg-pink-50 text-pink-700 border border-pink-300 font-bold shadow-2xs'
                             : 'bg-purple-800 hover:bg-purple-900 text-white shadow-2xs'
                         }`}
                       >
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${evt.hasRsvpd ? 'text-pink-600' : 'text-purple-200'}`} />
-                        <span>{evt.hasRsvpd ? 'Going' : 'RSVP'}</span>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${hasUserRsvpd ? 'text-pink-600' : 'text-purple-200'}`} />
+                        <span>{hasUserRsvpd ? 'Going' : 'RSVP'}</span>
                       </button>
                     </div>
                   </div>
@@ -423,7 +426,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         )}
       </div>
 
-      {/* Admin New Event Modal (Only Renders if Admin) */}
+      {/* Admin New Event Modal */}
       {isAddModalOpen && role === 'admin' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/40 backdrop-blur-xs select-none">
           <div className="bg-white rounded-2xl shadow-2xl border border-purple-200 w-full max-w-lg max-h-[94dvh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
@@ -519,7 +522,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 {formErrors.description && <p className="text-rose-600 text-[10px]">{formErrors.description}</p>}
               </div>
 
-              {/* NEW: VIDEO INPUT */}
+              {/* VIDEO INPUT */}
               <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 space-y-1">
                 <label className="font-bold text-purple-950 flex items-center gap-1.5">
                   <Video className="w-4 h-4 text-pink-600" /> 
@@ -557,7 +560,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         </div>
       )}
 
-      {/* NEW: Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {eventToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-purple-950/50 backdrop-blur-xs select-none">
           <div className="bg-white rounded-2xl p-5 max-w-sm w-full border border-rose-200 shadow-2xl space-y-4 animate-in zoom-in-95">

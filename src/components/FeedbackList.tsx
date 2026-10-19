@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, AuthUser } from '../types';
-import { calculateSlaInfo } from '../utils';
+import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   ThumbsUp, 
   MapPin, 
@@ -28,7 +28,7 @@ interface FeedbackListProps {
   onNavigateToEvents?: () => void;
   eventsCount?: number;
   role?: RoleMode;
-  currentUser?: AuthUser | null; // <--- ADDED
+  currentUser?: AuthUser | null;
   onBulkUpdateStatus?: (ids: string[], newStatus: FeedbackStatus) => void;
 }
 
@@ -41,7 +41,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
   onNavigateToEvents,
   eventsCount = 6,
   role = 'student',
-  currentUser, // <--- ADDED
+  currentUser,
   onBulkUpdateStatus,
 }) => {
   const [urgencyFilter, setUrgencyFilter] = useState<'all' | UrgencyLevel>('all');
@@ -320,7 +320,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {sorted.map((item) => {
               const sla = calculateSlaInfo(item.createdAt, item.urgency, item.status);
               const isBulkSelected = selectedIds.has(item.id);
@@ -329,6 +329,9 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
               const hasUserUpvoted = currentUser?.email 
                 ? item.endorsers?.some((e) => e.email === currentUser.email) 
                 : false;
+
+              // Format the ID (KCIS, KCOI, KCRS, etc.)
+              const formattedId = formatReportId(item.id, item.type, item.status);
 
               return (
                 <div
@@ -359,7 +362,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                           </button>
                         )}
                         <span className="font-mono font-bold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/60">
-                          #{item.id}
+                          {formattedId}
                         </span>
                         {item.author === 'Dylon Ocha' && (
                           <span className="text-[10px] bg-amber-100 text-amber-950 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow-2xs" title="Author has a birthday today!">

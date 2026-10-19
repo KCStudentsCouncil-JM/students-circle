@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FeedbackReport, FeedbackStatus, RoleMode, AuthUser } from '../types';
-import { calculateSlaInfo } from '../utils';
+import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   Building2, 
   MapPin, 
@@ -113,6 +113,8 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
     ? report.endorsers?.some((e) => e.email === currentUser.email) 
     : false;
 
+  const formattedId = formatReportId(report.id, report.type, report.status);
+
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyMessage.trim()) return;
@@ -202,7 +204,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           </button>
 
           <span className="font-mono text-xs font-semibold text-purple-900 bg-purple-100/70 px-2 py-1 rounded">
-            #{report.id}
+            {formattedId}
           </span>
           <span className="text-xs text-purple-400 hidden sm:inline">·</span>
           <span className="text-xs font-medium text-purple-800/80 hidden sm:inline truncate max-w-[200px] md:max-w-none">
@@ -682,7 +684,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                 <Trash2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-slate-900">Delete Report #{report.id}?</h3>
+                <h3 className="font-bold text-sm text-slate-900">Delete Report {formattedId}?</h3>
                 <p className="text-xs text-slate-500">
                   This action is permanent and will remove this report and its history.
                 </p>

@@ -1,10 +1,11 @@
 /**
  * Campus Feedback Assistant Utility Functions
  * Addresses: exact-word search, stop-word filtered duplicate detection,
- * image compression, safe localStorage persistence, and tamper-proof SLA calculation.
+ * image compression, safe localStorage persistence, tamper-proof SLA calculation,
+ * and ID formatting.
  */
 
-import { FeedbackReport, UrgencyLevel, FeedbackStatus } from './types';
+import { FeedbackReport, UrgencyLevel, FeedbackStatus, FeedbackType } from './types';
 
 // Common stop-words that should NEVER trigger duplicate detection on their own
 export const STOP_WORDS = new Set([
@@ -29,9 +30,9 @@ export function matchesExactWords(text: string, query: string): boolean {
 
   return terms.every((term) => {
     // If searching for report ID or numerical code, match directly
-    if (/^(fb-)?\d+$/i.test(term)) {
-      const cleanNum = term.replace(/^fb-/i, '');
-      return lowerText.includes(term) || lowerText.includes(`fb-${cleanNum}`);
+    if (/^(fb-|kcis-|kcoi-|kcirv-|kcrs-|kcdrf-)?\d+$/i.test(term)) {
+      const cleanNum = term.replace(/^(fb-|kcis-|kcoi-|kcirv-|kcrs-|kcdrf-)/i, '');
+      return lowerText.includes(term) || lowerText.includes(cleanNum);
     }
 
     // Escape regex special chars
@@ -264,4 +265,32 @@ export function exportCampusDataBackup(reports: any[], events: any[], user: any)
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+// --- NEW ID FORMATTING HELPERS ---
+
+/**
+ * Formats report IDs with the requested prefixes based on type and status.
+ * Initiative -> KCIS
+ * Open Issue -> KCOI
+ * In Review -> KCIRV
+ * Resolved -> KCRS
+ * Draft -> KCDRF
+ */
+export function formatReportId(id: string, type: FeedbackType, status: FeedbackStatus): string {
+  const num = id.includes('-') ? id.split('-')[1] : id;
+  
+  if (type === 'initiative') return `KCIS-${num}`;
+  if (status === 'draft') return `KCDRF-${num}`;
+  if (status === 'resolved') return `KCRS-${num}`;
+  if (status === 'in-review' || status === 'in-progress') return `KCIRV-${num}`;
+  return `KCOI-${num}`; // Default to Open Issue
+}
+
+/**
+ * Formats event IDs with the KCEV prefix.
+ */
+export function formatEventId(id: string): string {
+  const num = id.includes('-') ? id.split('-')[1] : id;
+  return `KCEV-${num}`;
 }

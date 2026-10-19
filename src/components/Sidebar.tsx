@@ -14,9 +14,9 @@ import {
   ShieldAlert, 
   Ribbon, 
   Layers, 
-  Heart, 
   X,
-  Calendar
+  Calendar,
+  Users
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +29,7 @@ interface SidebarProps {
   onClose?: () => void;
   onSignOut?: () => void;
   onExportBackup?: () => void;
+  onOpenStudentList?: () => void; // <--- NEW PROP
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -41,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onSignOut,
   onExportBackup,
+  onOpenStudentList, // <--- NEW PROP
 }) => {
   // Compute counts
   const counts = {
@@ -208,6 +210,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Bottom Solemnity & Actions */}
         <div className="p-3 border-t border-purple-100/80 bg-gradient-to-b from-purple-50/40 to-pink-50/40 space-y-2">
+          
+          {/* ADMIN: MANAGE STUDENTS BUTTON */}
+          {role === 'admin' && onOpenStudentList && (
+            <button
+              onClick={() => {
+                onOpenStudentList();
+                if (window.innerWidth < 1024 && onClose) onClose();
+              }}
+              className="w-full py-2.5 px-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs"
+            >
+              <Users className="w-4 h-4" />
+              <span>Manage Students</span>
+            </button>
+          )}
+
           {/* Quick Data Backup & Sign Out */}
           <div className="flex items-center gap-1.5">
             {onExportBackup && (
