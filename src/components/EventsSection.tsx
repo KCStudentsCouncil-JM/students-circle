@@ -12,13 +12,11 @@ import {
   CheckCircle2, 
   Download, 
   ArrowLeft, 
-  Share2, 
-  Tag, 
-  Bookmark, 
   X, 
-  AlertCircle,
   Building2,
-  Filter
+  Video,
+  Trash2,
+  PlayCircle
 } from 'lucide-react';
 
 interface EventsSectionProps {
@@ -26,6 +24,7 @@ interface EventsSectionProps {
   role: RoleMode;
   onToggleRsvp: (id: string) => void;
   onAddEvent: (newEvent: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => void;
+  onDeleteEvent?: (id: string) => void; // NEW: Passed from App.tsx
   onSelectFeedbackReport?: (feedbackId: string) => void;
   onBackToReports: () => void;
 }
@@ -35,6 +34,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   role,
   onToggleRsvp,
   onAddEvent,
+  onDeleteEvent,
   onSelectFeedbackReport,
   onBackToReports,
 }) => {
@@ -52,6 +52,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [newCategory, setNewCategory] = useState<EventCategory>('student-life');
   const [newTags, setNewTags] = useState('Campus, Student Life');
   const [newCapacity, setNewCapacity] = useState('250');
+  const [newVideoUrl, setNewVideoUrl] = useState(''); // NEW: Video URL state
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Filtered events
@@ -70,12 +71,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           return false;
         }
       }
-
       return true;
     });
   }, [events, selectedCategory, searchQuery]);
 
-  // Featured event (first featured or first overall)
+  // Featured event
   const featuredEvent = useMemo(() => {
     return events.find((e) => e.featured) || events[0] || null;
   }, [events]);
@@ -128,12 +128,14 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       capacity: parseInt(newCapacity, 10) || 200,
       isOfficialUniversityEvent: true,
       featured: false,
+      videoUrl: newVideoUrl.trim() || undefined, // Add video URL
     });
 
     setIsAddModalOpen(false);
     setNewTitle('');
     setNewDesc('');
     setNewLocation('');
+    setNewVideoUrl('');
     setFormErrors({});
   };
 
@@ -188,14 +190,33 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     const monthIdx = parseInt(parts[1], 10) - 1;
     const day = parseInt(parts[2], 10);
     const dateObj = new Date(year, monthIdx, day);
-    const monthStr = dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase();
-    const weekday = dateObj.toLocaleDateString(undefined, { weekday: 'short' });
-
     return {
-      month: monthStr,
+      month: dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
       day,
-      weekday,
+      weekday: dateObj.toLocaleDateString(undefined, { weekday: 'short' }),
     };
+  };
+
+  // Helper to render YouTube or MP4 videos
+  const renderVideo = (url: string) => {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('youtu.be/')[1];
+      return (
+        <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3">
+          <iframe
+            className="w-full h-full"
+            src={`https://www.youtube.com/embed/${videoId}`}
+            title="Event Video"
+            allowFullScreen
+          />
+        </div>
+      );
+    }
+    return (
+      <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3">
+        <video src={url} controls className="w-full h-full object-cover" />
+      </div>
+    );
   };
 
   return (
@@ -207,7 +228,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             <button
               onClick={onBackToReports}
               className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-lg bg-white hover:bg-purple-50 text-purple-950 font-semibold text-xs border border-purple-200 shadow-2xs transition-all cursor-pointer touch-manipulation active:scale-95"
-              title="Return to Feedback Reports"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-purple-700" />
               <span>Back to Reports</span>
@@ -223,13 +243,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   {events.length} Scheduled
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-purple-700/80 mt-0.5">
-                Official school assemblies, career fairs, student rallies, and BCA solidarity gatherings.
-              </p>
             </div>
           </div>
 
-          {/* Right Action: Search & Admin Add CTA */}
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
             <div className="relative min-w-[140px] sm:min-w-[180px]">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-purple-400 pointer-events-none" />
@@ -240,16 +256,9 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 placeholder="Search events..."
                 className="w-full text-xs pl-8 pr-7 py-1.5 rounded-lg border border-purple-200 bg-purple-50/60 focus:bg-white text-purple-950 focus:outline-none focus:ring-1 focus:ring-purple-400"
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-700 p-0.5 cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
             </div>
 
+            {/* STRICTLY ADMINS CAN SEE THIS BUTTON */}
             {role === 'admin' && (
               <button
                 onClick={() => setIsAddModalOpen(true)}
@@ -295,71 +304,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
 
       {/* Main Content: Scrollable Grid */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 space-y-5">
-        {/* Spotlight Featured Event Banner (if available & category is all/bca) */}
-        {featuredEvent && (selectedCategory === 'all' || selectedCategory === featuredEvent.category) && !searchQuery && (
-          <div className="rounded-2xl bg-gradient-to-r from-purple-950 via-purple-900 to-pink-950 p-4 sm:p-6 text-white shadow-md border border-purple-800/80 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-2 max-w-2xl">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-400/30 flex items-center gap-1">
-                    <Ribbon className="w-3 h-3 text-pink-400" />
-                    <span>Featured Campus Event</span>
-                  </span>
-                  <span className="text-xs text-purple-200">
-                    {featuredEvent.date} · {featuredEvent.time}
-                  </span>
-                </div>
-
-                <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white leading-snug">
-                  {featuredEvent.title}
-                </h2>
-
-                <p className="text-xs text-purple-100/80 leading-relaxed">
-                  {featuredEvent.description}
-                </p>
-
-                <div className="flex items-center gap-4 text-xs text-purple-200 pt-1 flex-wrap">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-pink-400 shrink-0" />
-                    <span>{featuredEvent.location}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-purple-300 shrink-0" />
-                    <span>Organized by {featuredEvent.organizer}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-row md:flex-col items-center gap-2.5 shrink-0 self-start md:self-center">
-                <button
-                  onClick={() => onToggleRsvp(featuredEvent.id)}
-                  className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer touch-manipulation min-h-[40px] shadow-sm ${
-                    featuredEvent.hasRsvpd
-                      ? 'bg-pink-500 hover:bg-pink-600 text-white'
-                      : 'bg-white hover:bg-purple-50 text-purple-950 font-bold'
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4 text-pink-200" />
-                  <span>{featuredEvent.hasRsvpd ? 'RSVP Confirmed' : 'RSVP / Register'} ({featuredEvent.rsvps})</span>
-                </button>
-
-                <button
-                  onClick={() => handleDownloadIcs(featuredEvent)}
-                  className="px-3 py-2 rounded-xl text-xs font-medium text-purple-200 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 transition-colors flex items-center gap-1.5 cursor-pointer touch-manipulation min-h-[40px]"
-                  title="Add to personal calendar (.ics)"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Add to Calendar</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Events Grid */}
         {filteredEvents.length === 0 ? (
           <div className="p-12 text-center text-purple-950/60 flex flex-col items-center justify-center min-h-[260px] bg-white rounded-2xl border border-purple-100">
             <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-500 mb-3">
@@ -367,7 +311,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             </div>
             <h3 className="text-sm font-bold text-purple-950">No events found</h3>
             <p className="text-xs text-purple-700/70 mt-1 max-w-sm">
-              No campus events match your selected category or search filter. Try choosing "All Upcoming" or clearing your search.
+              No campus events match your selected category or search filter.
             </p>
           </div>
         ) : (
@@ -377,13 +321,12 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               return (
                 <div
                   key={evt.id}
-                  className="bg-white rounded-2xl p-4 sm:p-5 border border-purple-100 hover:border-purple-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group touch-manipulation"
+                  className="bg-white rounded-2xl p-4 sm:p-5 border border-purple-100 hover:border-purple-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group touch-manipulation relative"
                 >
                   <div>
-                    {/* Top Row: Date Square + Category + Capacity */}
+                    {/* Top Row */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3">
-                        {/* Apple macOS style calendar tile */}
                         <div className="w-11 h-12 rounded-xl bg-purple-50 border border-purple-200/90 flex flex-col items-center justify-center shadow-2xs shrink-0 overflow-hidden text-center">
                           <div className="bg-purple-800 w-full text-[9px] font-bold text-white py-0.5 tracking-wider">
                             {cal.month}
@@ -392,7 +335,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                             {cal.day}
                           </div>
                         </div>
-
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {getCategoryBadge(evt.category)}
@@ -403,28 +345,29 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         </div>
                       </div>
 
-                      {evt.linkedFeedbackId && (
+                      {/* ADMIN DELETE BUTTON */}
+                      {role === 'admin' && onDeleteEvent && (
                         <button
-                          onClick={() => onSelectFeedbackReport && onSelectFeedbackReport(evt.linkedFeedbackId!)}
-                          className="text-[10px] font-semibold text-purple-700 hover:text-purple-950 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded border border-purple-200 transition-colors cursor-pointer"
-                          title="View student initiative report"
+                          onClick={(e) => { e.stopPropagation(); onDeleteEvent(evt.id); }}
+                          className="text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-md transition-colors"
+                          title="Delete Event permanently"
                         >
-                          Initiative #{evt.linkedFeedbackId}
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
 
-                    {/* Event Title */}
                     <h3 className="text-sm sm:text-[15px] font-bold text-purple-950 group-hover:text-purple-700 transition-colors leading-snug line-clamp-2 mb-2">
                       {evt.title}
                     </h3>
 
-                    {/* Description preview */}
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed mb-3">
                       {evt.description}
                     </p>
 
-                    {/* Location & Organizer Info */}
+                    {/* RENDER VIDEO IF IT EXISTS */}
+                    {evt.videoUrl && renderVideo(evt.videoUrl)}
+
                     <div className="space-y-1.5 mb-3 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100/70 text-xs">
                       <div className="flex items-center gap-1.5 text-purple-900/90 truncate">
                         <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0" />
@@ -435,23 +378,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         <span className="truncate">Host: {evt.organizer}</span>
                       </div>
                     </div>
-
-                    {/* Tags */}
-                    {evt.tags && evt.tags.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap mb-3">
-                        {evt.tags.slice(0, 3).map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[10px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded font-medium"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
-                  {/* Bottom Strip: RSVP Button & Calendar Action */}
                   <div className="pt-3 border-t border-purple-50 flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 text-xs text-purple-800">
                       <span className="font-semibold tabular-nums text-purple-950">
@@ -461,7 +389,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {/* Add to personal calendar */}
                       <button
                         onClick={() => handleDownloadIcs(evt)}
                         title="Download .ics calendar invite"
@@ -470,7 +397,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         <Download className="w-3.5 h-3.5" />
                       </button>
 
-                      {/* RSVP toggle */}
                       <button
                         onClick={() => onToggleRsvp(evt.id)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1 ${
@@ -491,11 +417,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
         )}
       </div>
 
-      {/* Admin New Event Modal */}
-      {isAddModalOpen && (
+      {/* Admin New Event Modal (Only Renders if Admin) */}
+      {isAddModalOpen && role === 'admin' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/40 backdrop-blur-xs select-none">
           <div className="bg-white rounded-2xl shadow-2xl border border-purple-200 w-full max-w-lg max-h-[94dvh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
             <div className="px-5 py-4 border-b border-purple-100 flex items-center justify-between bg-gradient-to-r from-purple-50/80 to-white">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-purple-800 text-white flex items-center justify-center shadow-xs">
@@ -514,7 +439,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleCreateEventSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs select-text">
               <div className="space-y-1">
                 <label className="font-semibold text-purple-950 block">Event Title *</label>
@@ -522,7 +446,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g., Campus Coding Marathon, Spring Music Gala"
+                  placeholder="e.g., Campus Coding Marathon"
                   className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.title && <p className="text-rose-600 text-[10px]">{formErrors.title}</p>}
@@ -544,7 +468,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                     type="text"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
-                    placeholder="e.g. 2:00 PM - 5:00 PM"
                     className="w-full p-2 rounded-lg border border-purple-200 text-purple-950 focus:outline-none focus:ring-1 focus:ring-purple-400"
                   />
                 </div>
@@ -572,21 +495,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   type="text"
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
-                  placeholder="e.g., Student Union Lawn, Tech Auditorium"
+                  placeholder="e.g., Student Union Lawn"
                   className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.location && <p className="text-rose-600 text-[10px]">{formErrors.location}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-semibold text-purple-950 block">Organizer Department *</label>
-                <input
-                  type="text"
-                  value={newOrganizer}
-                  onChange={(e) => setNewOrganizer(e.target.value)}
-                  placeholder="e.g., Student Senate, Dean of Students Office"
-                  className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-400"
-                />
               </div>
 
               <div className="space-y-1">
@@ -595,32 +507,28 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   rows={3}
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Details, student registration guidelines, speakers..."
+                  placeholder="Details, student registration guidelines..."
                   className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.description && <p className="text-rose-600 text-[10px]">{formErrors.description}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-semibold text-purple-950 block">Capacity</label>
-                  <input
-                    type="number"
-                    value={newCapacity}
-                    onChange={(e) => setNewCapacity(e.target.value)}
-                    className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-purple-950 block">Tags (comma-separated)</label>
-                  <input
-                    type="text"
-                    value={newTags}
-                    onChange={(e) => setNewTags(e.target.value)}
-                    placeholder="e.g. Free Food, Seniors"
-                    className="w-full p-2 rounded-lg border border-purple-200 focus:outline-none"
-                  />
-                </div>
+              {/* NEW: VIDEO INPUT */}
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-200 space-y-1">
+                <label className="font-bold text-purple-950 flex items-center gap-1.5">
+                  <Video className="w-4 h-4 text-pink-600" /> 
+                  <span>Attach Promo Video (Optional)</span>
+                </label>
+                <input 
+                  type="url" 
+                  value={newVideoUrl} 
+                  onChange={(e) => setNewVideoUrl(e.target.value)} 
+                  className="w-full p-2 rounded-lg border border-purple-200 bg-white focus:outline-none focus:ring-1 focus:ring-purple-400" 
+                  placeholder="Paste YouTube link or direct .mp4 URL" 
+                />
+                <p className="text-[10px] text-purple-700/80 pt-0.5">
+                  Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+                </p>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2 border-t border-purple-100">

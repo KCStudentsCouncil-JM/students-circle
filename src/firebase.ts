@@ -97,3 +97,9 @@ export async function updateEventInDb(id: string, updates: Partial<CampusEvent>)
   const docRef = doc(db, 'events', id);
   await updateDoc(docRef, updates);
 }
+
+export async function deleteEventFromDb(id: string) {
+  if (!db) return;
+  const docRef = doc(db, 'events', id);
+  await deleteDoc(docRef);
+}

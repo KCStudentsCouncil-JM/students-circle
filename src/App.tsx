@@ -18,7 +18,6 @@ import {
   matchesExactWords, 
   exportCampusDataBackup 
 } from './utils';
-// Import Firebase Firestore functions
 import { 
   subscribeToReports, 
   subscribeToEvents, 
@@ -26,7 +25,8 @@ import {
   updateReportInDb, 
   deleteReportFromDb, 
   saveEventToDb, 
-  updateEventInDb 
+  updateEventInDb,
+  deleteEventFromDb // <-- NEW IMPORT
 } from './firebase';
 
 import { TopBar } from './components/TopBar';
@@ -85,9 +85,8 @@ export default function App() {
 
   // 3. Connect to Firestore (Global Database) when user is logged in
   useEffect(() => {
-    if (!currentUser) return; // Don't fetch data if not logged in
+    if (!currentUser) return;
 
-    // Listen to live updates from the internet
     const unsubReports = subscribeToReports((data) => setReports(data));
     const unsubEvents = subscribeToEvents((data) => setEvents(data));
 
@@ -161,6 +160,13 @@ export default function App() {
     await deleteReportFromDb(id);
     showToast(`Report #${id} deleted from cloud.`);
     setPageView('main');
+  };
+
+  // NEW: Handle Event Deletion
+  const handleDeleteEvent = async (id: string) => {
+    if (role !== 'admin') return;
+    await deleteEventFromDb(id);
+    showToast(`Event deleted permanently.`);
   };
 
   const handleBulkUpdateStatus = async (ids: string[], newStatus: FeedbackStatus) => {
@@ -410,7 +416,6 @@ export default function App() {
     }
   }, [currentFilter]);
 
-  // 4. BLOCK ACCESS UNTIL LOGGED IN
   if (!currentUser) {
     return (
       <PortalPage 
@@ -501,6 +506,7 @@ export default function App() {
             role={role}
             onToggleRsvp={handleToggleEventRsvp}
             onAddEvent={handleAddEvent}
+            onDeleteEvent={handleDeleteEvent} // <--- NEW PROP ADDED HERE
             onSelectFeedbackReport={(fbId) => {
               setSelectedId(fbId);
               setCurrentFilter('all');

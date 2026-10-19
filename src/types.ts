@@ -71,11 +71,11 @@ export type EventCategory =
   | 'arts';
 
 export interface CampusEvent {
-  id: string; // e.g., 'EVT-101'
+  id: string;
   title: string;
   description: string;
-  date: string; // e.g., '2026-10-24'
-  time: string; // e.g., '9:00 AM - 1:00 PM'
+  date: string;
+  time: string;
   location: string;
   organizer: string;
   category: EventCategory;
@@ -86,6 +86,7 @@ export interface CampusEvent {
   capacity?: number;
   isOfficialUniversityEvent: boolean;
   featured?: boolean;
+  videoUrl?: string; // <--- ADD THIS LINE
 }
 
 export type NavFilter = 
