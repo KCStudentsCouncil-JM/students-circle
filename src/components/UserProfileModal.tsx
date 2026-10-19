@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthUser, isBirthdayToday } from '../types';
+import { UserProfile, isBirthdayToday } from '../types';
 import { isValidImageFile, compressImage } from '../utils';
 import { 
   X, 
@@ -20,10 +20,10 @@ import {
 } from 'lucide-react';
 
 interface UserProfileModalProps {
-  user: AuthUser;
+  user: UserProfile;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updated: AuthUser) => void;
+  onSave: (updated: UserProfile) => void;
   onSignOut?: () => void;
   onExportBackup?: () => void;
   onImportBackup?: (e: React.ChangeEvent<HTMLInputElement>) => void;

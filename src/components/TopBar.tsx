@@ -1,4 +1,4 @@
-import { AuthUser, isBirthdayToday } from '../types';
+import { UserProfile, isBirthdayToday } from '../types';
 import { 
   Search, 
   Plus, 
@@ -14,7 +14,7 @@ interface TopBarProps {
   onOpenNewModal: () => void;
   totalCount: number;
   openCount: number;
-  currentUser: AuthUser | null;
+  currentUser: UserProfile | null;
   onSignOut: () => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
