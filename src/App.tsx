@@ -281,10 +281,24 @@ export default function App() {
     showToast(`Feedback ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
   };
 
-  const filteredReports = useMemo(() => {
+    const filteredReports = useMemo(() => {
     return reports.filter(item => {
-      if (currentFilter !== 'all' && item.status !== currentFilter) return false;
+      // 1. Status Filters
+      if (currentFilter === 'open' && item.status !== 'open') return false;
+      if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
+      if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
+      if (currentFilter === 'drafts' && item.status !== 'draft') return false;
+
+      // 2. Category Filters (THIS IS THE FIX)
+      if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
+      if (currentFilter === 'technology' && item.category !== 'technology') return false;
+      if (currentFilter === 'academics' && item.category !== 'academics') return false;
+      if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
+      if (currentFilter === 'safety' && item.category !== 'safety') return false;
+
+      // 3. Search Filter
       if (searchQuery.trim() && !matchesExactWords(`${item.title} ${item.description}`, searchQuery)) return false;
+      
       return true;
     });
   }, [reports, currentFilter, searchQuery]);
