@@ -34,13 +34,18 @@ export const PortalPage: React.FC<PortalPageProps> = ({
     <div className="min-h-screen bg-[#faf8fc] flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         
-        {/* Header */}
+       {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-700 to-pink-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-            <Ribbon className="w-8 h-8 text-white" />
+          {/* NEW LOGO IMAGE */}
+          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border border-purple-100 p-1">
+            <img 
+              src="/SCBCALogo.jpg" 
+              alt="KC Students Circle Logo" 
+              className="w-full h-full object-contain rounded-xl" 
+            />
           </div>
-          <h1 className="text-2xl font-extrabold text-purple-950">KC Students Cirle</h1>
-          <p className="text-sm text-purple-700/80">Kingston College Student Voice & Updates Hub</p>
+          <h1 className="text-2xl font-extrabold text-purple-950">KC Students Circle</h1>
+          <p className="text-sm text-purple-700/80">University Student Voice & Leadership Hub</p>
         </div>
 
         {/* Auth Buttons */}
