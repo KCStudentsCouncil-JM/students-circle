@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CampusEvent, EventCategory, RoleMode, AuthUser } from '../types';
+import { CampusEvent, EventCategory, RoleMode, UserProfile } from '../types';
 import { formatEventId } from '../utils';
 import { 
   Calendar, 
@@ -23,7 +23,7 @@ import {
 interface EventsSectionProps {
   events: CampusEvent[];
   role: RoleMode;
-  currentUser?: AuthUser | null; // <--- NEW
+  currentUser?: UserProfile | null; // <--- NEW
   onToggleRsvp: (id: string) => void;
   onAddEvent: (newEvent: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => void;
   onDeleteEvent?: (id: string) => void;

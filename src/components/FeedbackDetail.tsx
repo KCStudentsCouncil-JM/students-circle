@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FeedbackReport, FeedbackStatus, RoleMode, AuthUser } from '../types';
+import { FeedbackReport, FeedbackStatus, RoleMode, UserProfile } from '../types';
 import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   Building2, 
@@ -30,7 +30,7 @@ import {
 interface FeedbackDetailProps {
   report: FeedbackReport | null;
   role: RoleMode;
-  currentUser?: AuthUser | null;
+  currentUser?: UserProfile | null;
   onUpdateStatus: (id: string, status: FeedbackStatus, adminNote?: string) => void;
   onAddActivity: (id: string, message: string, role: 'admin' | 'student', statusChange?: FeedbackStatus) => void;
   onToggleUpvote: (id: string, e: React.MouseEvent) => void;

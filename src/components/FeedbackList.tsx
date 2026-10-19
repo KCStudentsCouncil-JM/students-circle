@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, AuthUser } from '../types';
+import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, UserProfile } from '../types';
 import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   ThumbsUp, 
@@ -28,7 +28,7 @@ interface FeedbackListProps {
   onNavigateToEvents?: () => void;
   eventsCount?: number;
   role?: RoleMode;
-  currentUser?: AuthUser | null;
+  currentUser?: UserProfile | null;
   onBulkUpdateStatus?: (ids: string[], newStatus: FeedbackStatus) => void;
 }
 
