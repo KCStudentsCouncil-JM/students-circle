@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FeedbackReport, CampusEvent } from '../types';
 import { GraduationCap, ShieldCheck, KeyRound } from 'lucide-react';
-import logoImg from '../assets/SCBCALogo.jpg';
 
 interface PortalPageProps {
   reports: FeedbackReport[];
@@ -35,12 +34,17 @@ export const PortalPage: React.FC<PortalPageProps> = ({
       <div className="max-w-md w-full space-y-8">
         
        {/* Header */}
-        <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border border-purple-100 p-1">
-          <img 
-            src={logoImg} 
-            alt="KC Students Circle Logo" 
-            className="w-full h-full object-contain rounded-xl" 
-          />
+        <div className="text-center space-y-2">
+          {/* NEW LOGO IMAGE */}
+          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border border-purple-100 p-1">
+            <img 
+              src={`${import.meta.env.BASE_URL}SCBCALogo.jpg`} 
+              alt="KC Students Circle Logo" 
+              className="w-full h-full object-contain rounded-xl" 
+            />
+          </div>
+          <h1 className="text-2xl font-extrabold text-purple-950">KC Students Circle</h1>
+          <p className="text-sm text-purple-700/80">University Student Voice & Leadership Hub</p>
         </div>
         {/* Auth Buttons */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-purple-200 shadow-xl space-y-4">
