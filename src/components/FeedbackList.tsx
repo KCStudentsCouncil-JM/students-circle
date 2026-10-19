@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, UserProfile } from '../types';
+import { FeedbackReport, UrgencyLevel, FeedbackStatus, RoleMode, UserProfile, isBirthdayToday } from '../types';
 import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   ThumbsUp, 
@@ -16,7 +16,9 @@ import {
   ArrowUpDown,
   Wrench,
   Layers,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Cake,
+  PartyPopper
 } from 'lucide-react';
 
 interface FeedbackListProps {
@@ -29,6 +31,7 @@ interface FeedbackListProps {
   eventsCount?: number;
   role?: RoleMode;
   currentUser?: UserProfile | null;
+  allUsers?: UserProfile[]; // <--- ADDED
   onBulkUpdateStatus?: (ids: string[], newStatus: FeedbackStatus) => void;
 }
 
@@ -42,6 +45,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
   eventsCount = 6,
   role = 'student',
   currentUser,
+  allUsers = [], // <--- ADDED
   onBulkUpdateStatus,
 }) => {
   const [urgencyFilter, setUrgencyFilter] = useState<'all' | UrgencyLevel>('all');
@@ -51,6 +55,9 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
   // Fix #12: Admin Bulk selection state & confirmation modal
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [pendingBulkStatus, setPendingBulkStatus] = useState<FeedbackStatus | null>(null);
+
+  // Calculate today's birthdays
+  const todaysBirthdays = allUsers.filter(u => isBirthdayToday(u.birthday));
 
   // Filter by urgency and type
   const filtered = reports.filter((r) => {
@@ -309,6 +316,44 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
 
       {/* Main Page Cards Grid */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 pb-28 sm:pb-12">
+        
+        {/* Birthday Celebration Section */}
+        {todaysBirthdays.length > 0 && (
+          <div className="mb-5 animate-in fade-in slide-in-from-top-4">
+            <div className="bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="relative z-10 flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                  <Cake className="w-6 h-6 text-amber-300" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
+                    Happy Birthday! <PartyPopper className="w-5 h-5 text-amber-300" />
+                  </h2>
+                  <p className="text-xs text-pink-100 font-medium">Join us in celebrating our KC Students today!</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2.5 relative z-10">
+                {todaysBirthdays.map(student => (
+                  <div key={student.email} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30 shadow-sm cursor-default">
+                    {student.photo ? (
+                      <img src={student.photo} alt={student.name} className="w-7 h-7 rounded-full object-cover border-2 border-white/80" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-white/40 flex items-center justify-center text-xs font-bold border-2 border-white/80">
+                        {student.name.charAt(0)}
+                      </div>
+                    )}
+                    <span className="text-sm font-bold">{student.name}</span>
+                    <span className="text-[10px] bg-black/20 px-2 py-0.5 rounded-full font-mono">{student.classYear || 'Student'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {sorted.length === 0 ? (
           <div className="p-8 sm:p-12 text-center text-purple-950/60 flex flex-col items-center justify-center min-h-[250px] sm:min-h-[300px]">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-400 mb-3">

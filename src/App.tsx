@@ -114,7 +114,7 @@ export default function App() {
 
   const handleOnboardingSubmit = async (profile: UserProfile) => {
     await createUserProfile(profile);
-    setUserProfile(profile); // Show pending screen immediately
+    setUserProfile(profile);
     showToast('Request sent to admins.');
   };
 
@@ -125,7 +125,6 @@ export default function App() {
       
       if (targetRole === 'admin') {
         if (!profile) {
-          // Auto-create admin profile if it doesn't exist
           const newAdmin: UserProfile = {
             id: user.email!, name: user.displayName || 'Admin', email: user.email!,
             role: 'admin', status: 'approved', photo: user.photoURL || '', createdAt: new Date().toISOString()
@@ -134,7 +133,6 @@ export default function App() {
           setUserProfile(newAdmin);
           setRole('admin');
         } else {
-          // Ensure role is upgraded to admin
           await createUserProfile({ ...profile, role: 'admin', status: 'approved' });
           setUserProfile({ ...profile, role: 'admin', status: 'approved' });
           setRole('admin');
@@ -276,7 +274,6 @@ export default function App() {
       activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted.', timestamp: nowIso }],
     };
 
-    // Optimistically update UI so there's no delay
     setReports((prev) => [createdReport, ...prev]);
     await saveReportToDb(createdReport);
     setSelectedId(newId); 
@@ -300,7 +297,7 @@ export default function App() {
     return (
       <>
         <PortalPage reports={reports} onSignInClick={(r) => { setLoginRole(r); setIsGooglePickerOpen(true); }} isGooglePickerOpen={isGooglePickerOpen} onCloseGooglePicker={() => setIsGooglePickerOpen(false)} />
-        <GoogleAccountPickerModal isOpen={isGooglePickerOpen} onClose={() => setIsGooglePickerOpen(false)} targetRole={loginRole} onSelectAccount={(acc) => handleGoogleLogin(loginRole)} />
+        <GoogleAccountPickerModal isOpen={isGooglePickerOpen} onClose={() => setIsGooglePickerOpen(false)} targetRole={loginRole} onSelectAccount={() => handleGoogleLogin(loginRole)} />
       </>
     );
   }
@@ -333,9 +330,10 @@ export default function App() {
         openCount={reports.filter(r => r.status === 'open').length} 
         currentUser={userProfile} 
         onSignOut={handleSignOut} 
+        onGoHome={() => { setCurrentFilter('all'); setPageView('main'); }} // <--- NEW
         isSidebarOpen={isSidebarOpen} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        onOpenProfile={() => setIsProfileModalOpen(true)} // <--- FIXED
+        onOpenProfile={() => setIsProfileModalOpen(true)}
       />
       
       <div className="flex-1 flex overflow-hidden relative">
@@ -371,21 +369,22 @@ export default function App() {
             reports={filteredReports} 
             selectedId={selectedId} 
             currentUser={userProfile as any} 
+            allUsers={allUsers} // <--- NEW
             onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }} 
             onToggleUpvote={handleToggleUpvote} 
             activeFilterTitle="All Reports" 
             onNavigateToEvents={() => setCurrentFilter('events')} 
             eventsCount={events.length} 
             role={role} 
-            onBulkUpdateStatus={handleBulkUpdateStatus} // <--- FIXED
+            onBulkUpdateStatus={handleBulkUpdateStatus}
           />
         ) : (
           <FeedbackDetail 
             report={reports.find(r => r.id === selectedId) || null} 
             role={role} 
             currentUser={userProfile as any} 
-            onUpdateStatus={handleUpdateStatus} // <--- FIXED
-            onAddActivity={handleAddActivity} // <--- FIXED
+            onUpdateStatus={handleUpdateStatus}
+            onAddActivity={handleAddActivity}
             onToggleUpvote={handleToggleUpvote} 
             onBack={() => setPageView('main')} 
             onDeleteReport={handleDeleteReport} 
@@ -431,7 +430,7 @@ export default function App() {
           setPageView('detail');
           setIsNewFeedbackModalOpen(false);
         }}
-        currentUser={userProfile} // <--- FIXED
+        currentUser={userProfile}
       />
 
       {userProfile && (

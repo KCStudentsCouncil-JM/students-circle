@@ -1,12 +1,5 @@
 import { UserProfile, isBirthdayToday } from '../types';
-import { 
-  Search, 
-  Plus, 
-  X, 
-  Ribbon, 
-  LogOut, 
-  PanelLeft
-} from 'lucide-react';
+import { Search, Plus, X, Ribbon, LogOut, PanelLeft } from 'lucide-react';
 
 interface TopBarProps {
   searchQuery: string;
@@ -16,6 +9,7 @@ interface TopBarProps {
   openCount: number;
   currentUser: UserProfile | null;
   onSignOut: () => void;
+  onGoHome: () => void; // <--- NEW PROP
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenProfile?: () => void;
@@ -28,6 +22,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenNewModal,
   currentUser,
   onSignOut,
+  onGoHome, // <--- NEW PROP
   isSidebarOpen,
   onToggleSidebar,
   onOpenProfile,
@@ -54,8 +49,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         {/* Brand Marker */}
         <button
-          onClick={onSignOut}
-          title="Click to return to Sign In Portal"
+          onClick={onGoHome} // <--- CHANGED TO GO HOME
+          title="Go to All Reports"
           className="flex items-center gap-1.5 sm:gap-2 group p-1 -ml-0.5 rounded-xl hover:bg-purple-100/70 transition-all text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400 touch-manipulation shrink-0"
         >
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-purple-700 via-purple-800 to-pink-600 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform shrink-0">
@@ -64,8 +59,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           <div className="flex flex-col">
             <div className="flex items-center gap-1">
               <span className="font-bold text-xs sm:text-sm tracking-tight text-purple-950 group-hover:text-purple-800 transition-colors whitespace-nowrap">
-                <span className="inline sm:hidden">Feedback</span>
-                <span className="hidden sm:inline">Feedback Assistant</span>
+                <span className="inline sm:hidden">KC Circle</span>
+                <span className="hidden sm:inline">KC Students Circle</span>
               </span>
               <span className="hidden md:inline-flex text-[9px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-pink-50 text-pink-700 border border-pink-200/60 items-center gap-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
@@ -73,7 +68,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               </span>
             </div>
             <span className="hidden sm:inline text-[9px] text-purple-600 font-medium -mt-0.5 group-hover:underline">
-              ← Sign In Portal
+              ← All Reports
             </span>
           </div>
         </button>
@@ -104,7 +99,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Right Zone: New Feedback & Sign Out */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        {/* Primary CTA */}
         <button
           onClick={onOpenNewModal}
           className="flex items-center justify-center gap-1 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 text-white px-2 sm:px-3 py-1.5 rounded-lg text-xs font-semibold shadow-2xs hover:shadow transition-all active:scale-[0.98] border border-purple-600/50 cursor-pointer touch-manipulation"
@@ -114,7 +108,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline">New</span>
         </button>
 
-        {/* Current User Profile & Birthday Indicator OR Google Sign-In */}
         {currentUser ? (
           <div className="flex items-center gap-1 sm:gap-1.5 pl-1 sm:pl-2 border-l border-purple-200">
             <button
@@ -142,11 +135,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                     {currentUser.name.charAt(0)}
                   </div>
                 )}
-                {isBirthdayToday(currentUser.birthday) && (
-                  <span className="absolute -top-1 -right-1 text-[10px] w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-xs">
-                    🎂
-                  </span>
-                )}
               </div>
 
               <div className="hidden xl:flex flex-col text-left leading-tight pr-1">
@@ -154,11 +142,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <span className="text-xs font-bold text-purple-950 truncate max-w-[100px]">
                     {currentUser.name}
                   </span>
-                  {isBirthdayToday(currentUser.birthday) && (
-                    <span className="text-[9px] bg-gradient-to-r from-amber-400 to-pink-500 text-white font-extrabold px-1.5 py-0.2 rounded-full shadow-2xs">
-                      🎂 Birthday!
-                    </span>
-                  )}
                 </div>
                 <span className="text-[10px] text-purple-600 truncate max-w-[100px]">
                   {currentUser.classYear || (currentUser.role === 'admin' ? 'Staff' : 'Student')}
@@ -170,7 +153,6 @@ export const TopBar: React.FC<TopBarProps> = ({
               onClick={onSignOut}
               title={`Signed in as ${currentUser.name}. Return to Guest`}
               className="flex items-center justify-center gap-1 p-1.5 sm:px-2.5 sm:py-1 text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors border border-rose-200 cursor-pointer touch-manipulation shrink-0 min-w-[34px] min-h-[34px]"
-              aria-label="Sign Out"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden sm:inline text-[11px]">Sign Out</span>
@@ -181,16 +163,8 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={onOpenGoogleSignIn}
               className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs hover:shadow-xs transition-all active:scale-[0.99] cursor-pointer touch-manipulation shrink-0"
-              title="Sign in with your Google Account"
             >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-              </svg>
-              <span className="hidden sm:inline">Sign In with Google</span>
-              <span className="sm:hidden">Sign In</span>
+              <span>Sign In</span>
             </button>
           </div>
         )}

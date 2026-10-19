@@ -39,8 +39,8 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           <div className="w-16 h-16 bg-gradient-to-br from-purple-700 to-pink-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
             <Ribbon className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-purple-950">Campus Feedback Assistant</h1>
-          <p className="text-sm text-purple-700/80">University Student Voice & Leadership Hub</p>
+          <h1 className="text-2xl font-extrabold text-purple-950">KC Students Cirle</h1>
+          <p className="text-sm text-purple-700/80">Kingston College Student Voice & Updates Hub</p>
         </div>
 
         {/* Auth Buttons */}
