@@ -29,7 +29,7 @@ interface SidebarProps {
   onClose?: () => void;
   onSignOut?: () => void;
   onExportBackup?: () => void;
-  onOpenStudentList?: () => void; // <--- NEW PROP
+  onOpenStudentList?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   onSignOut,
   onExportBackup,
-  onOpenStudentList, // <--- NEW PROP
+  onOpenStudentList,
 }) => {
   // Compute counts
   const counts = {
@@ -85,7 +85,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile/Tablet Backdrop: tap outside to close drawer */}
       <div 
         onClick={onClose}
         className="fixed inset-0 bg-purple-950/30 backdrop-blur-2xs z-40 lg:hidden"
@@ -94,7 +93,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] lg:static lg:w-64 bg-[#fdfcff] border-r border-purple-100 flex flex-col justify-between select-none shrink-0 text-slate-700 shadow-2xl lg:shadow-none animate-in slide-in-from-left-4 duration-200">
         <div className="p-3 sm:p-4 space-y-4 overflow-y-auto">
-          {/* Mobile drawer header with close action */}
           <div className="flex items-center justify-between lg:hidden pb-1 border-b border-purple-100">
             <div className="flex items-center gap-2">
               <span className="font-bold text-xs text-purple-950 uppercase tracking-wider">
@@ -108,14 +106,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-lg text-purple-600 hover:text-purple-950 hover:bg-purple-100 cursor-pointer"
-                title="Close drawer"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          {/* Quick New Feedback Action in Sidebar */}
           <button
             onClick={() => {
               onOpenNewModal();
@@ -127,7 +123,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>New Feedback / Initiative</span>
           </button>
 
-          {/* Status Views Section */}
           <div>
             <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-950/60 flex items-center justify-between">
               <span>Mailbox & Status</span>
@@ -168,7 +163,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Category Views Section */}
           <div>
             <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-950/60 flex items-center justify-between">
               <span>Categories</span>
@@ -208,7 +202,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Bottom Solemnity & Actions */}
         <div className="p-3 border-t border-purple-100/80 bg-gradient-to-b from-purple-50/40 to-pink-50/40 space-y-2">
           
           {/* ADMIN: MANAGE STUDENTS BUTTON */}
@@ -225,14 +218,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           )}
 
-          {/* Quick Data Backup & Sign Out */}
           <div className="flex items-center gap-1.5">
             {onExportBackup && (
               <button
                 type="button"
                 onClick={onExportBackup}
                 className="flex-1 py-1.5 px-2 text-[11px] font-semibold text-purple-700 bg-white hover:bg-purple-100/80 rounded-lg border border-purple-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                title="Download backup file of all campus reports"
               >
                 <span>Backup Data</span>
               </button>
@@ -246,7 +237,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onSignOut();
                 }}
                 className="flex-1 py-1.5 px-2 text-[11px] font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                title="Sign out of student account"
               >
                 <span>Sign Out</span>
               </button>
@@ -261,10 +251,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <p className="text-[11px] text-purple-900/70 leading-relaxed">
               Honoring survivors, fighters, and advocates on our campus this October.
             </p>
-            <div className="flex items-center justify-between text-[10px] text-pink-800/80 pt-0.5 border-t border-pink-100">
-              <span>Student Support Center</span>
-              <span className="font-mono">Ext. 4090</span>
-            </div>
           </div>
         </div>
       </aside>

@@ -5,12 +5,12 @@ import {
   GraduationCap, 
   ShieldCheck, 
   Ribbon, 
-  ArrowRight, 
   MapPin, 
   AlertTriangle, 
   Calendar,
   Users,
-  KeyRound
+  KeyRound,
+  CheckCircle2
 } from 'lucide-react';
 
 interface PortalPageProps {
@@ -33,7 +33,6 @@ export const PortalPage: React.FC<PortalPageProps> = ({
   const [isGooglePickerOpen, setIsGooglePickerOpen] = useState(false);
   
   // Admin Secret Key State
-  const [showAdminPrompt, setShowAdminPrompt] = useState(true); // Show prompt by default on admin tab
   const [adminSecret, setAdminSecret] = useState('');
   const [adminError, setAdminError] = useState('');
   const [isAdminVerified, setIsAdminVerified] = useState(false);
@@ -44,7 +43,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
     if (adminSecret === ADMIN_KEY) {
       setAdminError('');
       setIsAdminVerified(true);
-      setIsGooglePickerOpen(true); // Automatically open Google login after verifying key
+      setIsGooglePickerOpen(true); 
     } else {
       setAdminError('Invalid Secret Key. Access Denied.');
     }
@@ -211,7 +210,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
             </div>
           </div>
 
-          {/* Column 2: Live Feed of Urgent Issues OR Upcoming School Events */}
+          {/* Column 2: Live Feed */}
           <div className="lg:col-span-7 space-y-4">
             <div className="flex items-center justify-between pb-1 border-b border-purple-100 flex-wrap gap-2">
               <div className="flex items-center gap-1 p-0.5 bg-purple-100/70 rounded-xl">
@@ -311,7 +310,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           </div>
         </div>
 
-        {/* Modal Preview for an Urgent Issue */}
+        {/* Modal Previews */}
         {previewItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/40 backdrop-blur-xs">
             <div className="bg-white rounded-2xl border border-purple-200 shadow-2xl max-w-lg w-full flex flex-col p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
@@ -331,7 +330,6 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           </div>
         )}
 
-        {/* Modal Preview for an Event */}
         {previewEvent && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/40 backdrop-blur-xs">
             <div className="bg-white rounded-2xl border border-purple-200 shadow-2xl max-w-lg w-full flex flex-col p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
@@ -355,7 +353,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
         <GoogleAccountPickerModal
           isOpen={isGooglePickerOpen}
           onClose={() => setIsGooglePickerOpen(false)}
-          targetRole={activeLoginTab} // Passes 'student' or 'admin' correctly
+          targetRole={activeLoginTab} // <--- CRITICAL: Passes 'student' or 'admin' correctly
           onSelectAccount={(acc) => {
             onSignIn(acc);
             setIsGooglePickerOpen(false);
