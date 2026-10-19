@@ -54,6 +54,10 @@ export default function App() {
 
   // 1. Listen to Firebase Auth State
   useEffect(() => {
+    if (!auth) {
+      setIsLoadingAuth(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user && user.email) {
