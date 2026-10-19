@@ -307,7 +307,7 @@ export default function App() {
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Student reply posted.');
   };
 
-  const handleCreateReport = async (
+    const handleCreateReport = async (
     newReportData: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>
   ) => {
     const randomNum = Math.floor(1050 + Math.random() * 8900);
@@ -360,10 +360,21 @@ export default function App() {
       ],
     };
 
-    await saveReportToDb(createdReport);
-    setSelectedId(newId);
-    setPageView('detail');
-    showToast(`Feedback #${newId} submitted globally!`);
+    try {
+      // 1. Save to global cloud database
+      await saveReportToDb(createdReport);
+      
+      // 2. Optimistic UI Update: Immediately show the new report in the UI 
+      // so the user doesn't have to wait for the database to sync.
+      setReports((prev) => [createdReport, ...prev]);
+      setSelectedId(newId);
+      setPageView('detail');
+      showToast(`Feedback #${newId} submitted globally!`);
+    } catch (error: any) {
+      console.error("Submission failed:", error);
+      // Show the exact error so you know if it's a permissions issue
+      showToast(`Failed to submit: ${error.message || 'Check your database rules'}`);
+    }
   };
 
   const filteredReports = useMemo(() => {
