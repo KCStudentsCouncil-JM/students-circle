@@ -36,7 +36,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
        {/* Header */}
         <div className="text-center space-y-2">
           {/* NEW LOGO IMAGE */}
-          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border border-purple-100 p-1">
+          <div className="w-40 h-40 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-lg overflow-hidden border border-purple-100 p-1">
             <img 
               src={`${import.meta.env.BASE_URL}SCBCALogo.jpg`} 
               alt="KC Students Circle Logo" 
