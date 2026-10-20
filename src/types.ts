@@ -111,7 +111,7 @@ export interface QuickPoll {
 
 // Unified User Profile for everything
 export interface UserProfile {
-  id: string; // Email is used as the ID
+  id: string;
   name: string;
   email: string;
   role: RoleMode;
@@ -120,7 +120,8 @@ export interface UserProfile {
   classYear?: string;
   photo?: string;
   birthday?: string;
-  title?: string; // Used by UI components
+  title?: string;
+  lastActiveAt?: string;  // ← NEW: tracks online presence
   createdAt: string;
 }
 

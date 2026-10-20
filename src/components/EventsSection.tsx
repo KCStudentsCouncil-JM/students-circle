@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { VideoPlayer } from './VideoPlayer';
 import { CampusEvent, EventCategory, EventType, RoleMode, UserProfile } from '../types';
 import { formatEventId, isValidMediaFile, compressImage } from '../utils';
 import { 
@@ -399,7 +400,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     }
     return (
       <div className="w-full aspect-video rounded-xl overflow-hidden border border-purple-100 dark:border-slate-800 shadow-2xs mt-2 mb-3 bg-black">
-        <video src={url} controls className="w-full h-full object-cover" />
+        <VideoPlayer src={url} className="w-full h-full object-cover" />
       </div>
     );
   };

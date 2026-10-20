@@ -128,6 +128,20 @@ const sanitizeData = (data: any) => {
 
 // --- USER PROFILE FUNCTIONS ---
 
+export async function updateUserLastActive(email: string) {
+  const now = new Date().toISOString();
+  if (db) {
+    try {
+      await updateDoc(doc(db, 'users', email), { lastActiveAt: now });
+    } catch { /* silent */ }
+  }
+  const users = getLocalUsers().map((u) =>
+    u.email.toLowerCase() === email.toLowerCase() ? { ...u, lastActiveAt: now } : u
+  );
+  safeLocalStorageSet(STORAGE_KEY_USERS, users);
+  notifyUserListeners();
+}
+
 export async function getUserProfile(email: string): Promise<UserProfile | null> {
   if (db) {
     try {

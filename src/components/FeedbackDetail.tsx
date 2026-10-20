@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { VideoPlayer } from './VideoPlayer';
 import { FeedbackReport, FeedbackStatus, RoleMode, UserProfile, isBirthdayToday } from '../types';
 import { calculateSlaInfo, formatReportId, isValidMediaFile, compressImage } from '../utils';
 import { 
@@ -522,7 +523,11 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {report.videos.map((vSrc, i) => (
                   <div key={`video-${i}`} className="rounded-2xl overflow-hidden border border-purple-200 dark:border-slate-700 bg-black aspect-video relative shadow-sm">
-                    <video src={vSrc} controls className="w-full h-full object-contain" />
+                    <VideoPlayer
+                      src={vSrc}
+                      className="w-full h-full object-contain"
+                      title={`Evidence video ${i + 1}`}
+                    />
                   </div>
                 ))}
               </div>
@@ -714,7 +719,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                       <div className="grid grid-cols-1 gap-2 pt-1.5 max-w-sm">
                         {act.videos.map((vSrc, i) => (
                           <div key={`act-video-${i}`} className="rounded-xl overflow-hidden border border-purple-200 dark:border-slate-700 bg-black aspect-video shadow-2xs">
-                            <video src={vSrc} controls className="w-full h-full object-contain" />
+                            <VideoPlayer src={vSrc} className="w-full h-full object-contain" />
                           </div>
                         ))}
                       </div>
@@ -802,7 +807,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                 ))}
                 {replyVideos.map((src, i) => (
                   <div key={`reply-video-${i}`} className="relative w-20 h-14 rounded-xl overflow-hidden border border-purple-300 shadow-2xs bg-black flex items-center justify-center">
-                    <video src={src} className="w-full h-full object-cover opacity-80" />
+                    <VideoPlayer src={src} thumbnail className="w-full h-full object-cover opacity-80" />
                     <button
                       type="button"
                       onClick={() => setReplyVideos(v => v.filter((_, idx) => idx !== i))}
@@ -826,7 +831,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                 <span>{isProcessingReplyMedia ? 'Processing media...' : 'Attach Photo/Video (Max 20MB)'}</span>
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/mov"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
                   multiple
                   onChange={handleReplyMediaUpload}
                   disabled={isProcessingReplyMedia}

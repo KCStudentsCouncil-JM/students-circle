@@ -9,7 +9,7 @@ import {
   auth, isFirebaseConfigured, subscribeToReports, subscribeToEvents, saveReportToDb, updateReportInDb, 
   deleteReportFromDb, saveEventToDb, updateEventInDb, deleteEventFromDb,
   subscribeToUsers, createUserProfile, approveUserInDb, rejectUserInDb, removeUserInDb,
-  getUserProfile, signOutReal, signInWithGoogleReal
+  getUserProfile, signOutReal, signInWithGoogleReal, updateUserLastActive
 } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -24,7 +24,9 @@ import { PortalPage } from './components/PortalPage';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { AdminStudentList } from './components/AdminStudentList';
 import { GoogleAccountPickerModal } from './components/GoogleAccountPickerModal';
-import { CheckCircle2, Calendar, Plus, User as UserIcon, LogOut, Inbox } from 'lucide-react';
+import { AdminAnalyticsModal } from './components/AdminAnalyticsModal';
+import { HomeScreen } from './components/HomeScreen';
+import { CheckCircle2, Calendar, Plus, User as UserIcon, LogOut, Inbox, Home } from 'lucide-react';
 
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
@@ -36,6 +38,7 @@ export default function App() {
   const [loginRole, setLoginRole] = useState<'student' | 'admin'>('student');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNewFeedbackModalOpen, setIsNewFeedbackModalOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false); // NEW
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
   
   // Core Data
@@ -49,10 +52,11 @@ export default function App() {
   const [currentFilter, setCurrentFilter] = useState<NavFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [pageView, setPageView] = useState<'main' | 'detail' | 'student-list'>('main');
+  // pageView now includes 'home' and defaults to it
+  const [pageView, setPageView] = useState<'home' | 'main' | 'detail' | 'student-list'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
-  // 1. Listen to Database Data (Always active so landing page has data)
+  // 1. Data subscriptions
   useEffect(() => {
     const unsubR = subscribeToReports(setReports);
     const unsubE = subscribeToEvents(setEvents);
@@ -60,7 +64,7 @@ export default function App() {
     return () => { unsubR(); unsubE(); unsubU(); };
   }, []);
 
-  // 2. Listen to Auth State
+  // 2. Auth state
   useEffect(() => {
     if (auth && isFirebaseConfigured()) {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -76,7 +80,6 @@ export default function App() {
       });
       return () => unsubscribe();
     } else {
-      // Offline/Local Demo Mode: check stored session
       try {
         const stored = localStorage.getItem('campus_active_user');
         if (stored) {
@@ -89,15 +92,12 @@ export default function App() {
           });
           return;
         }
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) { /* ignore */ }
       setIsLoadingAuth(false);
     }
   }, []);
 
-  // 🆕 FIX #1b: Sync userProfile when allUsers list changes (e.g. admin approves a pending student)
-  // Without this, a "pending" user stays stuck on the pending screen until they re-login.
+  // Sync userProfile when allUsers changes (approval flows)
   useEffect(() => {
     if (!userProfile?.email) return;
     const fresh = allUsers.find(
@@ -115,7 +115,17 @@ export default function App() {
     }
   }, [allUsers, userProfile?.email]);
 
-  // 3. Keyboard Detection (for Mobile)
+  // ⭐ NEW: Online presence heartbeat (every 60s)
+  useEffect(() => {
+    if (!userProfile?.email) return;
+    updateUserLastActive(userProfile.email);
+    const interval = setInterval(() => {
+      updateUserLastActive(userProfile.email);
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [userProfile?.email]);
+
+  // Keyboard detection
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -132,7 +142,7 @@ export default function App() {
     };
   }, []);
 
-  // 4. Toast auto-dismiss
+  // Toast auto-dismiss
   useEffect(() => {
     if (toastMessage) {
       const timer = setTimeout(() => setToastMessage(null), 3500);
@@ -146,7 +156,7 @@ export default function App() {
     await signOutReal();
     setFirebaseUser(null);
     setUserProfile(null);
-    setPageView('main');
+    setPageView('home');
     showToast('Signed out securely.');
   };
 
@@ -157,6 +167,7 @@ export default function App() {
     showToast('Request sent to campus administrators.');
   };
 
+  // Same login logic as before (with the pending-flow fix already applied)
   const handleGoogleLogin = async (simulatedUser?: { email: string; name: string; photoURL?: string }) => {
     try {
       let user: any = null;
@@ -192,32 +203,23 @@ export default function App() {
           setUserProfile(updatedAdmin);
           setRole('admin');
         }
-        showToast(`Welcome back, ${profile?.name || user.displayName || 'Administrator'}!`);
+        setPageView('home');
       } else {
-        // ✅ FIX #1: Student role — do NOT auto-create an approved profile.
-        // If no existing profile is found, leave userProfile as null so
-        // OnboardingScreen renders (which submits with status: 'pending').
+        // ✅ Do NOT auto-create; new students go through Onboarding
         if (!profile) {
           const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-          if (found) {
-            profile = found;
-          }
-          // else: profile remains null → OnboardingScreen will render
+          if (found) profile = found;
         }
         setUserProfile(profile);
         setRole(profile?.role || 'student');
-        if (profile) {
-          showToast(`Welcome back, ${profile.name}!`);
-        }
-        // If profile is null, no toast — user goes straight to OnboardingScreen
+        if (profile) setPageView('home');
       }
     } catch (error: any) {
       showToast(error.message || 'Login failed');
     }
   };
 
-  // --- DATABASE ACTIONS ---
-
+  // --- DATABASE ACTIONS (unchanged from your version) ---
   const handleDeleteReport = async (id: string) => {
     setReports(prev => prev.filter(r => r.id !== id));
     setSelectedId(null);
@@ -236,66 +238,38 @@ export default function App() {
   const handleUpdateStatus = async (id: string, newStatus: FeedbackStatus) => {
     const r = reports.find(rep => rep.id === id);
     if (!r) return;
-
     const newActivity: ActivityItem = {
-      id: `act-${Date.now()}`,
-      author: userProfile?.name || 'Admin',
-      role: 'admin',
+      id: `act-${Date.now()}`, author: userProfile?.name || 'Admin', role: 'admin',
       message: `Status manually changed to ${newStatus.toUpperCase()}.`,
-      timestamp: new Date().toISOString(),
-      statusChange: newStatus,
+      timestamp: new Date().toISOString(), statusChange: newStatus,
       badgeText: 'Official Campus Administrator'
     };
-
     setReports(prev => prev.map(rep => rep.id === id ? { 
-      ...rep, 
-      status: newStatus, 
-      activities: [...(rep.activities || []), newActivity] 
+      ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-
-    await updateReportInDb(id, { 
-      status: newStatus, 
-      activities: [...(r.activities || []), newActivity] 
-    });
+    await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
     showToast(`Status updated to ${newStatus}.`);
   };
 
   const handleAddActivity = async (
-    id: string, 
-    message: string, 
-    activityRole: 'admin' | 'student', 
-    statusChange?: FeedbackStatus, 
-    parentId?: string,
-    photos?: string[],
-    videos?: string[]
+    id: string, message: string, activityRole: 'admin' | 'student',
+    statusChange?: FeedbackStatus, parentId?: string, photos?: string[], videos?: string[]
   ) => {
     const r = reports.find(rep => rep.id === id);
     if (!r) return;
-
     const newActivity: ActivityItem = {
-      id: `act-${Date.now()}`,
-      author: userProfile?.name || 'User',
-      role: activityRole,
-      message,
-      timestamp: new Date().toISOString(),
-      statusChange,
+      id: `act-${Date.now()}`, author: userProfile?.name || 'User', role: activityRole,
+      message, timestamp: new Date().toISOString(), statusChange,
       badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined,
       parentId,
       photos: photos && photos.length > 0 ? photos : undefined,
       videos: videos && videos.length > 0 ? videos : undefined,
     };
-
     const nextStatus = statusChange || r.status;
     setReports(prev => prev.map(rep => rep.id === id ? { 
-      ...rep, 
-      status: nextStatus, 
-      activities: [...(rep.activities || []), newActivity] 
+      ...rep, status: nextStatus, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-
-    await updateReportInDb(id, { 
-      status: nextStatus, 
-      activities: [...(r.activities || []), newActivity] 
-    });
+    await updateReportInDb(id, { status: nextStatus, activities: [...(r.activities || []), newActivity] });
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Reply posted.');
   };
 
@@ -304,30 +278,19 @@ export default function App() {
     setReports(prev => prev.map(rep => {
       if (!ids.includes(rep.id)) return rep;
       const newActivity: ActivityItem = {
-        id: `act-${Date.now()}-${rep.id}`,
-        author: userProfile?.name || 'Admin',
-        role: 'admin',
+        id: `act-${Date.now()}-${rep.id}`, author: userProfile?.name || 'Admin', role: 'admin',
         message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
-        timestamp: nowIso,
-        statusChange: newStatus,
+        timestamp: nowIso, statusChange: newStatus,
       };
-      return {
-        ...rep,
-        status: newStatus,
-        activities: [...(rep.activities || []), newActivity]
-      };
+      return { ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] };
     }));
-
     for (const id of ids) {
       const r = reports.find(rep => rep.id === id);
       if (r) {
         const newActivity: ActivityItem = {
-          id: `act-${Date.now()}-${id}`,
-          author: userProfile?.name || 'Admin',
-          role: 'admin',
+          id: `act-${Date.now()}-${id}`, author: userProfile?.name || 'Admin', role: 'admin',
           message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
-          timestamp: nowIso,
-          statusChange: newStatus,
+          timestamp: nowIso, statusChange: newStatus,
         };
         await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
       }
@@ -343,7 +306,6 @@ export default function App() {
     const hasUserRsvpd = attendees.includes(userProfile.email);
     const nextCount = hasUserRsvpd ? Math.max(0, evt.rsvps - 1) : evt.rsvps + 1;
     const updatedAttendees = hasUserRsvpd ? attendees.filter(e => e !== userProfile.email) : [...attendees, userProfile.email];
-
     setEvents(prev => prev.map(e => e.id === id ? { ...e, rsvps: nextCount, attendees: updatedAttendees } : e));
     await updateEventInDb(id, { rsvps: nextCount, attendees: updatedAttendees });
     showToast(hasUserRsvpd ? `RSVP cancelled` : `RSVP confirmed`);
@@ -351,12 +313,7 @@ export default function App() {
 
   const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
     const newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
-    const fullEvent: CampusEvent = { 
-      ...newEventData, 
-      id: newId, 
-      rsvps: 1, 
-      attendees: [userProfile?.email || ''] 
-    };
+    const fullEvent: CampusEvent = { ...newEventData, id: newId, rsvps: 1, attendees: [userProfile?.email || ''] };
     setEvents(prev => [fullEvent, ...prev]);
     await saveEventToDb(fullEvent);
     showToast(`Event published!`);
@@ -367,11 +324,9 @@ export default function App() {
     if (!userProfile) return;
     const r = reports.find((rep) => rep.id === id);
     if (!r) return;
-
     const existingEndorsers = r.endorsers || [];
     const isAlreadyEndorsed = existingEndorsers.some((end) => end.email === userProfile.email);
     let updatedEndorsers;
-    
     if (isAlreadyEndorsed) {
       updatedEndorsers = existingEndorsers.filter((end) => end.email !== userProfile.email);
       showToast(`Endorsement retracted.`);
@@ -379,13 +334,7 @@ export default function App() {
       updatedEndorsers = [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.role, email: userProfile.email, timestamp: new Date().toISOString() }, ...existingEndorsers];
       showToast(`Endorsement added.`);
     }
-
-    setReports(prev => prev.map(rep => rep.id === id ? { 
-      ...rep, 
-      upvotes: updatedEndorsers.length, 
-      endorsers: updatedEndorsers 
-    } : rep));
-
+    setReports(prev => prev.map(rep => rep.id === id ? { ...rep, upvotes: updatedEndorsers.length, endorsers: updatedEndorsers } : rep));
     await updateReportInDb(id, { upvotes: updatedEndorsers.length, endorsers: updatedEndorsers });
   };
 
@@ -393,21 +342,17 @@ export default function App() {
     let prefix = newReportData.type === 'initiative' ? 'KCIS' : newReportData.status === 'open' ? 'KCOI' : 'KCIRV';
     const newId = `${prefix}-${Math.floor(1050 + Math.random() * 8900)}`;
     const nowIso = new Date().toISOString();
-    
     const createdReport: FeedbackReport = {
-      ...newReportData, 
-      id: newId, 
+      ...newReportData, id: newId,
       author: newReportData.author || userProfile?.name || 'Student', 
       authorEmail: userProfile?.email,
       authorRole: newReportData.authorRole || userProfile?.title || 'Student',
       authorRealName: userProfile?.name,
       authorStudentId: userProfile?.id,
-      createdAt: nowIso, 
-      upvotes: 1, 
+      createdAt: nowIso, upvotes: 1,
       endorsers: [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
       activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted report to campus council queue.', timestamp: nowIso }],
     };
-
     setReports((prev) => [createdReport, ...prev]);
     await saveReportToDb(createdReport);
     setSelectedId(newId); 
@@ -415,58 +360,47 @@ export default function App() {
     showToast(`Feedback ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
   };
 
-  // Student list actions
   const handleApproveUser = async (email: string) => {
     setAllUsers(prev => prev.map(u => u.email === email ? { ...u, status: 'approved' } : u));
     await approveUserInDb(email);
     showToast(`Student access approved.`);
   };
-
   const handleRejectUser = async (email: string) => {
     setAllUsers(prev => prev.map(u => u.email === email ? { ...u, status: 'rejected' } : u));
     await rejectUserInDb(email);
     showToast(`Student request rejected.`);
   };
-
   const handleRemoveUser = async (email: string) => {
     setAllUsers(prev => prev.filter(u => u.email !== email));
     await removeUserInDb(email);
     showToast(`Student access revoked.`);
   };
 
-  // Backup & Restore
   const handleExportBackup = () => {
     exportCampusDataBackup(reports, events, userProfile);
     showToast('Campus data backup downloaded.');
   };
-
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const text = event.target?.result as string;
-        const backup = JSON.parse(text);
-        if (backup && Array.isArray(backup.reports)) {
+        const backup = JSON.parse(event.target?.result as string);
+        if (Array.isArray(backup?.reports)) {
           setReports(backup.reports);
-          for (const rep of backup.reports) {
-            await saveReportToDb(rep);
-          }
+          for (const rep of backup.reports) await saveReportToDb(rep);
         }
-        if (backup && Array.isArray(backup.events)) {
+        if (Array.isArray(backup?.events)) {
           setEvents(backup.events);
-          for (const ev of backup.events) {
-            await saveEventToDb(ev);
-          }
+          for (const ev of backup.events) await saveEventToDb(ev);
         }
-        if (backup && backup.user) {
+        if (backup?.user) {
           setUserProfile(backup.user);
           await createUserProfile(backup.user);
         }
         showToast('Backup restored successfully!');
-      } catch (err) {
+      } catch {
         showToast('Failed to import backup. Invalid JSON file format.');
       }
     };
@@ -476,28 +410,21 @@ export default function App() {
 
   const filteredReports = useMemo(() => {
     return reports.filter(item => {
-      // 1. Status Filters
       if (currentFilter === 'open' && item.status !== 'open') return false;
       if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
       if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
       if (currentFilter === 'drafts' && item.status !== 'draft') return false;
-
-      // 2. Category Filters
       if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
       if (currentFilter === 'technology' && item.category !== 'technology') return false;
       if (currentFilter === 'academics' && item.category !== 'academics') return false;
       if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
       if (currentFilter === 'safety' && item.category !== 'safety') return false;
-
-      // 3. Search Filter
       if (searchQuery.trim() && !matchesExactWords(`${item.title} ${item.description}`, searchQuery)) return false;
-      
       return true;
     });
   }, [reports, currentFilter, searchQuery]);
 
   // --- RENDER LOGIC ---
-
   if (isLoadingAuth) {
     return (
       <div className="min-h-screen bg-[#faf8fc] dark:bg-slate-950 flex flex-col items-center justify-center text-purple-700 dark:text-purple-300 font-bold gap-3">
@@ -511,8 +438,7 @@ export default function App() {
     return (
       <>
         <PortalPage 
-          reports={reports} 
-          events={events}
+          reports={reports} events={events}
           onSignInClick={(r) => { setLoginRole(r); setIsGooglePickerOpen(true); }} 
           isGooglePickerOpen={isGooglePickerOpen} 
           onCloseGooglePicker={() => setIsGooglePickerOpen(false)} 
@@ -555,11 +481,12 @@ export default function App() {
         openCount={reports.filter(r => r.status === 'open').length} 
         currentUser={userProfile} 
         onSignOut={handleSignOut} 
-        onGoHome={() => { setCurrentFilter('all'); setPageView('main'); }} 
+        onGoHome={() => { setPageView('home'); setCurrentFilter('all'); }} 
         isSidebarOpen={isSidebarOpen} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
         onOpenGoogleSignIn={() => setIsGooglePickerOpen(true)}
+        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
       />
       
       <div className="flex-1 flex overflow-hidden relative">
@@ -575,33 +502,41 @@ export default function App() {
             onSignOut={handleSignOut} 
             onExportBackup={handleExportBackup} 
             onOpenStudentList={() => setPageView('student-list')} 
+            onOpenAnalytics={() => setIsAnalyticsOpen(true)}
           />
         )}
 
-        {pageView === 'student-list' && role === 'admin' ? (
+        {pageView === 'home' ? (
+          <HomeScreen
+            currentUser={userProfile}
+            reports={reports}
+            events={events}
+            allUsers={allUsers}
+            onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }}
+            onToggleUpvote={handleToggleUpvote}
+            onNavigateToEvents={() => { setCurrentFilter('events'); setPageView('main'); }}
+            onNavigateToReports={() => { setCurrentFilter('all'); setPageView('main'); }}
+            onOpenNewModal={() => setIsNewFeedbackModalOpen(true)}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
+          />
+        ) : pageView === 'student-list' && role === 'admin' ? (
           <AdminStudentList 
             allUsers={allUsers} 
             onApprove={handleApproveUser} 
             onReject={handleRejectUser} 
             onRemove={handleRemoveUser} 
-            onBack={() => setPageView('main')} 
+            onBack={() => setPageView('home')} 
           />
         ) : currentFilter === 'events' ? (
           <EventsSection 
-            events={events} 
-            role={role} 
-            currentUser={userProfile as any} 
-            onToggleRsvp={handleToggleEventRsvp} 
-            onAddEvent={handleAddEvent} 
-            onDeleteEvent={handleDeleteEvent} 
-            onBackToReports={() => setCurrentFilter('all')} 
+            events={events} role={role} currentUser={userProfile as any} 
+            onToggleRsvp={handleToggleEventRsvp} onAddEvent={handleAddEvent} 
+            onDeleteEvent={handleDeleteEvent} onBackToReports={() => { setCurrentFilter('all'); setPageView('home'); }} 
           />
         ) : pageView === 'main' ? (
           <FeedbackList 
-            reports={filteredReports} 
-            selectedId={selectedId} 
-            currentUser={userProfile as any} 
-            allUsers={allUsers} 
+            reports={filteredReports} selectedId={selectedId} 
+            currentUser={userProfile as any} allUsers={allUsers} 
             onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }} 
             onToggleUpvote={handleToggleUpvote} 
             activeFilterTitle={
@@ -613,17 +548,14 @@ export default function App() {
               `${currentFilter.replace('-', ' ').toUpperCase()} Reports`
             } 
             onNavigateToEvents={() => setCurrentFilter('events')} 
-            eventsCount={events.length} 
-            role={role} 
+            eventsCount={events.length} role={role} 
             onBulkUpdateStatus={handleBulkUpdateStatus}
           />
         ) : (
           <FeedbackDetail 
             report={reports.find(r => r.id === selectedId) || null} 
-            role={role} 
-            currentUser={userProfile as any} 
-            onUpdateStatus={handleUpdateStatus}
-            onAddActivity={handleAddActivity}
+            role={role} currentUser={userProfile as any} 
+            onUpdateStatus={handleUpdateStatus} onAddActivity={handleAddActivity} 
             onToggleUpvote={handleToggleUpvote} 
             onBack={() => setPageView('main')} 
             onDeleteReport={handleDeleteReport} 
@@ -636,24 +568,45 @@ export default function App() {
       {/* MOBILE BOTTOM NAVIGATION */}
       {!isKeyboardActive && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-purple-100 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg">
-          <button onClick={() => { setCurrentFilter('all'); setPageView('main'); }} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter !== 'events' && pageView === 'main' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'}`}>
+          <button
+            onClick={() => { setPageView('home'); setCurrentFilter('all'); }}
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+              pageView === 'home' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            <span>Home</span>
+          </button>
+          <button
+            onClick={() => { setCurrentFilter('all'); setPageView('main'); }}
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+              currentFilter !== 'events' && pageView === 'main' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'
+            }`}
+          >
             <Inbox className="w-4 h-4" />
             <span>Reports</span>
           </button>
-          <button onClick={() => setCurrentFilter('events')} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter === 'events' ? 'text-pink-600 dark:text-pink-400' : 'text-purple-400'}`}>
+          <button
+            onClick={() => setIsNewFeedbackModalOpen(true)}
+            className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-md active:scale-95 transition-transform cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => { setCurrentFilter('events'); setPageView('main'); }}
+            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+              currentFilter === 'events' ? 'text-pink-600 dark:text-pink-400' : 'text-purple-400'
+            }`}
+          >
             <Calendar className="w-4 h-4" />
             <span>Events</span>
           </button>
-          <button onClick={() => setIsNewFeedbackModalOpen(true)} className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-md active:scale-95 transition-transform cursor-pointer">
-            <Plus className="w-5 h-5" />
-          </button>
-          <button onClick={() => setIsProfileModalOpen(true)} className="flex flex-col items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 dark:hover:text-purple-200 transition-colors cursor-pointer">
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 dark:hover:text-purple-200 transition-colors cursor-pointer"
+          >
             <UserIcon className="w-4 h-4" />
             <span>Profile</span>
-          </button>
-          <button onClick={handleSignOut} className="flex flex-col items-center gap-1 text-[10px] font-semibold text-rose-500 hover:text-rose-700 transition-colors cursor-pointer">
-            <LogOut className="w-4 h-4" />
-            <span>Logout</span>
           </button>
         </div>
       )}
@@ -665,9 +618,7 @@ export default function App() {
         onSubmit={handleCreateReport}
         existingReports={reports}
         onSelectExistingReport={(id) => {
-          setSelectedId(id);
-          setPageView('detail');
-          setIsNewFeedbackModalOpen(false);
+          setSelectedId(id); setPageView('detail'); setIsNewFeedbackModalOpen(false);
         }}
         currentUser={userProfile}
       />
@@ -689,7 +640,16 @@ export default function App() {
         />
       )}
 
-      {/* TOAST NOTIFICATION */}
+      {/* ⭐ ADMIN ANALYTICS MODAL — now properly wired */}
+      <AdminAnalyticsModal
+        isOpen={isAnalyticsOpen}
+        onClose={() => setIsAnalyticsOpen(false)}
+        reports={reports}
+        events={events}
+        allUsers={allUsers}
+      />
+
+      {/* TOAST */}
       {toastMessage && (
         <div className="fixed bottom-16 md:bottom-5 right-5 z-50 bg-purple-950 dark:bg-purple-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 dark:border-purple-700 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />

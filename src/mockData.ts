@@ -8,15 +8,15 @@ const dynamicTodayBirthday = `2004-${currentMonth}-${currentDay}`;
 
 export const INITIAL_USERS: UserProfile[] = [
   {
-    id: 'dylonnnaocha@gmail.com',
-    name: 'Dylon Ocha',
+    id: 'dyloniscouncilpresident@gmail.com',
+    name: 'Dylon SCPres',
     email: 'dylonnnaocha@gmail.com',
     role: 'student',
     status: 'approved',
-    major: 'Computer Science',
-    classYear: "Class of '26",
+    major: 'Natural Science',
+    classYear: "Class of '25",
     birthday: dynamicTodayBirthday, // Celebrates birthday today!
-    title: "Computer Science · Class of '26",
+    title: "Science · Class of '26",
     photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   },
@@ -56,6 +56,17 @@ export const INITIAL_USERS: UserProfile[] = [
     photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
   }
+  // Inside INITIAL_USERS:
+  {
+    id: 'sarah.j@campus.edu',
+    // ...
+    lastActiveAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(), // 2 min ago
+  },
+  {
+    id: 'admin@campus.edu',
+    // ...
+    lastActiveAt: new Date(Date.now() - 4 * 60 * 1000).toISOString(), // 4 min ago
+  },
 ];
 
 export const INITIAL_REPORTS: FeedbackReport[] = [

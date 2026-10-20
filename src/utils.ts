@@ -250,29 +250,50 @@ export function compressImage(file: File, maxDimension = 800, quality = 0.7): Pr
  * Safe localStorage setter that handles QuotaExceededError and prevents crashes.
  */
 export function safeLocalStorageSet(key: string, value: any): boolean {
-  try {
-    const str = typeof value === 'string' ? value : JSON.stringify(value);
-    localStorage.setItem(key, str);
-    return true;
-  } catch (err: any) {
-    console.warn(`localStorage quota exceeded for key ${key}:`, err);
+  const trySave = (data: any): boolean => {
     try {
-      // If saving reports failed because of images, strip photos from older reports and retry
-      if (Array.isArray(value)) {
-        const pruned = value.map((item: any, idx: number) => {
-          if (idx > 2 && item.photos) {
-            return { ...item, photos: [] };
-          }
-          return item;
-        });
-        localStorage.setItem(key, JSON.stringify(pruned));
+      localStorage.setItem(key, typeof data === 'string' ? data : JSON.stringify(data));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  if (trySave(value)) return true;
+
+  console.warn(`localStorage quota exceeded for key ${key}, attempting progressive pruning...`);
+
+  if (!Array.isArray(value)) return false;
+
+  // Progressive pruning — each level is more aggressive
+  const pruningStrategies: Array<(items: any[]) => any[]> = [
+    // 1. Strip photos from items beyond the first 3
+    (items) => items.map((item, idx) => idx > 2 && item.photos ? { ...item, photos: [] } : item),
+    // 2. Strip photos AND videos from items beyond the first 3
+    (items) => items.map((item, idx) =>
+      idx > 2 ? { ...item, photos: [], videos: [] } : item
+    ),
+    // 3. Strip ALL videos from every item, photos from old items
+    (items) => items.map((item, idx) => ({
+      ...item,
+      videos: [],
+      photos: idx > 2 ? [] : item.photos,
+    })),
+    // 4. Strip ALL media from every item (text-only persistence)
+    (items) => items.map((item) => ({ ...item, photos: [], videos: [] })),
+  ];
+
+  for (let i = 0; i < pruningStrategies.length; i++) {
+    try {
+      if (trySave(pruningStrategies[i](value))) {
+        console.warn(`Saved with pruning level ${i + 1} — some media was dropped.`);
         return true;
       }
-    } catch (e) {
-      console.error('Failed fallback localStorage save', e);
-    }
-    return false;
+    } catch { /* continue */ }
   }
+
+  console.error(`Unable to save ${key} to localStorage even after aggressive pruning.`);
+  return false;
 }
 
 /**

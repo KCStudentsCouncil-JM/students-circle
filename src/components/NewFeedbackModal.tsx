@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { VideoPlayer } from './VideoPlayer';
 import { 
   FeedbackType, 
   Category, 
@@ -453,14 +454,14 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 {/* Video Previews */}
                 {videos.map((src, idx) => (
                   <div key={`video-${idx}`} className="relative w-24 h-20 rounded-xl overflow-hidden border border-purple-300 dark:border-purple-700 shadow-2xs group bg-black flex items-center justify-center">
-                    <video src={src} className="w-full h-full object-cover opacity-80" />
+                    <VideoPlayer src={src} thumbnail className="w-full h-full object-cover opacity-80" />
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <Play className="w-5 h-5 text-white fill-white/80" />
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setVideos(v => v.filter((_, i) => i !== idx))} 
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity cursor-pointer shadow-xs z-10"
+                    <button
+                      type="button"
+                      onClick={() => setVideos((v) => v.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 cursor-pointer shadow-xs z-10"
                       title="Remove video"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -470,8 +471,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                     </span>
                   </div>
                 ))}
-              </div>
-            )}
 
             {photos.length + videos.length < 5 && (
               <label className="flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-purple-300 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 bg-purple-50/40 dark:bg-slate-800/40 hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-purple-900 dark:text-purple-300">
@@ -484,13 +483,13 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                     Supports JPG, PNG, WebP, MP4, WebM, MOV (Max 20MB per file)
                   </span>
                 </div>
-                <input 
-                  type="file" 
-                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/mov" 
-                  multiple 
-                  onChange={handleMediaUpload} 
-                  disabled={isProcessingMedia} 
-                  className="hidden" 
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+                  multiple
+                  onChange={handleMediaUpload}
+                  disabled={isProcessingMedia}
+                  className="hidden"
                 />
               </label>
             )}
