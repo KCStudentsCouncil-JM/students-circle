@@ -25,7 +25,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
       setShowAdminPrompt(false);
       onSignInClick('admin');
     } else {
-      setAdminError('Invalid Secret Key. Hint: CAMPUS2026');
+      setAdminError('Invalid Secret Key. Hint: Contact Dylon');
     }
   };
 
@@ -115,7 +115,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                     type="password"
                     value={adminSecret}
                     onChange={(e) => setAdminSecret(e.target.value)}
-                    placeholder="Enter CAMPUS2026"
+                    placeholder="Text Dylon for key"
                     className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     autoFocus
                   />
