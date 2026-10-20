@@ -536,7 +536,7 @@ export default function App() {
 
   // APPROVED USER DASHBOARD
   return (
-    <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] text-slate-800 antialiased overflow-hidden select-none">
+    <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-hidden select-none transition-colors">
       <TopBar 
         searchQuery={searchQuery} 
         onSearchChange={setSearchQuery} 

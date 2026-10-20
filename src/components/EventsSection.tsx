@@ -106,7 +106,26 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const handleDownloadIcs = (event: CampusEvent) => {
     const isMulti = event.eventType === 'multi-day' && event.endDate;
     const dateFormatted = event.date.replace(/-/g, '');
-    const endDateFormatted = isMulti ? event.endDate!.replace(/-/g, '') : dateFormatted;
+    
+    // In RFC 5545, DTEND;VALUE=DATE is non-inclusive, so add 1 day to the end date
+    const getNextDayFormatted = (isoDate: string) => {
+      try {
+        const parts = isoDate.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          d.setDate(d.getDate() + 1);
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}${m}${day}`;
+        }
+      } catch (e) {
+        // fallback
+      }
+      return dateFormatted;
+    };
+
+    const endDateFormatted = isMulti ? getNextDayFormatted(event.endDate!) : getNextDayFormatted(event.date);
 
     const icsData = [
       'BEGIN:VCALENDAR',
@@ -345,6 +364,16 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     return { month: 'OCT', day: 24, weekday: 'Sat' };
   };
 
+  const formatDateRange = (start: string, end?: string) => {
+    if (!end || start === end) {
+      const cal = formatCalendarSquare(start);
+      return `${cal.weekday}, ${cal.month} ${cal.day}`;
+    }
+    const calStart = formatCalendarSquare(start);
+    const calEnd = formatCalendarSquare(end);
+    return `${calStart.month} ${calStart.day} – ${calEnd.month} ${calEnd.day}`;
+  };
+
   const renderVideo = (url: string) => {
     if (!url || !url.trim()) return null;
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -507,7 +536,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                             )}
                           </div>
                           <span className="text-[10px] text-purple-400 font-mono block mt-0.5">
-                            {isMultiDay ? `${evt.date} to ${evt.endDate}` : `${cal.weekday}`} · {evt.time}
+                            {formatDateRange(evt.date, evt.endDate)} · {evt.time}
                           </span>
                         </div>
                       </div>

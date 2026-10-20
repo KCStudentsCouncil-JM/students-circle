@@ -7,7 +7,6 @@ import {
   Sparkles, 
   GraduationCap, 
   Check, 
-  Calendar, 
   Camera, 
   ShieldCheck, 
   Mail, 
@@ -15,8 +14,7 @@ import {
   BookOpen,
   Download,
   Upload,
-  LogOut,
-  AlertCircle
+  LogOut
 } from 'lucide-react';
 
 interface UserProfileModalProps {
@@ -67,7 +65,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setBirthday(getTodayDateStr());
   };
 
-  // Custom photo upload with Fix #11 type validation and Fix #3 compression
   const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setAvatarError(null);
     const file = e.target.files?.[0];
@@ -111,19 +108,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/50 backdrop-blur-xs select-none">
       <div 
-        className="bg-white rounded-2xl max-w-lg w-full max-h-[92dvh] overflow-y-auto shadow-2xl border border-purple-200 flex flex-col"
+        className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[92dvh] overflow-y-auto shadow-2xl border border-purple-200 dark:border-slate-800 flex flex-col text-slate-800 dark:text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-purple-100 flex items-center justify-between bg-gradient-to-r from-purple-50 via-pink-50/40 to-white shrink-0">
+        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-pink-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 ${
-              isToday ? 'border-amber-400 ring-2 ring-pink-400 ring-offset-2 animate-pulse' : 'border-purple-200'
+            <div className={`relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0 ${
+              isToday ? 'border-amber-400 ring-2 ring-pink-400 ring-offset-2 animate-pulse' : 'border-purple-200 dark:border-slate-700'
             }`}>
               {photo ? (
                 <img src={photo} alt={name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-purple-100 flex items-center justify-center text-purple-700">
+                <div className="w-full h-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-700 dark:text-purple-300">
                   <UserIcon className="w-6 h-6" />
                 </div>
               )}
@@ -136,7 +133,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-base text-purple-950">Student Profile</h3>
+                <h3 className="font-bold text-base text-purple-950 dark:text-purple-100">Student Profile</h3>
                 {isToday && (
                   <span className="text-[10px] bg-gradient-to-r from-amber-400 to-pink-500 text-white font-extrabold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
@@ -144,7 +141,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-purple-700/80">
+              <p className="text-xs text-purple-700/80 dark:text-purple-400">
                 Google Student Identity & Birthday Highlight Settings
               </p>
             </div>
@@ -152,7 +149,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-purple-400 hover:text-purple-700 hover:bg-purple-100/70 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-purple-400 hover:text-purple-700 dark:hover:text-purple-200 hover:bg-purple-100/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -162,12 +159,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
           {/* Birthday Highlight Banner if active */}
           {isToday && (
-            <div className="p-3 bg-gradient-to-r from-pink-50 via-amber-50 to-purple-50 rounded-xl border border-pink-200 text-xs text-purple-950 flex items-start gap-2.5">
+            <div className="p-3 bg-gradient-to-r from-pink-50 via-amber-50 to-purple-50 dark:from-pink-950/40 dark:via-amber-950/40 dark:to-purple-950/40 rounded-2xl border border-pink-200 dark:border-pink-800 text-xs text-purple-950 dark:text-purple-200 flex items-start gap-2.5">
               <span className="text-xl">🎂</span>
               <div>
-                <p className="font-bold text-pink-800">Birthday Highlight Activated!</p>
-                <p className="text-[11px] text-purple-800">
-                  You will be prominently highlighted with a celebratory halo and birthday cake badge across campus reports, comments, and the top bar today!
+                <p className="font-bold text-pink-800 dark:text-pink-300">Birthday Highlight Activated!</p>
+                <p className="text-[11px] text-purple-800 dark:text-purple-300">
+                  You are prominently highlighted with a celebratory halo and birthday cake badge across campus reports, comments, and the top bar today!
                 </p>
               </div>
             </div>
@@ -176,11 +173,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Avatar Selection & Upload */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
-                <Camera className="w-3.5 h-3.5 text-purple-600" />
+              <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Profile Photo & Avatar</span>
               </label>
-              <label className="text-[11px] font-semibold text-purple-700 hover:text-purple-950 hover:underline cursor-pointer">
+              <label className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:text-purple-950 dark:hover:text-purple-200 hover:underline cursor-pointer">
                 <span>{isCompressingAvatar ? 'Optimizing...' : 'Upload Custom Photo'}</span>
                 <input
                   type="file"
@@ -192,7 +189,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             {avatarError && (
-              <p className="text-[11px] text-rose-600 font-medium bg-rose-50 p-1.5 rounded border border-rose-200">
+              <p className="text-[11px] text-rose-600 font-medium bg-rose-50 dark:bg-rose-950/40 p-1.5 rounded border border-rose-200 dark:border-rose-900">
                 {avatarError}
               </p>
             )}
@@ -205,8 +202,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   onClick={() => setPhoto(av.url)}
                   className={`relative rounded-xl overflow-hidden aspect-square border-2 transition-all cursor-pointer ${
                     photo === av.url
-                      ? 'border-purple-600 ring-2 ring-purple-300 scale-105 shadow-xs'
-                      : 'border-purple-100 hover:border-purple-300 opacity-75 hover:opacity-100'
+                      ? 'border-purple-600 ring-2 ring-purple-300 dark:ring-purple-700 scale-105 shadow-xs'
+                      : 'border-purple-100 dark:border-slate-700 hover:border-purple-300 opacity-75 hover:opacity-100'
                   }`}
                 >
                   <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
@@ -223,8 +220,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Name & Google Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-purple-900 flex items-center gap-1">
-                <UserIcon className="w-3 h-3 text-purple-600" />
+              <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
+                <UserIcon className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                 <span>Full Name</span>
               </label>
               <input
@@ -232,13 +229,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-purple-900 flex items-center gap-1">
-                <Mail className="w-3 h-3 text-purple-600" />
+              <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
+                <Mail className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                 <span>Google Email</span>
               </label>
               <input
@@ -246,7 +243,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
           </div>
@@ -254,8 +251,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Class Year & Major */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-purple-900 flex items-center gap-1">
-                <GraduationCap className="w-3 h-3 text-purple-600" />
+              <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
+                <GraduationCap className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                 <span>Class Year</span>
               </label>
               <input
@@ -263,13 +260,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={classYear}
                 onChange={(e) => setClassYear(e.target.value)}
                 placeholder="Class of '26"
-                className="w-full bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-purple-900 flex items-center gap-1">
-                <BookOpen className="w-3 h-3 text-purple-600" />
+              <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
+                <BookOpen className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                 <span>Major / Program</span>
               </label>
               <input
@@ -277,22 +274,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
                 placeholder="Computer Science"
-                className="w-full bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
           </div>
 
           {/* Birthday with quick "Today" button */}
-          <div className="space-y-1.5 p-3 rounded-xl bg-purple-50/60 border border-purple-100">
+          <div className="space-y-1.5 p-3 rounded-2xl bg-purple-50/60 dark:bg-slate-800/60 border border-purple-100 dark:border-slate-700">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-purple-950 flex items-center gap-1">
-                <Cake className="w-3.5 h-3.5 text-pink-600" />
+              <label className="text-xs font-semibold text-purple-950 dark:text-purple-200 flex items-center gap-1">
+                <Cake className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
                 <span>Birthday (Day of Celebration)</span>
               </label>
               <button
                 type="button"
                 onClick={handleSetTodayBirthday}
-                className="text-[11px] font-bold text-pink-700 bg-pink-100 hover:bg-pink-200 px-2.5 py-1 rounded-md border border-pink-300 transition-colors cursor-pointer flex items-center gap-1"
+                className="text-[11px] font-bold text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-950/60 hover:bg-pink-200 px-2.5 py-1 rounded-lg border border-pink-300 dark:border-pink-800 transition-colors cursor-pointer flex items-center gap-1"
               >
                 <span>🎂 Set to Today!</span>
               </button>
@@ -303,34 +300,34 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 type="date"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="flex-1 bg-white border border-purple-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950"
+                className="flex-1 bg-white dark:bg-slate-900 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
               {birthday && (
                 <button
                   type="button"
                   onClick={() => setBirthday('')}
-                  className="text-[10px] text-purple-500 hover:text-purple-800 underline px-1 cursor-pointer"
+                  className="text-[10px] text-purple-500 hover:text-purple-800 dark:text-purple-400 underline px-1 cursor-pointer"
                 >
                   Clear
                 </button>
               )}
             </div>
 
-            <p className="text-[10px] text-purple-700/80">
+            <p className="text-[10px] text-purple-700/80 dark:text-purple-400">
               When your birthday matches the current date, your profile is automatically highlighted with a celebratory halo and birthday cake badge across campus reports!
             </p>
           </div>
 
-          {/* Fix #10: Backup & Restore Section so data is never lost if browser cache is cleared */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          {/* Backup & Restore Section */}
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
                 <span>Campus Data Vault & Backup</span>
               </span>
-              <span className="text-[10px] text-slate-500 font-mono">Resilience v1</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Resilience v1</span>
             </div>
-            <p className="text-[11px] text-slate-600 leading-snug">
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
               Prevent losing customized profiles and tickets if browser cache or storage is cleared:
             </p>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
@@ -338,16 +335,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <button
                   type="button"
                   onClick={onExportBackup}
-                  className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg border border-slate-300 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                 >
-                  <Download className="w-3 h-3 text-purple-600" />
+                  <Download className="w-3 h-3 text-purple-600 dark:text-pink-400" />
                   <span>Download Backup (.json)</span>
                 </button>
               )}
 
               {onImportBackup && (
-                <label className="flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 rounded-lg border border-slate-300 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
-                  <Upload className="w-3 h-3 text-purple-600" />
+                <label className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
+                  <Upload className="w-3 h-3 text-purple-600 dark:text-pink-400" />
                   <span>Restore from Backup</span>
                   <input
                     type="file"
@@ -360,32 +357,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Fix #13: Sign Out Shortcut from Profile Modal */}
+          {/* Footer Controls */}
           {onSignOut && (
-            <div className="pt-1 flex items-center justify-between border-t border-purple-100">
+            <div className="pt-2 flex items-center justify-between border-t border-purple-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onSignOut();
                 }}
-                className="text-xs font-semibold text-rose-700 hover:text-rose-900 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                className="text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out of Campus Hub</span>
+                <span>Sign Out</span>
               </button>
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-700 hover:bg-purple-100/60 transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-100/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-pink-600 hover:from-purple-900 hover:to-pink-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-pink-600 hover:from-purple-900 hover:to-pink-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Save Profile</span>
