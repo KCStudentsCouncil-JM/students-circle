@@ -107,7 +107,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Admin Secret Key</label>
-                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Key: CAMPUS2026</span>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Key: Breast Cancer POPS</span>
                 </div>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
