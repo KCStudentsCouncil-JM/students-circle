@@ -25,7 +25,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
       setShowAdminPrompt(false);
       onSignInClick('admin');
     } else {
-      setAdminError('Invalid Secret Key. Hint: Contact Dylon');
+      setAdminError('Invalid Secret Key!! HAHA YOU THOUGHT, text Dylon');
     }
   };
 
