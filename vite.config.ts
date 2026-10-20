@@ -21,9 +21,9 @@ export default defineConfig(({ command }) => {
     };
   }
 
-  // For GitHub Pages production build, hardcode your repository name
+  // For production build, allow VITE_BASE_PATH or GITHUB_PAGES override, otherwise default to '/'
   return {
-    base: '/students-circle/', 
+    base: process.env.VITE_BASE_PATH || (process.env.GITHUB_PAGES ? '/students-circle/' : '/'), 
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

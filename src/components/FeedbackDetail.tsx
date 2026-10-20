@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FeedbackReport, FeedbackStatus, RoleMode, UserProfile } from '../types';
+import { FeedbackReport, FeedbackStatus, RoleMode, UserProfile, isBirthdayToday } from '../types';
 import { calculateSlaInfo, formatReportId } from '../utils';
 import { 
   Building2, 
@@ -343,7 +343,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               ) : (
                 <span className="font-semibold text-purple-950 truncate flex items-center gap-1" title={`${report.author} (${report.authorRole})`}>
                   <span className="truncate">{report.author}</span>
-                  {report.author === 'Dylon Ocha' && (
+                  {((currentUser?.name === report.author && isBirthdayToday(currentUser?.birthday)) || (report.author === 'Dylon Ocha')) && (
                     <span className="text-[10px] bg-amber-200 text-purple-950 px-1.5 py-0.5 rounded-full font-bold shrink-0 shadow-2xs">
                       🎂 Birthday!
                     </span>
@@ -552,12 +552,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <span>Official Responses & Activity Timeline</span>
             </h2>
             <span className="text-[11px] font-mono text-purple-600">
-              {report.activities.length} {report.activities.length === 1 ? 'event' : 'events'}
+              {(report.activities || []).length} {(report.activities || []).length === 1 ? 'event' : 'events'}
             </span>
           </div>
 
           <div className="space-y-3 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-purple-100">
-            {report.activities.map((act) => {
+            {(report.activities || []).map((act) => {
               const isAdmin = act.role === 'admin';
               const isSystem = act.role === 'system';
 

@@ -113,6 +113,15 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     }
   };
 
+  const resetForm = () => {
+    setTitle('');
+    setLocation('');
+    setDescription('');
+    setPhotos([]);
+    setErrors({});
+    setUploadError(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -130,7 +139,11 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
       isAnonymous,
       author: isAnonymous ? 'Anonymous Student' : (currentUser?.name || 'Student'),
       authorRole: isAnonymous ? 'Enrolled Student' : (currentUser?.title || 'Undergraduate Student'),
+      authorRealName: currentUser?.name,
+      authorEmail: currentUser?.email,
+      authorStudentId: currentUser?.id,
     });
+    resetForm();
     onClose();
   };
 

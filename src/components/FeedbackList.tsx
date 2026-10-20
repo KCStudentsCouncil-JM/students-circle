@@ -375,6 +375,10 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                 ? item.endorsers?.some((e) => e.email === currentUser.email) 
                 : false;
 
+              // Check if report author has a birthday today
+              const authorUser = allUsers.find(u => u.name === item.author || (item.authorEmail && u.email === item.authorEmail));
+              const isAuthorBirthday = authorUser ? isBirthdayToday(authorUser.birthday) : (item.author === 'Dylon Ocha');
+
               // Format the ID (KCIS, KCOI, KCRS, etc.)
               const formattedId = formatReportId(item.id, item.type, item.status);
 
@@ -409,7 +413,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                         <span className="font-mono font-bold text-purple-900 bg-purple-50 px-2 py-0.5 rounded border border-purple-200/60">
                           {formattedId}
                         </span>
-                        {item.author === 'Dylon Ocha' && (
+                        {isAuthorBirthday && (
                           <span className="text-[10px] bg-amber-100 text-amber-950 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow-2xs" title="Author has a birthday today!">
                             🎂 Birthday Author
                           </span>

@@ -186,24 +186,50 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   };
 
   const formatCalendarSquare = (dateStr: string) => {
-    const parts = dateStr.split('-');
-    const year = parseInt(parts[0], 10);
-    const monthIdx = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const dateObj = new Date(year, monthIdx, day);
-    return {
-      month: dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
-      day,
-      weekday: dateObj.toLocaleDateString(undefined, { weekday: 'short' }),
-    };
+    try {
+      const parts = (dateStr || '').split('-');
+      if (parts.length >= 3) {
+        const year = parseInt(parts[0], 10);
+        const monthIdx = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        if (!isNaN(year) && !isNaN(monthIdx) && !isNaN(day)) {
+          const dateObj = new Date(year, monthIdx, day);
+          return {
+            month: dateObj.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+            day,
+            weekday: dateObj.toLocaleDateString(undefined, { weekday: 'short' }),
+          };
+        }
+      }
+      const fallback = new Date(dateStr);
+      if (!isNaN(fallback.getTime())) {
+        return {
+          month: fallback.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+          day: fallback.getDate(),
+          weekday: fallback.toLocaleDateString(undefined, { weekday: 'short' }),
+        };
+      }
+    } catch (e) {
+      // ignore
+    }
+    return { month: 'OCT', day: 24, weekday: 'Sat' };
   };
 
   // Helper to render YouTube or MP4 videos
   const renderVideo = (url: string) => {
+    if (!url || !url.trim()) return null;
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      const videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('youtu.be/')[1];
+      let rawId = '';
+      if (url.includes('v=')) {
+        rawId = url.split('v=')[1]?.split('&')[0] || '';
+      } else if (url.includes('youtu.be/')) {
+        rawId = url.split('youtu.be/')[1]?.split(/[?&#]/)[0] || '';
+      }
+      const videoId = rawId.trim();
+      if (!videoId) return null;
+
       return (
-        <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3">
+        <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3 bg-black">
           <iframe
             className="w-full h-full"
             src={`https://www.youtube.com/embed/${videoId}`}
@@ -214,7 +240,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       );
     }
     return (
-      <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3">
+      <div className="w-full aspect-video rounded-lg overflow-hidden border border-purple-100 shadow-2xs mt-2 mb-3 bg-black">
         <video src={url} controls className="w-full h-full object-cover" />
       </div>
     );

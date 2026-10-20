@@ -93,9 +93,31 @@ export interface UserProfile {
 export function isBirthdayToday(birthday?: string): boolean {
   if (!birthday) return false;
   try {
-    const parts = birthday.trim().split('-');
-    let month = parseInt(parts[1] || parts[0], 10);
-    let day = parseInt(parts[2] || parts[1], 10);
+    const cleaned = birthday.trim().replace(/\//g, '-');
+    const parts = cleaned.split('-').map(p => parseInt(p, 10)).filter(n => !isNaN(n));
+    if (parts.length < 2) return false;
+
+    let month = 0;
+    let day = 0;
+
+    if (parts.length >= 3) {
+      if (parts[0] > 1900) {
+        // YYYY-MM-DD
+        month = parts[1];
+        day = parts[2];
+      } else {
+        // DD-MM-YYYY or MM-DD-YYYY
+        month = parts[1];
+        day = parts[0];
+      }
+    } else if (parts.length === 2) {
+      // MM-DD
+      month = parts[0];
+      day = parts[1];
+    } else {
+      return false;
+    }
+
     const today = new Date();
     return today.getMonth() + 1 === month && today.getDate() === day;
   } catch (e) {

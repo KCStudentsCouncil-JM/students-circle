@@ -278,19 +278,20 @@ export function exportCampusDataBackup(reports: any[], events: any[], user: any)
  * Draft -> KCDRF
  */
 export function formatReportId(id: string, type: FeedbackType, status: FeedbackStatus): string {
-  const num = id.includes('-') ? id.split('-')[1] : id;
+  // Strip known prefix if already present
+  const cleanNum = id.replace(/^(KCIS|KCOI|KCIRV|KCRS|KCDRF|FB)-/i, '');
   
-  if (type === 'initiative') return `KCIS-${num}`;
-  if (status === 'draft') return `KCDRF-${num}`;
-  if (status === 'resolved') return `KCRS-${num}`;
-  if (status === 'in-review' || status === 'in-progress') return `KCIRV-${num}`;
-  return `KCOI-${num}`; // Default to Open Issue
+  if (type === 'initiative') return `KCIS-${cleanNum}`;
+  if (status === 'draft') return `KCDRF-${cleanNum}`;
+  if (status === 'resolved') return `KCRS-${cleanNum}`;
+  if (status === 'in-review' || status === 'in-progress') return `KCIRV-${cleanNum}`;
+  return `KCOI-${cleanNum}`; // Default to Open Issue
 }
 
 /**
  * Formats event IDs with the KCEV prefix.
  */
 export function formatEventId(id: string): string {
-  const num = id.includes('-') ? id.split('-')[1] : id;
-  return `KCEV-${num}`;
+  const cleanNum = id.replace(/^(KCEV|EV)-/i, '');
+  return `KCEV-${cleanNum}`;
 }

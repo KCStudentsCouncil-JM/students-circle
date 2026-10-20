@@ -3,10 +3,10 @@ import {
   FeedbackReport, NavFilter, RoleMode, FeedbackStatus, ActivityItem, CampusEvent, UserProfile 
 } from './types';
 import { 
-  matchesExactWords, exportCampusDataBackup, formatReportId, formatEventId 
+  matchesExactWords, exportCampusDataBackup, formatReportId 
 } from './utils';
 import { 
-  auth, subscribeToReports, subscribeToEvents, saveReportToDb, updateReportInDb, 
+  auth, isFirebaseConfigured, subscribeToReports, subscribeToEvents, saveReportToDb, updateReportInDb, 
   deleteReportFromDb, saveEventToDb, updateEventInDb, deleteEventFromDb,
   subscribeToUsers, createUserProfile, approveUserInDb, rejectUserInDb, removeUserInDb,
   getUserProfile, signOutReal, signInWithGoogleReal
@@ -52,34 +52,49 @@ export default function App() {
   const [pageView, setPageView] = useState<'main' | 'detail' | 'student-list'>('main');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
-  // 1. Listen to Firebase Auth State
+  // 1. Listen to Database Data (Always active so landing page has data)
   useEffect(() => {
-    if (!auth) {
-      setIsLoadingAuth(false);
-      return;
-    }
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      if (user && user.email) {
-        const profile = await getUserProfile(user.email);
-        setUserProfile(profile);
-        if (profile) setRole(profile.role);
-      } else {
-        setUserProfile(null);
-      }
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // 2. Listen to Database Data
-  useEffect(() => {
-    if (!firebaseUser) return;
     const unsubR = subscribeToReports(setReports);
     const unsubE = subscribeToEvents(setEvents);
     const unsubU = subscribeToUsers(setAllUsers);
     return () => { unsubR(); unsubE(); unsubU(); };
-  }, [firebaseUser]);
+  }, []);
+
+  // 2. Listen to Auth State
+  useEffect(() => {
+    if (auth && isFirebaseConfigured()) {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setFirebaseUser(user);
+        if (user && user.email) {
+          const profile = await getUserProfile(user.email);
+          setUserProfile(profile);
+          if (profile) setRole(profile.role);
+        } else {
+          setUserProfile(null);
+        }
+        setIsLoadingAuth(false);
+      });
+      return () => unsubscribe();
+    } else {
+      // Offline/Local Demo Mode: check stored session
+      try {
+        const stored = localStorage.getItem('campus_active_user');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setFirebaseUser(parsed);
+          getUserProfile(parsed.email).then(profile => {
+            setUserProfile(profile);
+            if (profile) setRole(profile.role);
+            setIsLoadingAuth(false);
+          });
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+      setIsLoadingAuth(false);
+    }
+  }, []);
 
   // 3. Keyboard Detection (for Mobile)
   useEffect(() => {
@@ -110,8 +125,8 @@ export default function App() {
 
   const handleSignOut = async () => {
     await signOutReal();
-    setReports([]);
-    setEvents([]);
+    setFirebaseUser(null);
+    setUserProfile(null);
     setPageView('main');
     showToast('Signed out securely.');
   };
@@ -119,31 +134,73 @@ export default function App() {
   const handleOnboardingSubmit = async (profile: UserProfile) => {
     await createUserProfile(profile);
     setUserProfile(profile);
-    showToast('Request sent to admins.');
+    setAllUsers(prev => [profile, ...prev.filter(u => u.email !== profile.email)]);
+    showToast('Request sent to campus administrators.');
   };
 
-  const handleGoogleLogin = async (targetRole: 'student' | 'admin') => {
+  const handleGoogleLogin = async (simulatedUser?: { email: string; name: string; photoURL?: string }) => {
     try {
-      const user = await signInWithGoogleReal();
-      const profile = await getUserProfile(user.email!);
+      let user: any = null;
+      if (simulatedUser) {
+        user = simulatedUser;
+        localStorage.setItem('campus_active_user', JSON.stringify(simulatedUser));
+      } else {
+        user = await signInWithGoogleReal();
+      }
       
-      if (targetRole === 'admin') {
+      setFirebaseUser(user);
+      const email = user.email || 'student@campus.edu';
+      let profile = await getUserProfile(email);
+
+      if (loginRole === 'admin') {
         if (!profile) {
           const newAdmin: UserProfile = {
-            id: user.email!, name: user.displayName || 'Admin', email: user.email!,
-            role: 'admin', status: 'approved', photo: user.photoURL || '', createdAt: new Date().toISOString()
+            id: email,
+            name: user.displayName || user.name || 'Campus Administrator',
+            email,
+            role: 'admin',
+            status: 'approved',
+            title: 'Senior Campus Operations Director',
+            photo: user.photoURL || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
+            createdAt: new Date().toISOString()
           };
           await createUserProfile(newAdmin);
           setUserProfile(newAdmin);
           setRole('admin');
         } else {
-          await createUserProfile({ ...profile, role: 'admin', status: 'approved' });
-          setUserProfile({ ...profile, role: 'admin', status: 'approved' });
+          const updatedAdmin: UserProfile = { ...profile, role: 'admin', status: 'approved' };
+          await createUserProfile(updatedAdmin);
+          setUserProfile(updatedAdmin);
           setRole('admin');
         }
       } else {
+        // Student role
+        if (!profile) {
+          // If no existing profile, check if user exists in allUsers
+          const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+          if (found) {
+            profile = found;
+          } else {
+            // New student profile
+            profile = {
+              id: email,
+              name: user.displayName || user.name || 'Enrolled Student',
+              email,
+              role: 'student',
+              status: 'approved',
+              major: 'Computer Science',
+              classYear: "Class of '26",
+              title: "Computer Science · Class of '26",
+              photo: user.photoURL || '',
+              createdAt: new Date().toISOString()
+            };
+            await createUserProfile(profile);
+          }
+        }
         setUserProfile(profile);
+        setRole(profile.role);
       }
+      showToast(`Welcome back, ${profile?.name || user.displayName || 'User'}!`);
     } catch (error: any) {
       showToast(error.message || 'Login failed');
     }
@@ -152,6 +209,8 @@ export default function App() {
   // --- DATABASE ACTIONS ---
 
   const handleDeleteReport = async (id: string) => {
+    setReports(prev => prev.filter(r => r.id !== id));
+    setSelectedId(null);
     await deleteReportFromDb(id);
     showToast(`Report deleted.`);
     setPageView('main');
@@ -159,6 +218,7 @@ export default function App() {
 
   const handleDeleteEvent = async (id: string) => {
     if (role !== 'admin') return;
+    setEvents(prev => prev.filter(e => e.id !== id));
     await deleteEventFromDb(id);
     showToast(`Event deleted.`);
   };
@@ -177,9 +237,15 @@ export default function App() {
       badgeText: 'Official Campus Administrator'
     };
 
+    setReports(prev => prev.map(rep => rep.id === id ? { 
+      ...rep, 
+      status: newStatus, 
+      activities: [...(rep.activities || []), newActivity] 
+    } : rep));
+
     await updateReportInDb(id, { 
       status: newStatus, 
-      activities: [...r.activities, newActivity] 
+      activities: [...(r.activities || []), newActivity] 
     });
     showToast(`Status updated to ${newStatus}.`);
   };
@@ -198,14 +264,39 @@ export default function App() {
       badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined
     };
 
+    const nextStatus = statusChange || r.status;
+    setReports(prev => prev.map(rep => rep.id === id ? { 
+      ...rep, 
+      status: nextStatus, 
+      activities: [...(rep.activities || []), newActivity] 
+    } : rep));
+
     await updateReportInDb(id, { 
-      status: statusChange || r.status, 
-      activities: [...r.activities, newActivity] 
+      status: nextStatus, 
+      activities: [...(r.activities || []), newActivity] 
     });
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Reply posted.');
   };
 
   const handleBulkUpdateStatus = async (ids: string[], newStatus: FeedbackStatus) => {
+    const nowIso = new Date().toISOString();
+    setReports(prev => prev.map(rep => {
+      if (!ids.includes(rep.id)) return rep;
+      const newActivity: ActivityItem = {
+        id: `act-${Date.now()}-${rep.id}`,
+        author: userProfile?.name || 'Admin',
+        role: 'admin',
+        message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
+        timestamp: nowIso,
+        statusChange: newStatus,
+      };
+      return {
+        ...rep,
+        status: newStatus,
+        activities: [...(rep.activities || []), newActivity]
+      };
+    }));
+
     for (const id of ids) {
       const r = reports.find(rep => rep.id === id);
       if (r) {
@@ -214,10 +305,10 @@ export default function App() {
           author: userProfile?.name || 'Admin',
           role: 'admin',
           message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
-          timestamp: new Date().toISOString(),
+          timestamp: nowIso,
           statusChange: newStatus,
         };
-        await updateReportInDb(id, { status: newStatus, activities: [...r.activities, newActivity] });
+        await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
       }
     }
     showToast(`Bulk updated ${ids.length} reports.`);
@@ -231,13 +322,22 @@ export default function App() {
     const hasUserRsvpd = attendees.includes(userProfile.email);
     const nextCount = hasUserRsvpd ? Math.max(0, evt.rsvps - 1) : evt.rsvps + 1;
     const updatedAttendees = hasUserRsvpd ? attendees.filter(e => e !== userProfile.email) : [...attendees, userProfile.email];
+
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, rsvps: nextCount, attendees: updatedAttendees } : e));
     await updateEventInDb(id, { rsvps: nextCount, attendees: updatedAttendees });
     showToast(hasUserRsvpd ? `RSVP cancelled` : `RSVP confirmed`);
   };
 
   const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
     const newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
-    await saveEventToDb({ ...newEventData, id: newId, rsvps: 1, attendees: [userProfile?.email || ''] });
+    const fullEvent: CampusEvent = { 
+      ...newEventData, 
+      id: newId, 
+      rsvps: 1, 
+      attendees: [userProfile?.email || ''] 
+    };
+    setEvents(prev => [fullEvent, ...prev]);
+    await saveEventToDb(fullEvent);
     showToast(`Event published!`);
   };
 
@@ -258,6 +358,13 @@ export default function App() {
       updatedEndorsers = [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.role, email: userProfile.email, timestamp: new Date().toISOString() }, ...existingEndorsers];
       showToast(`Endorsement added.`);
     }
+
+    setReports(prev => prev.map(rep => rep.id === id ? { 
+      ...rep, 
+      upvotes: updatedEndorsers.length, 
+      endorsers: updatedEndorsers 
+    } : rep));
+
     await updateReportInDb(id, { upvotes: updatedEndorsers.length, endorsers: updatedEndorsers });
   };
 
@@ -269,13 +376,15 @@ export default function App() {
     const createdReport: FeedbackReport = {
       ...newReportData, 
       id: newId, 
-      author: userProfile?.name || 'Student', 
+      author: newReportData.author || userProfile?.name || 'Student', 
       authorEmail: userProfile?.email,
-      authorRole: userProfile?.role || 'Student',
+      authorRole: newReportData.authorRole || userProfile?.title || 'Student',
+      authorRealName: userProfile?.name,
+      authorStudentId: userProfile?.id,
       createdAt: nowIso, 
       upvotes: 1, 
       endorsers: [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
-      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted.', timestamp: nowIso }],
+      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted report to campus council queue.', timestamp: nowIso }],
     };
 
     setReports((prev) => [createdReport, ...prev]);
@@ -285,7 +394,66 @@ export default function App() {
     showToast(`Feedback ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
   };
 
-    const filteredReports = useMemo(() => {
+  // Student list actions
+  const handleApproveUser = async (email: string) => {
+    setAllUsers(prev => prev.map(u => u.email === email ? { ...u, status: 'approved' } : u));
+    await approveUserInDb(email);
+    showToast(`Student access approved.`);
+  };
+
+  const handleRejectUser = async (email: string) => {
+    setAllUsers(prev => prev.map(u => u.email === email ? { ...u, status: 'rejected' } : u));
+    await rejectUserInDb(email);
+    showToast(`Student request rejected.`);
+  };
+
+  const handleRemoveUser = async (email: string) => {
+    setAllUsers(prev => prev.filter(u => u.email !== email));
+    await removeUserInDb(email);
+    showToast(`Student access revoked.`);
+  };
+
+  // Backup & Restore
+  const handleExportBackup = () => {
+    exportCampusDataBackup(reports, events, userProfile);
+    showToast('Campus data backup downloaded.');
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const backup = JSON.parse(text);
+        if (backup && Array.isArray(backup.reports)) {
+          setReports(backup.reports);
+          for (const rep of backup.reports) {
+            await saveReportToDb(rep);
+          }
+        }
+        if (backup && Array.isArray(backup.events)) {
+          setEvents(backup.events);
+          for (const ev of backup.events) {
+            await saveEventToDb(ev);
+          }
+        }
+        if (backup && backup.user) {
+          setUserProfile(backup.user);
+          await createUserProfile(backup.user);
+        }
+        showToast('Backup restored successfully!');
+      } catch (err) {
+        showToast('Failed to import backup. Invalid JSON file format.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const filteredReports = useMemo(() => {
     return reports.filter(item => {
       // 1. Status Filters
       if (currentFilter === 'open' && item.status !== 'open') return false;
@@ -293,7 +461,7 @@ export default function App() {
       if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
       if (currentFilter === 'drafts' && item.status !== 'draft') return false;
 
-      // 2. Category Filters (THIS IS THE FIX)
+      // 2. Category Filters
       if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
       if (currentFilter === 'technology' && item.category !== 'technology') return false;
       if (currentFilter === 'academics' && item.category !== 'academics') return false;
@@ -309,13 +477,31 @@ export default function App() {
 
   // --- RENDER LOGIC ---
 
-  if (isLoadingAuth) return <div className="min-h-screen bg-[#faf8fc] flex items-center justify-center text-purple-600 font-bold">Loading...</div>;
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-[#faf8fc] flex flex-col items-center justify-center text-purple-700 font-bold gap-3">
+        <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-mono">Loading KC Students Circle...</span>
+      </div>
+    );
+  }
 
   if (!firebaseUser) {
     return (
       <>
-        <PortalPage reports={reports} onSignInClick={(r) => { setLoginRole(r); setIsGooglePickerOpen(true); }} isGooglePickerOpen={isGooglePickerOpen} onCloseGooglePicker={() => setIsGooglePickerOpen(false)} />
-        <GoogleAccountPickerModal isOpen={isGooglePickerOpen} onClose={() => setIsGooglePickerOpen(false)} targetRole={loginRole} onSelectAccount={() => handleGoogleLogin(loginRole)} />
+        <PortalPage 
+          reports={reports} 
+          events={events}
+          onSignInClick={(r) => { setLoginRole(r); setIsGooglePickerOpen(true); }} 
+          isGooglePickerOpen={isGooglePickerOpen} 
+          onCloseGooglePicker={() => setIsGooglePickerOpen(false)} 
+        />
+        <GoogleAccountPickerModal 
+          isOpen={isGooglePickerOpen} 
+          onClose={() => setIsGooglePickerOpen(false)} 
+          targetRole={loginRole} 
+          onSelectAccount={(simulated) => handleGoogleLogin(simulated)} 
+        />
       </>
     );
   }
@@ -327,8 +513,8 @@ export default function App() {
           <CheckCircle2 className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold text-purple-950 mb-2">Approval Pending</h1>
-        <p className="text-purple-700 max-w-sm mb-6">Your request is currently being reviewed by campus administrators. Please check back later.</p>
-        <button onClick={handleSignOut} className="text-sm font-bold text-rose-600 hover:underline">Sign Out</button>
+        <p className="text-purple-700 max-w-sm mb-6">Your student verification request is currently being reviewed by campus administrators. Please check back later.</p>
+        <button onClick={handleSignOut} className="text-sm font-bold text-rose-600 hover:underline cursor-pointer">Sign Out</button>
       </div>
     );
   }
@@ -348,10 +534,11 @@ export default function App() {
         openCount={reports.filter(r => r.status === 'open').length} 
         currentUser={userProfile} 
         onSignOut={handleSignOut} 
-        onGoHome={() => { setCurrentFilter('all'); setPageView('main'); }} // <--- NEW
+        onGoHome={() => { setCurrentFilter('all'); setPageView('main'); }} 
         isSidebarOpen={isSidebarOpen} 
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenGoogleSignIn={() => setIsGooglePickerOpen(true)}
       />
       
       <div className="flex-1 flex overflow-hidden relative">
@@ -365,13 +552,19 @@ export default function App() {
             eventsCount={events.length} 
             onClose={() => setIsSidebarOpen(false)} 
             onSignOut={handleSignOut} 
-            onExportBackup={() => {}} 
+            onExportBackup={handleExportBackup} 
             onOpenStudentList={() => setPageView('student-list')} 
           />
         )}
 
         {pageView === 'student-list' && role === 'admin' ? (
-          <AdminStudentList allUsers={allUsers} onApprove={approveUserInDb} onReject={rejectUserInDb} onRemove={removeUserInDb} onBack={() => setPageView('main')} />
+          <AdminStudentList 
+            allUsers={allUsers} 
+            onApprove={handleApproveUser} 
+            onReject={handleRejectUser} 
+            onRemove={handleRemoveUser} 
+            onBack={() => setPageView('main')} 
+          />
         ) : currentFilter === 'events' ? (
           <EventsSection 
             events={events} 
@@ -387,10 +580,17 @@ export default function App() {
             reports={filteredReports} 
             selectedId={selectedId} 
             currentUser={userProfile as any} 
-            allUsers={allUsers} // <--- NEW
+            allUsers={allUsers} 
             onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }} 
             onToggleUpvote={handleToggleUpvote} 
-            activeFilterTitle="All Reports" 
+            activeFilterTitle={
+              currentFilter === 'all' ? 'All Reports' :
+              currentFilter === 'open' ? 'Open Issues' :
+              currentFilter === 'in-review' ? 'In Review & Active' :
+              currentFilter === 'resolved' ? 'Resolved Reports' :
+              currentFilter === 'drafts' ? 'Drafts' :
+              `${currentFilter.replace('-', ' ').toUpperCase()} Reports`
+            } 
             onNavigateToEvents={() => setCurrentFilter('events')} 
             eventsCount={events.length} 
             role={role} 
@@ -406,8 +606,8 @@ export default function App() {
             onToggleUpvote={handleToggleUpvote} 
             onBack={() => setPageView('main')} 
             onDeleteReport={handleDeleteReport} 
-            otherReports={[]} 
-            onSelectOtherReport={setSelectedId} 
+            otherReports={reports.filter(r => r.id !== selectedId).slice(0, 5)} 
+            onSelectOtherReport={(id) => { setSelectedId(id); }} 
           />
         )}
       </div>
@@ -459,9 +659,12 @@ export default function App() {
           onSave={(updated) => {
             setUserProfile({ ...userProfile, ...updated });
             createUserProfile({ ...userProfile, ...updated }); 
+            setAllUsers(prev => prev.map(u => u.email === updated.email ? { ...u, ...updated } : u));
             showToast('Profile updated successfully.');
           }}
           onSignOut={handleSignOut}
+          onExportBackup={handleExportBackup}
+          onImportBackup={handleImportBackup}
         />
       )}
 

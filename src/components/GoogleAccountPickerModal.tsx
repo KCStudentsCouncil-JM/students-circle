@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { RoleMode, UserProfile } from '../types';
+import { RoleMode } from '../types';
 import { isFirebaseConfigured } from '../firebase';
-import { X, AlertCircle, ShieldCheck } from 'lucide-react';
+import { X, AlertCircle, ShieldCheck, UserCheck, Sparkles, Database } from 'lucide-react';
 
 interface GoogleAccountPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectAccount: () => void; // <-- No longer needs to pass the user
+  onSelectAccount: (simulatedUser?: { email: string; name: string; photoURL?: string }) => void;
   targetRole?: RoleMode;
 }
 
@@ -26,12 +26,32 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
   if (!isOpen) return null;
 
   const handleGoogleSignIn = () => {
-    if (!firebaseActive) {
-      setAuthError('Firebase is not configured. Please add your VITE_FIREBASE_ keys.');
+    // If Firebase is configured, trigger the standard Firebase Google Auth popup
+    if (firebaseActive) {
+      onSelectAccount();
+      onClose();
       return;
     }
-    // Just trigger the callback. App.tsx will handle the actual Firebase popup.
-    onSelectAccount();
+
+    // In demo/offline mode, log in with default demo profile for the requested role
+    if (targetRole === 'admin') {
+      onSelectAccount({
+        email: 'admin@campus.edu',
+        name: 'Campus Administrator',
+        photoURL: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
+      });
+    } else {
+      onSelectAccount({
+        email: 'dylonnnaocha@gmail.com',
+        name: 'Dylon Ocha',
+        photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
+      });
+    }
+    onClose();
+  };
+
+  const handleSelectPresetStudent = (email: string, name: string, photoURL: string) => {
+    onSelectAccount({ email, name, photoURL });
     onClose();
   };
 
@@ -43,10 +63,12 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
           <div className="space-y-1">
             <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-purple-600" />
-              {targetRole === 'admin' ? 'Admin Verification' : 'Student Verification'}
+              {targetRole === 'admin' ? 'Admin Access Verification' : 'Student Access Verification'}
             </h2>
             <p className="text-xs text-purple-900/70">
-              You must sign in with a verified Google account to access the portal.
+              {firebaseActive 
+                ? 'Sign in with your verified Google account to access KC Students Circle.'
+                : 'Choose a verified campus identity or proceed with demo authentication.'}
             </p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full text-slate-400 hover:bg-slate-200/60 transition-colors cursor-pointer">
@@ -55,6 +77,21 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
         </div>
 
         <div className="p-6 space-y-4">
+          {/* Status Badge */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-purple-50/70 border border-purple-100 text-xs">
+            <span className="text-purple-700 font-medium flex items-center gap-1.5">
+              <Database className="w-3.5 h-3.5 text-purple-600" />
+              Storage Backend
+            </span>
+            <span className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded-full ${
+              firebaseActive 
+                ? 'bg-emerald-100 text-emerald-800' 
+                : 'bg-purple-200 text-purple-900'
+            }`}>
+              {firebaseActive ? '● Firebase Cloud' : '● Local Offline Storage'}
+            </span>
+          </div>
+
           {authError && (
             <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -62,6 +99,66 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
             </div>
           )}
 
+          {/* Quick Select Presets for testing */}
+          {targetRole === 'student' && !firebaseActive && (
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-900/70 block">
+                Instant Student Sign-In
+              </span>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelectPresetStudent(
+                    'dylonnnaocha@gmail.com',
+                    'Dylon Ocha',
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80'
+                  )}
+                  className="w-full flex items-center justify-between p-3 rounded-xl border border-purple-200 hover:border-purple-400 hover:bg-purple-50/50 transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" 
+                      alt="Dylon" 
+                      className="w-9 h-9 rounded-full object-cover border border-amber-300 ring-2 ring-pink-400"
+                    />
+                    <div>
+                      <div className="font-bold text-xs text-purple-950 flex items-center gap-1.5">
+                        <span>Dylon Ocha</span>
+                        <span className="text-[9px] bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded font-bold">🎂 Birthday Today</span>
+                      </div>
+                      <p className="text-[10px] text-purple-700/70">Computer Science · Class of '26</p>
+                    </div>
+                  </div>
+                  <UserCheck className="w-4 h-4 text-purple-500 opacity-60 group-hover:opacity-100" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectPresetStudent(
+                    'sarah.j@campus.edu',
+                    'Sarah Jenkins',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80'
+                  )}
+                  className="w-full flex items-center justify-between p-3 rounded-xl border border-purple-100 hover:border-purple-300 hover:bg-purple-50/30 transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80" 
+                      alt="Sarah" 
+                      className="w-9 h-9 rounded-full object-cover border border-purple-200"
+                    />
+                    <div>
+                      <div className="font-bold text-xs text-purple-950">Sarah Jenkins</div>
+                      <p className="text-[10px] text-purple-700/70">Biochemistry · Class of '25</p>
+                    </div>
+                  </div>
+                  <UserCheck className="w-4 h-4 text-purple-400 opacity-40 group-hover:opacity-100" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Standard Sign-In Button */}
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -73,7 +170,13 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
               <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
               <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
             </svg>
-            <span>Continue to Google</span>
+            <span>
+              {firebaseActive 
+                ? 'Continue to Google' 
+                : targetRole === 'admin' 
+                  ? 'Sign in as Campus Administrator' 
+                  : 'Continue as Verified Student'}
+            </span>
           </button>
         </div>
       </div>
