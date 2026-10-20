@@ -432,16 +432,16 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               </p>
             )}
 
-            {/* Media Previews */}
+               {/* Media Previews */}
             {(photos.length > 0 || videos.length > 0) && (
               <div className="flex items-center gap-2.5 flex-wrap pt-1">
                 {/* Photo Previews */}
                 {photos.map((src, idx) => (
                   <div key={`photo-${idx}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-purple-200 dark:border-slate-700 shadow-2xs group">
                     <img src={src} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button 
-                      type="button" 
-                      onClick={() => setPhotos(p => p.filter((_, i) => i !== idx))} 
+                    <button
+                      type="button"
+                      onClick={() => setPhotos(p => p.filter((_, i) => i !== idx))}
                       className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
                       title="Remove photo"
                     >
@@ -471,6 +471,8 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
 
             {photos.length + videos.length < 5 && (
               <label className="flex items-center justify-center gap-2 p-4 rounded-2xl border-2 border-dashed border-purple-300 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 bg-purple-50/40 dark:bg-slate-800/40 hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-purple-900 dark:text-purple-300">
@@ -480,7 +482,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                     {isProcessingMedia ? 'Compressing and importing media...' : 'Upload Photos or Videos from Gallery'}
                   </span>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 block">
-                    Supports JPG, PNG, WebP, MP4, WebM, MOV (Max 20MB per file)
+                    Supports JPG, PNG, WebP, MP4, WebM (Max 20MB per file)
                   </span>
                 </div>
                 <input

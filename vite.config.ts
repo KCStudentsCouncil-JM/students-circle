@@ -1,29 +1,22 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
+
+const detectBase = (): string => {
+  if (process.env.VITE_BASE_PATH) return process.env.VITE_BASE_PATH;
+  if (process.env.GITHUB_REPOSITORY) {
+    const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+    return `/${repo}/`;
+  }
+  return '/';
+};
 
 export default defineConfig(({ command }) => {
-  // In dev server ('serve'), base MUST always be '/' so Vite dev assets and client HMR load cleanly
-  if (command === 'serve') {
-    return {
-      base: '/',
-      plugins: [react(), tailwindcss()],
-      resolve: {
-        alias: {
-          '@': path.resolve(import.meta.dirname, '.'),
-        },
-      },
-      server: {
-        hmr: process.env.DISABLE_HMR !== 'true',
-        watch: process.env.DISABLE_HMR === 'true' ? null : {},
-      },
-    };
-  }
+  const base = command === 'serve' ? '/' : detectBase();
 
-  // For production build, allow VITE_BASE_PATH or GITHUB_PAGES override, otherwise default to '/'
   return {
-    base: process.env.VITE_BASE_PATH || (process.env.GITHUB_PAGES ? '/students-circle/' : '/'), 
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
