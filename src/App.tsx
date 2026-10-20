@@ -68,14 +68,20 @@ export default function App() {
     if (auth && isFirebaseConfigured()) {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setFirebaseUser(user);
-        if (user && user.email) {
-          const profile = await getUserProfile(user.email);
-          setUserProfile(profile);
-          if (profile) setRole(profile.role);
-        } else {
+        try {
+          if (user && user.email) {
+            const profile = await getUserProfile(user.email);
+            setUserProfile(profile);
+            if (profile) setRole(profile.role);
+          } else {
+            setUserProfile(null);
+          }
+        } catch (err) {
+          console.error("Auth profile fetch error:", err);
           setUserProfile(null);
+        } finally {
+          setIsLoadingAuth(false);
         }
-        setIsLoadingAuth(false);
       });
       return () => unsubscribe();
     } else {
@@ -88,7 +94,7 @@ export default function App() {
             setUserProfile(profile);
             if (profile) setRole(profile.role);
             setIsLoadingAuth(false);
-          });
+          }).catch(() => setIsLoadingAuth(false));
           return;
         }
       } catch (e) { /* ignore */ }
@@ -124,11 +130,11 @@ export default function App() {
     return () => clearInterval(interval);
   }, [userProfile?.email]);
 
-  // Keyboard detection
+  // Keyboard detection (Optimized for Mobile Bottom Nav)
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
         setIsKeyboardActive(true);
       }
     };
@@ -163,7 +169,7 @@ export default function App() {
     await createUserProfile(profile);
     setUserProfile(profile);
     setAllUsers(prev => [profile, ...prev.filter(u => u.email !== profile.email)]);
-    showToast('Request sent to campus administrators.');
+    showToast('Request sent to school administrators.');
   };
 
   const handleGoogleLogin = async (simulatedUser?: { email: string; name: string; photoURL?: string }) => {
@@ -177,18 +183,18 @@ export default function App() {
       }
       
       setFirebaseUser(user);
-      const email = user.email || 'student@campus.edu';
+      const email = user.email || 'student@kc.edu.jm';
       let profile = await getUserProfile(email);
 
       if (loginRole === 'admin') {
         if (!profile) {
           const newAdmin: UserProfile = {
             id: email,
-            name: user.displayName || user.name || 'Campus Administrator',
+            name: user.displayName || user.name || 'Staff Member',
             email,
             role: 'admin',
             status: 'approved',
-            title: 'Senior Campus Operations Director',
+            title: 'School Administrator',
             photo: user.photoURL || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
             createdAt: new Date().toISOString()
           };
@@ -238,7 +244,7 @@ export default function App() {
       id: `act-${Date.now()}`, author: userProfile?.name || 'Admin', role: 'admin',
       message: `Status manually changed to ${newStatus.toUpperCase()}.`,
       timestamp: new Date().toISOString(), statusChange: newStatus,
-      badgeText: 'Official Campus Administrator'
+      badgeText: 'Official Staff'
     };
     setReports(prev => prev.map(rep => rep.id === id ? { 
       ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] 
@@ -256,7 +262,7 @@ export default function App() {
     const newActivity: ActivityItem = {
       id: `act-${Date.now()}`, author: userProfile?.name || 'User', role: activityRole,
       message, timestamp: new Date().toISOString(), statusChange,
-      badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined,
+      badgeText: activityRole === 'admin' ? 'Official Staff' : undefined,
       parentId,
       photos: photos && photos.length > 0 ? photos : undefined,
       videos: videos && videos.length > 0 ? videos : undefined,
@@ -275,7 +281,7 @@ export default function App() {
       if (!ids.includes(rep.id)) return rep;
       const newActivity: ActivityItem = {
         id: `act-${Date.now()}-${rep.id}`, author: userProfile?.name || 'Admin', role: 'admin',
-        message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
+        message: `Report bulk-updated to ${newStatus.toUpperCase()}.`,
         timestamp: nowIso, statusChange: newStatus,
       };
       return { ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] };
@@ -285,7 +291,7 @@ export default function App() {
       if (r) {
         const newActivity: ActivityItem = {
           id: `act-${Date.now()}-${id}`, author: userProfile?.name || 'Admin', role: 'admin',
-          message: `Ticket bulk-updated to ${newStatus.toUpperCase()}.`,
+          message: `Report bulk-updated to ${newStatus.toUpperCase()}.`,
           timestamp: nowIso, statusChange: newStatus,
         };
         await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
@@ -325,10 +331,10 @@ export default function App() {
     let updatedEndorsers;
     if (isAlreadyEndorsed) {
       updatedEndorsers = existingEndorsers.filter((end) => end.email !== userProfile.email);
-      showToast(`Endorsement retracted.`);
+      showToast(`Support retracted.`);
     } else {
       updatedEndorsers = [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.role, email: userProfile.email, timestamp: new Date().toISOString() }, ...existingEndorsers];
-      showToast(`Endorsement added.`);
+      showToast(`Support added.`);
     }
     setReports(prev => prev.map(rep => rep.id === id ? { ...rep, upvotes: updatedEndorsers.length, endorsers: updatedEndorsers } : rep));
     await updateReportInDb(id, { upvotes: updatedEndorsers.length, endorsers: updatedEndorsers });
@@ -347,13 +353,13 @@ export default function App() {
       authorStudentId: userProfile?.id,
       createdAt: nowIso, upvotes: 1,
       endorsers: [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
-      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted report to campus council queue.', timestamp: nowIso }],
+      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted report.', timestamp: nowIso }],
     };
     setReports((prev) => [createdReport, ...prev]);
     await saveReportToDb(createdReport);
     setSelectedId(newId); 
     setPageView('detail');
-    showToast(`Feedback ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
+    showToast(`Report ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
   };
 
   const handleApproveUser = async (email: string) => {
@@ -374,7 +380,7 @@ export default function App() {
 
   const handleExportBackup = () => {
     exportCampusDataBackup(reports, events, userProfile);
-    showToast('Campus data backup downloaded.');
+    showToast('Data backup downloaded.');
   };
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -434,7 +440,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-[#faf8fc] dark:bg-slate-950 flex flex-col items-center justify-center text-purple-700 dark:text-purple-300 font-bold gap-3">
         <div className="w-8 h-8 border-3 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs font-mono">Loading KC Students Circle...</span>
+        <span className="text-xs font-mono">Loading KC Portal...</span>
       </div>
     );
   }
@@ -465,7 +471,7 @@ export default function App() {
           <CheckCircle2 className="w-8 h-8" />
         </div>
         <h1 className="text-2xl font-bold text-purple-950 dark:text-purple-100 mb-2">Approval Pending</h1>
-        <p className="text-purple-700 dark:text-purple-300 max-w-sm mb-6">Your student verification request is currently being reviewed by campus administrators. Please check back later.</p>
+        <p className="text-purple-700 dark:text-purple-300 max-w-sm mb-6">Your student verification request is currently being reviewed by staff. Please check back later.</p>
         <button onClick={handleSignOut} className="text-sm font-bold text-rose-600 hover:underline cursor-pointer">Sign Out</button>
       </div>
     );
@@ -550,7 +556,7 @@ export default function App() {
               currentFilter === 'in-review' ? 'In Review & Active' :
               currentFilter === 'resolved' ? 'Resolved Reports' :
               currentFilter === 'drafts' ? 'Drafts' :
-              currentFilter === 'my-activity' ? 'My Activity & Endorsed' :
+              currentFilter === 'my-activity' ? 'My Activity & Supported' :
               `${currentFilter.replace('-', ' ').toUpperCase()} Reports`
             } 
             onNavigateToEvents={() => { setCurrentFilter('events'); setPageView('main'); }} 
@@ -572,47 +578,47 @@ export default function App() {
         )}
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* MOBILE BOTTOM NAVIGATION - Hidden on Tablets (md) & Desktops */}
       {!isKeyboardActive && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-purple-100 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-purple-100 dark:border-slate-800 px-3 pt-2 pb-safe flex items-center justify-around shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <button
             onClick={() => { setPageView('home'); setCurrentFilter('all'); }}
-            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
               pageView === 'home' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'
             }`}
           >
-            <Home className="w-4 h-4" />
+            <Home className="w-5 h-5" />
             <span>Home</span>
           </button>
           <button
             onClick={() => { setCurrentFilter('all'); setPageView('main'); }}
-            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
               currentFilter !== 'events' && pageView === 'main' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'
             }`}
           >
-            <Inbox className="w-4 h-4" />
+            <Inbox className="w-5 h-5" />
             <span>Reports</span>
           </button>
           <button
             onClick={() => setIsNewFeedbackModalOpen(true)}
-            className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-md active:scale-95 transition-transform cursor-pointer"
+            className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-6 h-6" />
           </button>
           <button
             onClick={() => { setCurrentFilter('events'); setPageView('main'); }}
-            className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
+            className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
               currentFilter === 'events' ? 'text-pink-600 dark:text-pink-400' : 'text-purple-400'
             }`}
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="w-5 h-5" />
             <span>Events</span>
           </button>
           <button
             onClick={() => setIsProfileModalOpen(true)}
-            className="flex flex-col items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 dark:hover:text-purple-200 transition-colors cursor-pointer"
+            className="flex flex-col items-center justify-center min-w-[44px] min-h-[44px] gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 dark:hover:text-purple-200 transition-colors cursor-pointer"
           >
-            <UserIcon className="w-4 h-4" />
+            <UserIcon className="w-5 h-5" />
             <span>Profile</span>
           </button>
         </div>
@@ -655,9 +661,9 @@ export default function App() {
         allUsers={allUsers}
       />
 
-      {/* TOAST */}
+      {/* TOAST - Adjusted for Mobile Bottom Nav */}
       {toastMessage && (
-        <div className="fixed bottom-16 md:bottom-5 right-5 z-50 bg-purple-950 dark:bg-purple-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 dark:border-purple-700 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 bg-purple-950 dark:bg-purple-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg border border-purple-800 dark:border-purple-700 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>

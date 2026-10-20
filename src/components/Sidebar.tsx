@@ -20,7 +20,6 @@ import {
   UserCheck,
   BarChart3,
   Vote,
-  Trophy
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -94,21 +93,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number; highlight?: boolean }> = [
-    { id: 'all', label: 'All Reports', icon: <Inbox className="w-4 h-4" />, count: counts.all },
-    { id: 'my-activity', label: 'My Activity & Supported', icon: <UserCheck className="w-4 h-4 text-purple-600 dark:text-pink-400" />, count: counts.myActivity },
-    { id: 'events', label: 'School Events', icon: <Calendar className="w-4 h-4 text-pink-500" />, count: counts.events, highlight: true },
-    { id: 'open', label: 'Open Issues', icon: <AlertCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />, count: counts.open },
-    { id: 'in-review', label: 'In Review & Active', icon: <Clock className="w-4 h-4 text-pink-600 dark:text-pink-400" />, count: counts.inReview },
-    { id: 'resolved', label: 'Resolved', icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />, count: counts.resolved },
-    { id: 'drafts', label: 'Drafts', icon: <FileEdit className="w-4 h-4 text-slate-400" />, count: counts.drafts },
+    { id: 'all', label: 'All Reports', icon: <Inbox className="w-5 h-5 sm:w-4 sm:h-4" />, count: counts.all },
+    { id: 'my-activity', label: 'My Activity & Supported', icon: <UserCheck className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-pink-400" />, count: counts.myActivity },
+    { id: 'events', label: 'School Events', icon: <Calendar className="w-5 h-5 sm:w-4 sm:h-4 text-pink-500" />, count: counts.events, highlight: true },
+    { id: 'open', label: 'Open Issues', icon: <AlertCircle className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />, count: counts.open },
+    { id: 'in-review', label: 'In Review & Active', icon: <Clock className="w-5 h-5 sm:w-4 sm:h-4 text-pink-600 dark:text-pink-400" />, count: counts.inReview },
+    { id: 'resolved', label: 'Resolved', icon: <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />, count: counts.resolved },
+    { id: 'drafts', label: 'Drafts', icon: <FileEdit className="w-5 h-5 sm:w-4 sm:h-4 text-slate-400" />, count: counts.drafts },
   ];
 
   const categoryItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number }> = [
-    { id: 'facilities', label: 'Maintenance & Classrooms', icon: <Wrench className="w-3.5 h-3.5" />, count: counts.facilities },
-    { id: 'technology', label: 'IT Lab & Computers', icon: <Wifi className="w-3.5 h-3.5" />, count: counts.technology },
-    { id: 'academics', label: 'Academic Affairs & Forms', icon: <GraduationCap className="w-3.5 h-3.5" />, count: counts.academics },
-    { id: 'student-life', label: 'Clubs & Sports', icon: <Sparkles className="w-3.5 h-3.5" />, count: counts.studentLife },
-    { id: 'safety', label: 'Security & Discipline', icon: <ShieldAlert className="w-3.5 h-3.5" />, count: counts.safety },
+    { id: 'facilities', label: 'Maintenance & Classrooms', icon: <Wrench className="w-5 h-5 sm:w-3.5 sm:h-3.5" />, count: counts.facilities },
+    { id: 'technology', label: 'IT Lab & Computers', icon: <Wifi className="w-5 h-5 sm:w-3.5 sm:h-3.5" />, count: counts.technology },
+    { id: 'academics', label: 'Academic Affairs & Forms', icon: <GraduationCap className="w-5 h-5 sm:w-3.5 sm:h-3.5" />, count: counts.academics },
+    { id: 'student-life', label: 'Clubs & Sports', icon: <Sparkles className="w-5 h-5 sm:w-3.5 sm:h-3.5" />, count: counts.studentLife },
+    { id: 'safety', label: 'Security & Discipline', icon: <ShieldAlert className="w-5 h-5 sm:w-3.5 sm:h-3.5" />, count: counts.safety },
   ];
 
   const handleItemClick = (id: NavFilter) => {
@@ -120,29 +119,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
+      {/* Backdrop for mobile */}
       <div 
         onClick={onClose}
-        className="fixed inset-0 bg-purple-950/40 backdrop-blur-2xs z-40 lg:hidden"
+        className="fixed inset-0 bg-purple-950/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-200"
         aria-hidden="true"
       />
 
-      <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] lg:static lg:w-64 bg-[#fdfcff] dark:bg-slate-900 border-r border-purple-100 dark:border-slate-800 flex flex-col justify-between select-none shrink-0 text-slate-700 dark:text-slate-300 shadow-2xl lg:shadow-none animate-in slide-in-from-left-4 duration-200 transition-colors">
-        <div className="p-3 sm:p-4 space-y-4 overflow-y-auto">
-          <div className="flex items-center justify-between lg:hidden pb-1 border-b border-purple-100 dark:border-slate-800">
+      <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] lg:static lg:w-64 bg-[#fdfcff] dark:bg-slate-900 border-r border-purple-100 dark:border-slate-800 flex flex-col justify-between select-none shrink-0 text-slate-700 dark:text-slate-300 shadow-2xl lg:shadow-none animate-in slide-in-from-left-4 duration-200 transition-colors pt-safe pb-safe">
+        
+        {/* Scrollable Content Area */}
+        <div className="p-3 sm:p-4 space-y-4 overflow-y-auto momentum-scroll flex-1">
+          
+          <div className="flex items-center justify-between lg:hidden pb-2 border-b border-purple-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs text-purple-950 dark:text-purple-200 uppercase tracking-wider">
+              <span className="font-bold text-sm text-purple-950 dark:text-purple-200 uppercase tracking-wider">
                 Filters & Categories
               </span>
-              <span className="text-[10px] text-purple-500 font-mono">
+              <span className="text-[10px] text-purple-500 font-mono bg-purple-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                 {role === 'admin' ? 'STAFF' : 'STUDENT'}
               </span>
             </div>
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-slate-800 cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-xl text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-slate-800 cursor-pointer min-w-[44px]"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>
@@ -152,9 +155,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onOpenNewModal();
               if (window.innerWidth < 1024 && onClose) onClose();
             }}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 text-white font-medium text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all border border-purple-800 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 text-white font-medium text-sm py-3 px-3 rounded-xl shadow-xs transition-all border border-purple-800 cursor-pointer min-h-[44px]"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
             <span>New Report / School Idea</span>
           </button>
 
@@ -167,25 +170,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
 
-            <nav className="space-y-0.5">
+            <nav className="space-y-1">
               {navItems.map((item) => {
                 const isActive = currentFilter === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleItemClick(item.id)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-sm sm:text-xs font-medium transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-xs font-semibold'
                         : 'text-purple-950/80 dark:text-slate-300 hover:bg-purple-100/60 dark:hover:bg-slate-800 hover:text-purple-950 dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-3 truncate">
                       <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
                       <span className="truncate">{item.label}</span>
                     </div>
                     <span
-                      className={`font-mono text-[11px] tabular-nums px-1.5 py-0.2 rounded-md ${
+                      className={`font-mono text-[11px] tabular-nums px-2 py-0.5 rounded-md ${
                         isActive
                           ? 'bg-purple-950/40 text-purple-100'
                           : 'text-purple-900/60 dark:text-purple-400 bg-purple-100/50 dark:bg-slate-800'
@@ -203,28 +206,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div>
             <div className="px-2 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-950/60 dark:text-purple-400 flex items-center justify-between">
               <span>Categories</span>
-              <Layers className="w-3.5 h-3.5 text-purple-300 dark:text-purple-500" />
+              <Layers className="w-4 h-4 text-purple-300 dark:text-purple-500" />
             </div>
 
-            <nav className="space-y-0.5">
+            <nav className="space-y-1">
               {categoryItems.map((item) => {
                 const isActive = currentFilter === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => handleItemClick(item.id)}
-                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-sm sm:text-xs font-medium transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-purple-800 dark:bg-purple-700 text-white shadow-xs font-semibold'
                         : 'text-purple-950/80 dark:text-slate-300 hover:bg-purple-100/60 dark:hover:bg-slate-800 hover:text-purple-950 dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-3 truncate">
                       <span className={isActive ? 'text-white' : 'text-purple-600 dark:text-purple-400'}>{item.icon}</span>
                       <span className="truncate">{item.label}</span>
                     </div>
                     <span
-                      className={`font-mono text-[11px] tabular-nums px-1.5 py-0.2 rounded-md ${
+                      className={`font-mono text-[11px] tabular-nums px-2 py-0.5 rounded-md ${
                         isActive
                           ? 'bg-purple-950/40 text-purple-100'
                           : 'text-purple-900/60 dark:text-purple-400 bg-purple-100/50 dark:bg-slate-800'
@@ -242,10 +245,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/50 dark:from-slate-850 dark:to-purple-950/30 rounded-2xl border border-purple-200/80 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-purple-950 dark:text-purple-300 flex items-center gap-1">
-                <Vote className="w-3 h-3 text-pink-600" />
+                <Vote className="w-3.5 h-3.5 text-pink-600" />
                 <span>School Pulse Poll</span>
               </span>
-              <span className="text-[9px] font-mono text-purple-600 dark:text-purple-400">{totalPollVotes} votes</span>
+              <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400">{totalPollVotes} votes</span>
             </div>
 
             <p className="text-xs font-semibold text-purple-950 dark:text-purple-200 leading-snug">
@@ -258,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>Yes, definitely</span>
                   <span>{yesPct}% ({yesVotes})</span>
                 </div>
-                <div className="w-full h-2 bg-purple-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-purple-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div className="h-full bg-pink-500 rounded-full transition-all" style={{ width: `${yesPct}%` }} />
                 </div>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block">
@@ -266,28 +269,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               </div>
             ) : (
-              <div className="flex gap-1.5 pt-1">
+              <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => handleVote('yes')}
-                  className="flex-1 py-1.5 px-2 bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-purple-950 dark:text-purple-200 cursor-pointer shadow-2xs transition-colors"
+                  className="flex-1 py-2 min-h-[36px] bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-purple-950 dark:text-purple-200 cursor-pointer shadow-2xs transition-colors"
                 >
-                  Yes ({yesVotes})
+                  Yes
                 </button>
                 <button
                   type="button"
                   onClick={() => handleVote('no')}
-                  className="flex-1 py-1.5 px-2 bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer shadow-2xs transition-colors"
+                  className="flex-1 py-2 min-h-[36px] bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer shadow-2xs transition-colors"
                 >
-                  No ({noVotes})
+                  No
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Bottom Actions & Controls */}
-        <div className="p-3 border-t border-purple-100/80 dark:border-slate-800 bg-gradient-to-b from-purple-50/40 to-pink-50/40 dark:from-slate-900 dark:to-slate-900 space-y-2">
+        {/* Bottom Actions & Controls (Fixed) */}
+        <div className="p-3 border-t border-purple-100/80 dark:border-slate-800 bg-gradient-to-b from-purple-50/40 to-pink-50/40 dark:from-slate-900 dark:to-slate-900 space-y-2 shrink-0">
           
           {/* Admin Management Buttons */}
           {role === 'admin' && (
@@ -298,9 +301,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenAnalytics();
                     if (window.innerWidth < 1024 && onClose) onClose();
                   }}
-                  className="w-full py-2 px-2 text-xs font-bold text-purple-950 dark:text-purple-200 bg-purple-100 dark:bg-slate-800 hover:bg-purple-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-purple-200 dark:border-slate-700 shadow-2xs cursor-pointer"
+                  className="w-full py-2.5 min-h-[44px] px-2 text-xs font-bold text-purple-950 dark:text-purple-200 bg-purple-100 dark:bg-slate-800 hover:bg-purple-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-purple-200 dark:border-slate-700 shadow-2xs cursor-pointer"
                 >
-                  <BarChart3 className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
+                  <BarChart3 className="w-4 h-4 text-purple-700 dark:text-purple-400" />
                   <span>School Analytics</span>
                 </button>
               )}
@@ -311,21 +314,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenStudentList();
                     if (window.innerWidth < 1024 && onClose) onClose();
                   }}
-                  className="w-full py-2 px-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="w-full py-2.5 min-h-[44px] px-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                 >
-                  <Users className="w-3.5 h-3.5" />
+                  <Users className="w-4 h-4" />
                   <span>Manage Student Roster</span>
                 </button>
               )}
             </div>
           )}
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {onExportBackup && (
               <button
                 type="button"
                 onClick={onExportBackup}
-                className="flex-1 py-1.5 px-2 text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-800 hover:bg-purple-100/80 dark:hover:bg-slate-700 rounded-xl border border-purple-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-2 min-h-[44px] px-2 text-[11px] font-semibold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-800 hover:bg-purple-100/80 dark:hover:bg-slate-700 rounded-xl border border-purple-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>Backup Data</span>
               </button>
@@ -338,14 +341,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   if (onClose) onClose();
                   onSignOut();
                 }}
-                className="flex-1 py-1.5 px-2 text-[11px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 rounded-xl border border-rose-200 dark:border-rose-900 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="flex-1 py-2 min-h-[44px] px-2 text-[11px] font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 rounded-xl border border-rose-200 dark:border-rose-900 transition-colors flex items-center justify-center gap-1 cursor-pointer"
               >
                 <span>Sign Out</span>
               </button>
             )}
           </div>
 
-          <div className="rounded-xl p-2.5 bg-white dark:bg-slate-800 border border-pink-200/70 dark:border-slate-700 shadow-2xs space-y-1">
+          <div className="rounded-xl p-2.5 bg-white dark:bg-slate-800 border border-pink-200/70 dark:border-slate-700 shadow-2xs space-y-1 hidden sm:block">
             <div className="flex items-center gap-1.5 text-pink-700 dark:text-pink-400 font-semibold text-xs">
               <Ribbon className="w-3.5 h-3.5 text-pink-600 shrink-0" />
               <span>Breast Cancer Awareness</span>

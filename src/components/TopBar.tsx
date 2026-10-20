@@ -52,11 +52,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNotificationClick,
   onClearNotifications,
 }) => {
-  // Live digital clock state
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [showSeconds, setShowSeconds] = useState(false);
 
-  // Dark Mode state
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('campus_theme') === 'dark' || 
@@ -65,16 +63,13 @@ export const TopBar: React.FC<TopBarProps> = ({
     return false;
   });
 
-  // Notification dropdown
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
-  // Clock tick interval
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Sync dark mode class
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
@@ -87,7 +82,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const toggleDarkMode = () => setIsDarkMode(prev => !prev);
 
-  // Digital clock formatting
   const formattedTime = currentTime.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -104,14 +98,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="h-14 sm:h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-purple-100/90 dark:border-slate-800 px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4 select-none shrink-0 z-30 transition-colors">
+    <header className="h-14 sm:h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-purple-100/90 dark:border-slate-800 px-2.5 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4 select-none shrink-0 z-30 transition-colors pt-safe">
       
-      {/* Left Zone: Menu Bar Toggle, Brand & Live Digital Clock */}
+      {/* Left Zone: Menu Toggle & Brand & Clock */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-        {/* Menu bar toggle */}
         <button
           onClick={onToggleSidebar}
-          title={isSidebarOpen ? "Hide sidebar navigation" : "Show sidebar navigation"}
           className={`h-9 w-9 sm:h-9 sm:w-auto sm:px-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 border touch-manipulation ${
             isSidebarOpen 
               ? 'bg-purple-100/90 dark:bg-purple-900/50 border-purple-300 dark:border-purple-700 text-purple-950 dark:text-purple-200 font-bold' 
@@ -123,10 +115,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden xl:inline text-xs font-semibold">Sidebar</span>
         </button>
 
-        {/* Brand Marker with KCBCALogo.png */}
         <button
           onClick={onGoHome}
-          title="Go to All Reports"
           className="flex items-center gap-1.5 sm:gap-2 group p-1 -ml-0.5 rounded-xl hover:bg-purple-100/70 dark:hover:bg-slate-800 transition-all text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400 touch-manipulation shrink-0"
         >
           <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 p-0.5 flex items-center justify-center shadow-xs overflow-hidden group-hover:scale-105 transition-transform shrink-0">
@@ -142,46 +132,35 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <span className="inline sm:hidden">KC Circle</span>
                 <span className="hidden sm:inline">KC Students Circle</span>
               </span>
-              <span className="hidden md:inline-flex text-[9px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-200/60 dark:border-pink-800 items-center gap-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
-                BCA
-              </span>
             </div>
-            <span className="hidden sm:inline text-[9px] text-purple-600 dark:text-purple-400 font-medium -mt-0.5 group-hover:underline">
-              ← Campus Portal
-            </span>
           </div>
         </button>
 
-        {/* 3. DIGITAL CLOCK: BESIDE KC STUDENTS CIRCLE TO THE RIGHT */}
+        {/* Digital Clock - Hidden on very small screens to save space */}
         <div 
           onClick={() => setShowSeconds(prev => !prev)}
           title={`Campus Local Time: ${formattedDay} (Click to toggle seconds)`}
-          className="flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-pink-50/60 dark:from-slate-800 dark:to-purple-950/40 border border-purple-200/90 dark:border-slate-700 text-purple-950 dark:text-purple-200 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl shadow-2xs hover:shadow-xs cursor-pointer transition-all select-none group shrink-0"
+          className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-purple-50 to-pink-50/60 dark:from-slate-800 dark:to-purple-950/40 border border-purple-200/90 dark:border-slate-700 text-purple-950 dark:text-purple-200 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl shadow-2xs hover:shadow-xs cursor-pointer transition-all select-none group shrink-0"
         >
           <Clock className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400 shrink-0 group-hover:rotate-12 transition-transform" />
           <div className="flex items-baseline gap-1">
             <span className="font-mono text-[11px] sm:text-xs font-bold tracking-tight tabular-nums text-purple-950 dark:text-purple-100">
               {formattedTime}
             </span>
-            <span className="hidden lg:inline text-[9px] font-sans font-medium text-purple-600 dark:text-purple-400">
-              {formattedDay}
-            </span>
           </div>
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shrink-0" />
         </div>
       </div>
 
-      {/* Middle Zone: Search Bar */}
-      <div className="flex-1 min-w-[65px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2">
+      {/* Middle Zone: Search Bar (Hidden on extra small screens, toggled by icon) */}
+      <div className="flex-1 min-w-[65px] max-w-xs sm:max-w-sm md:max-w-md mx-1 sm:mx-2 hidden xs:block">
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 text-purple-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search tickets, initiatives..."
-            className="w-full bg-purple-50/70 dark:bg-slate-800/80 hover:bg-purple-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-xs pl-7 sm:pl-8 pr-6 sm:pr-7 py-1.5 rounded-xl border border-purple-200/80 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 text-purple-950 dark:text-purple-100 placeholder:text-purple-400/80 transition-all"
+            placeholder="Search reports..."
+            className="w-full bg-purple-50/70 dark:bg-slate-800/80 hover:bg-purple-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-base sm:text-xs pl-7 sm:pl-8 pr-6 sm:pr-7 py-1.5 rounded-xl border border-purple-200/80 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 text-purple-950 dark:text-purple-100 placeholder:text-purple-400/80 transition-all"
           />
           {searchQuery && (
             <button
@@ -195,10 +174,9 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Right Zone: Controls, Notifications, Dark Mode, New Feedback, Profile */}
+      {/* Right Zone: Controls */}
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         
-        {/* Admin Analytics Shortcut */}
         {currentUser?.role === 'admin' && onOpenAnalytics && (
           <button
             onClick={onOpenAnalytics}
@@ -210,7 +188,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         )}
 
-        {/* Dark Mode Toggle */}
         <button
           onClick={toggleDarkMode}
           title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -224,7 +201,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </button>
 
-        {/* Notification Bell Dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsNotifOpen(prev => !prev)}
@@ -240,17 +216,16 @@ export const TopBar: React.FC<TopBarProps> = ({
             )}
           </button>
 
-          {/* Dropdown Menu */}
           {isNotifOpen && (
             <div 
-              className="absolute right-0 mt-2 w-80 sm:w-88 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-purple-100 dark:border-slate-800 p-3 z-50 animate-in fade-in zoom-in-95"
+              className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-purple-100 dark:border-slate-800 p-3 z-50 animate-in fade-in zoom-in-95"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between pb-2 border-b border-purple-100 dark:border-slate-800">
                 <div className="flex items-center gap-1.5">
                   <Bell className="w-4 h-4 text-purple-700 dark:text-purple-400" />
                   <span className="font-bold text-xs text-purple-950 dark:text-purple-200">
-                    Campus Notifications
+                    Notifications
                   </span>
                 </div>
                 {onClearNotifications && notifications.length > 0 && (
@@ -263,7 +238,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 )}
               </div>
 
-              <div className="py-2 space-y-2 max-h-64 overflow-y-auto">
+              <div className="py-2 space-y-2 max-h-64 overflow-y-auto momentum-scroll">
                 {notifications.length === 0 ? (
                   <p className="text-center text-xs text-purple-500 dark:text-purple-400 py-4">
                     No new notifications right now.
@@ -299,17 +274,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
 
-        {/* Submit New Feedback Button */}
         <button
           onClick={onOpenNewModal}
-          className="flex items-center justify-center gap-1 bg-gradient-to-r from-purple-700 via-purple-800 to-pink-600 hover:from-purple-800 hover:to-pink-700 text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold shadow-2xs hover:shadow transition-all active:scale-[0.98] border border-purple-600/50 cursor-pointer touch-manipulation"
-          title="Submit New Feedback"
+          className="hidden sm:flex items-center justify-center gap-1 bg-gradient-to-r from-purple-700 via-purple-800 to-pink-600 hover:from-purple-800 hover:to-pink-700 text-white px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold shadow-2xs hover:shadow transition-all active:scale-[0.98] border border-purple-600/50 cursor-pointer touch-manipulation"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">New Feedback</span>
+          <span className="hidden md:inline">New Report</span>
         </button>
 
-        {/* Profile / User Section */}
         {currentUser ? (
           <div className="flex items-center gap-1 sm:gap-1.5 pl-1 sm:pl-2 border-l border-purple-200 dark:border-slate-700">
             <button
@@ -340,11 +312,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               </div>
 
               <div className="hidden xl:flex flex-col text-left leading-tight pr-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate max-w-[100px]">
-                    {currentUser.name}
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate max-w-[100px]">
+                  {currentUser.name}
+                </span>
                 <span className="text-[10px] text-purple-600 dark:text-purple-400 truncate max-w-[100px]">
                   {currentUser.classYear || (currentUser.role === 'admin' ? 'Staff' : 'Student')}
                 </span>
@@ -353,11 +323,10 @@ export const TopBar: React.FC<TopBarProps> = ({
 
             <button
               onClick={onSignOut}
-              title={`Signed in as ${currentUser.name}. Return to Guest`}
-              className="flex items-center justify-center gap-1 p-1.5 sm:px-2.5 sm:py-1 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl transition-colors border border-rose-200 dark:border-rose-900 cursor-pointer touch-manipulation shrink-0 min-w-[34px] min-h-[34px]"
+              className="hidden sm:flex items-center justify-center gap-1 p-1.5 sm:px-2.5 sm:py-1 text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 rounded-xl transition-colors border border-rose-200 dark:border-rose-900 cursor-pointer touch-manipulation shrink-0 min-w-[34px] min-h-[34px]"
             >
               <LogOut className="w-3.5 h-3.5 shrink-0" />
-              <span className="hidden sm:inline text-[11px]">Sign Out</span>
+              <span className="hidden md:inline text-[11px]">Sign Out</span>
             </button>
           </div>
         ) : (

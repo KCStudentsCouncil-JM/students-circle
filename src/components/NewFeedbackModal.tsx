@@ -68,7 +68,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
 
   if (!isOpen) return null;
 
-  // AI Auto-Triage heuristic function
   const handleAiAutoTriage = () => {
     const combined = `${title} ${description}`.toLowerCase();
     let suggestedCategory: Category = category;
@@ -222,13 +221,13 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         aria-modal="true"
       >
         {/* Header */}
-        <div className="px-4 sm:px-6 py-4 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
+        <div className="px-4 sm:px-6 py-4 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0 pt-safe">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-700 to-pink-600 text-white flex items-center justify-center shadow-xs shrink-0">
               <Sparkles className="w-4 h-4 text-pink-200" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100 tracking-tight">
+              <h2 className="text-sm sm:text-base font-bold text-purple-950 dark:text-purple-100 tracking-tight">
                 New School Report or Idea
               </h2>
               <p className="text-[11px] text-purple-700/80 dark:text-purple-400">
@@ -245,9 +244,8 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 text-sm overscroll-contain select-text">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 text-sm overscroll-contain select-text momentum-scroll">
           
-          {/* AI Auto-Triage Banner */}
           {aiTriageMessage && (
             <div className="p-3 bg-purple-100/90 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-700 rounded-2xl flex items-center gap-2.5 text-xs text-purple-950 dark:text-purple-200 animate-in fade-in slide-in-from-top-1">
               <Bot className="w-4 h-4 text-pink-600 dark:text-pink-400 shrink-0" />
@@ -313,7 +311,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Title & AI Auto-Triage button */}
+          {/* 2. Title */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 block">2. Title *</label>
@@ -322,7 +320,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                   type="button"
                   onClick={handleAiAutoTriage}
                   className="flex items-center gap-1 text-[11px] font-bold text-pink-700 dark:text-pink-300 hover:text-pink-900 bg-pink-50 dark:bg-pink-950/60 px-2 py-0.5 rounded-lg border border-pink-200 dark:border-pink-800 cursor-pointer transition-colors"
-                  title="Automatically categorize department and urgency using AI"
                 >
                   <Bot className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
                   <span>AI Auto-Triage</span>
@@ -409,14 +406,13 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             {errors.description && <p className="text-[11px] text-rose-600 font-medium">{errors.description}</p>}
           </div>
 
-          {/* 7. Gallery Media Upload: Photos & Videos up to 20MB */}
+          {/* 7. Gallery Media Upload */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span>Media Attachments (Photos & Videos up to 15MB)</span>
+                <span>Media Attachments (Max 15MB)</span>
               </label>
-              <span className="text-[10px] text-purple-500 font-mono">Max 15MB / file</span>
             </div>
 
             {uploadError && (
@@ -425,10 +421,8 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               </p>
             )}
 
-            {/* Media Previews */}
             {(photos.length > 0 || videos.length > 0) && (
               <div className="flex items-center gap-2.5 flex-wrap pt-1">
-                {/* Photo Previews */}
                 {photos.map((src, idx) => (
                   <div key={`photo-${idx}`} className="relative w-20 h-20 rounded-xl overflow-hidden border border-purple-200 dark:border-slate-700 shadow-2xs group">
                     <img src={src} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
@@ -436,15 +430,12 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                       type="button"
                       onClick={() => setPhotos(p => p.filter((_, i) => i !== idx))}
                       className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
-                      title="Remove photo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] font-bold px-1 rounded">Photo</span>
                   </div>
                 ))}
 
-                {/* Video Previews */}
                 {videos.map((src, idx) => (
                   <div key={`video-${idx}`} className="relative w-24 h-20 rounded-xl overflow-hidden border border-purple-300 dark:border-purple-700 shadow-2xs group bg-black flex items-center justify-center">
                     <VideoPlayer src={src} thumbnail className="w-full h-full object-cover opacity-80" />
@@ -455,13 +446,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                       type="button"
                       onClick={() => setVideos((v) => v.filter((_, i) => i !== idx))}
                       className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-90 hover:opacity-100 cursor-pointer shadow-xs z-10"
-                      title="Remove video"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                    <span className="absolute bottom-1 left-1 bg-purple-900/80 text-pink-200 text-[8px] font-bold px-1 rounded flex items-center gap-0.5">
-                      <Video className="w-2.5 h-2.5" /> Video
-                    </span>
                   </div>
                 ))}
               </div>
@@ -472,10 +459,10 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <UploadCloud className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 <div className="text-left">
                   <span className="text-xs sm:text-sm font-bold block">
-                    {isProcessingMedia ? 'Compressing and importing media...' : 'Upload Photos or Videos'}
+                    {isProcessingMedia ? 'Compressing and importing...' : 'Upload Photos or Videos'}
                   </span>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 block">
-                    Supports JPG, PNG, WebP, MP4, WebM (Max 15MB)
+                    Supports JPG, PNG, MP4, WebM
                   </span>
                 </div>
                 <input
@@ -504,7 +491,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <Shield className="w-4 h-4 text-pink-600" /> Submit Anonymously to Peers
               </label>
               <p className="text-xs text-purple-800/70 dark:text-purple-400 leading-snug mt-0.5">
-                Your public author identity will be masked as "Anonymous Student". Staff maintains confidential verification.
+                Your public author identity will be masked as "Anonymous Student".
               </p>
             </div>
           </div>
@@ -529,7 +516,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               disabled={isProcessingMedia}
               className="flex-[2] sm:flex-none px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-700 via-purple-800 to-pink-600 hover:from-purple-800 hover:to-pink-700 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
-              {isProcessingMedia ? 'Processing Media...' : 'Submit Report'}
+              {isProcessingMedia ? 'Processing...' : 'Submit Report'}
             </button>
           </div>
         </div>

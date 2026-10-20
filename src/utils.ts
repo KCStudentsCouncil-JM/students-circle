@@ -18,8 +18,7 @@ export const STOP_WORDS = new Set([
 ]);
 
 /**
- * Fix #8: Search matching requiring exact full words instead of partial letters.
- * Matches exact words in text using word boundary \b or token set matching.
+ * Search matching requiring exact full words instead of partial letters.
  */
 export function matchesExactWords(text: string, query: string): boolean {
   if (!query || !query.trim()) return true;
@@ -44,9 +43,7 @@ export function matchesExactWords(text: string, query: string): boolean {
 }
 
 /**
- * Fix #9: Duplicate detection without aggressive triggering on common words.
- * Extracts meaningful keywords (>= 4 chars, not in STOP_WORDS) and requires
- * at least 2 distinct meaningful keywords to match (or same location + 1 keyword).
+ * Duplicate detection without aggressive triggering on common words.
  */
 export function findPotentialDuplicates(
   title: string,
@@ -112,7 +109,7 @@ export function getAuthoritativeTimestamp(): number {
 }
 
 /**
- * Fix #7: SLA timer calculated from immutable creation timestamp and standard response targets:
+ * SLA timer calculated from immutable creation timestamp and standard response targets:
  * - High urgency: 24h SLA
  * - Medium urgency: 48h SLA
  * - Low urgency: 72h SLA
@@ -143,7 +140,7 @@ export function calculateSlaInfo(createdAt: string, urgency: UrgencyLevel, statu
 }
 
 /**
- * Fix #11: Validate image file types (JPG, PNG, WebP)
+ * Validate image file types (JPG, PNG, WebP)
  */
 export function isValidImageFile(file: File): { valid: boolean; error?: string } {
   const validMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -170,11 +167,13 @@ export function isValidImageFile(file: File): { valid: boolean; error?: string }
 }
 
 /**
- * Validate media files (Photos or Videos from gallery) up to 20MB
+ * Validate media files (Photos or Videos). 
+ * Restricts videos to MP4/WebM and enforces 15MB limit to prevent browser crashes.
  */
 export function isValidMediaFile(file: File): { valid: boolean; error?: string; mediaType: 'photo' | 'video' } {
   const photoExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-  const videoExts = ['.mp4', '.webm', '.mov', '.ogg', '.m4v'];
+  // ONLY allow MP4 and WebM. Removed .mov to prevent Chrome/Android playback failures.
+  const videoExts = ['.mp4', '.webm'];
 
   const lowerName = file.name.toLowerCase();
   const isPhoto = file.type.startsWith('image/') || photoExts.some(ext => lowerName.endsWith(ext));
@@ -183,17 +182,17 @@ export function isValidMediaFile(file: File): { valid: boolean; error?: string; 
   if (!isPhoto && !isVideo) {
     return {
       valid: false,
-      error: 'Unsupported format. Permitted formats: JPG, PNG, WebP, GIF, MP4, WebM, and MOV.',
+      error: 'Unsupported format. Permitted formats: JPG, PNG, WebP, GIF, MP4, and WebM.',
       mediaType: 'photo',
     };
   }
 
-  const MAX_MEDIA_BYTES = 20 * 1024 * 1024; // 20MB limit
+  const MAX_MEDIA_BYTES = 15 * 1024 * 1024; // 15MB limit
   if (file.size > MAX_MEDIA_BYTES) {
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
     return {
       valid: false,
-      error: `File size (${sizeMb}MB) exceeds the 20MB campus limit. Please compress or select a shorter video/smaller image.`,
+      error: `File size (${sizeMb}MB) exceeds the 15MB campus limit. Please compress or select a shorter video/smaller image.`,
       mediaType: isVideo ? 'video' : 'photo',
     };
   }
@@ -202,7 +201,7 @@ export function isValidMediaFile(file: File): { valid: boolean; error?: string; 
 }
 
 /**
- * Fix #3: Canvas-based image compression so Base64 photos don't crash localStorage
+ * Canvas-based image compression so Base64 photos don't crash localStorage
  * Downscales image to max 800x800 and compresses to JPEG ~0.70 quality (~30-50KB).
  */
 export function compressImage(file: File, maxDimension = 800, quality = 0.7): Promise<string> {
@@ -267,19 +266,15 @@ export function safeLocalStorageSet(key: string, value: any): boolean {
 
   // Progressive pruning — each level is more aggressive
   const pruningStrategies: Array<(items: any[]) => any[]> = [
-    // 1. Strip photos from items beyond the first 3
     (items) => items.map((item, idx) => idx > 2 && item.photos ? { ...item, photos: [] } : item),
-    // 2. Strip photos AND videos from items beyond the first 3
     (items) => items.map((item, idx) =>
       idx > 2 ? { ...item, photos: [], videos: [] } : item
     ),
-    // 3. Strip ALL videos from every item, photos from old items
     (items) => items.map((item, idx) => ({
       ...item,
       videos: [],
       photos: idx > 2 ? [] : item.photos,
     })),
-    // 4. Strip ALL media from every item (text-only persistence)
     (items) => items.map((item) => ({ ...item, photos: [], videos: [] })),
   ];
 
@@ -297,7 +292,7 @@ export function safeLocalStorageSet(key: string, value: any): boolean {
 }
 
 /**
- * Fix #10: Backup export & restore utility so users never lose data if browser cache is cleared.
+ * Backup export & restore utility so users never lose data if browser cache is cleared.
  */
 export function exportCampusDataBackup(reports: any[], events: any[], user: any) {
   const backup = {
@@ -324,14 +319,8 @@ export function exportCampusDataBackup(reports: any[], events: any[], user: any)
 
 /**
  * Formats report IDs with the requested prefixes based on type and status.
- * Initiative -> KCIS
- * Open Issue -> KCOI
- * In Review -> KCIRV
- * Resolved -> KCRS
- * Draft -> KCDRF
  */
 export function formatReportId(id: string, type: FeedbackType, status: FeedbackStatus): string {
-  // Strip known prefix if already present
   const cleanNum = id.replace(/^(KCIS|KCOI|KCIRV|KCRS|KCDRF|FB)-/i, '');
   
   if (type === 'initiative') return `KCIS-${cleanNum}`;

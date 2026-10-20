@@ -46,7 +46,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [classYear, setClassYear] = useState(user.classYear || "2026");
-  const [major, setMajor] = useState(user.major || 'Form 5');
+  const [major, setMajor] = useState(user.major || 'Form 5 Science');
   const [birthday, setBirthday] = useState(user.birthday || '');
   const [photo, setPhoto] = useState(user.photo || PRESET_AVATARS[0].url);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -106,13 +106,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/50 backdrop-blur-xs select-none">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-purple-950/60 backdrop-blur-sm select-none">
       <div 
-        className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[92dvh] overflow-y-auto shadow-2xl border border-purple-200 dark:border-slate-800 flex flex-col text-slate-800 dark:text-slate-100"
+        className="bg-white dark:bg-slate-900 sm:rounded-3xl rounded-t-3xl max-w-lg w-full max-h-[92dvh] shadow-2xl border-t sm:border border-purple-200 dark:border-slate-800 flex flex-col text-slate-800 dark:text-slate-100 animate-in slide-in-from-bottom-5 sm:zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-pink-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0">
+        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-pink-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0 rounded-t-3xl sm:rounded-t-3xl pt-safe">
           <div className="flex items-center gap-3">
             <div className={`relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0 ${
               isToday ? 'border-amber-400 ring-2 ring-pink-400 ring-offset-2 animate-pulse' : 'border-purple-200 dark:border-slate-700'
@@ -149,14 +149,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-purple-400 hover:text-purple-700 dark:hover:text-purple-200 hover:bg-purple-100/70 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-full bg-purple-50 dark:bg-slate-800 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto momentum-scroll">
           {/* Birthday Highlight Banner if active */}
           {isToday && (
             <div className="p-3 bg-gradient-to-r from-pink-50 via-amber-50 to-purple-50 dark:from-pink-950/40 dark:via-amber-950/40 dark:to-purple-950/40 rounded-2xl border border-pink-200 dark:border-pink-800 text-xs text-purple-950 dark:text-purple-200 flex items-start gap-2.5">
@@ -177,7 +177,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <Camera className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Profile Photo & Avatar</span>
               </label>
-              <label className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:text-purple-950 dark:hover:text-purple-200 hover:underline cursor-pointer">
+              <label className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:text-purple-950 dark:hover:text-purple-200 hover:underline cursor-pointer min-h-[44px] flex items-center">
                 <span>{isCompressingAvatar ? 'Optimizing...' : 'Upload Custom Photo'}</span>
                 <input
                   type="file"
@@ -208,8 +208,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 >
                   <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
                   {photo === av.url && (
-                    <div className="absolute top-1 right-1 bg-purple-700 text-white rounded-full p-0.5 shadow-xs">
-                      <Check className="w-2.5 h-2.5" />
+                    <div className="absolute top-1 right-1 bg-purple-700 text-white rounded-full p-1 shadow-xs">
+                      <Check className="w-3 h-3" />
                     </div>
                   )}
                 </button>
@@ -229,7 +229,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
 
@@ -243,7 +243,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
           </div>
@@ -260,7 +260,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={classYear}
                 onChange={(e) => setClassYear(e.target.value)}
                 placeholder="2026"
-                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
 
@@ -274,14 +274,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
                 placeholder="Form 5 Science"
-                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
           </div>
 
           {/* Birthday with quick "Today" button */}
           <div className="space-y-1.5 p-3 rounded-2xl bg-purple-50/60 dark:bg-slate-800/60 border border-purple-100 dark:border-slate-700">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="text-xs font-semibold text-purple-950 dark:text-purple-200 flex items-center gap-1">
                 <Cake className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
                 <span>Birthday</span>
@@ -289,24 +289,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <button
                 type="button"
                 onClick={handleSetTodayBirthday}
-                className="text-[11px] font-bold text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-950/60 hover:bg-pink-200 px-2.5 py-1 rounded-lg border border-pink-300 dark:border-pink-800 transition-colors cursor-pointer flex items-center gap-1"
+                className="text-[11px] font-bold text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-950/60 hover:bg-pink-200 px-3 py-1.5 rounded-lg border border-pink-300 dark:border-pink-800 transition-colors cursor-pointer flex items-center gap-1 min-h-[36px]"
               >
                 <span>🎂 Set to Today!</span>
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-1">
               <input
                 type="date"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="flex-1 bg-white dark:bg-slate-900 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                className="flex-1 bg-white dark:bg-slate-900 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100 min-h-[44px]"
               />
               {birthday && (
                 <button
                   type="button"
                   onClick={() => setBirthday('')}
-                  className="text-[10px] text-purple-500 hover:text-purple-800 dark:text-purple-400 underline px-1 cursor-pointer"
+                  className="text-[11px] text-purple-500 hover:text-purple-800 dark:text-purple-400 underline px-2 min-h-[44px]"
                 >
                   Clear
                 </button>
@@ -321,26 +321,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
                 <span>Data Vault & Backup</span>
               </span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Resilience v1</span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
               Prevent losing customized profiles and reports if browser cache is cleared:
             </p>
-            <div className="flex items-center gap-2 pt-1 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
               {onExportBackup && (
                 <button
                   type="button"
                   onClick={onExportBackup}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                  className="w-full flex justify-center items-center gap-1.5 px-3 py-2.5 min-h-[44px] bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                 >
-                  <Download className="w-3 h-3 text-purple-600 dark:text-pink-400" />
+                  <Download className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
                   <span>Download Backup</span>
                 </button>
               )}
 
               {onImportBackup && (
-                <label className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
-                  <Upload className="w-3 h-3 text-purple-600 dark:text-pink-400" />
+                <label className="w-full flex justify-center items-center gap-1.5 px-3 py-2.5 min-h-[44px] bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
+                  <Upload className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
                   <span>Restore Backup</span>
                   <input
                     type="file"
@@ -355,37 +354,39 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* Footer Controls */}
           {onSignOut && (
-            <div className="pt-2 flex items-center justify-between border-t border-purple-100 dark:border-slate-800">
+            <div className="pt-2 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-purple-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onSignOut();
                 }}
-                className="text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                className="w-full sm:w-auto text-xs font-semibold text-rose-700 dark:text-rose-400 hover:text-rose-900 flex items-center justify-center gap-1.5 px-3 py-3 min-h-[44px] rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-100/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-none px-4 py-3 min-h-[44px] rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-100/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-pink-600 hover:from-purple-900 hover:to-pink-700 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none px-5 py-3 min-h-[44px] rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-pink-600 hover:from-purple-900 hover:to-pink-700 text-white shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
                   <span>Save Profile</span>
                 </button>
               </div>
             </div>
           )}
+          {/* Bottom padding for iOS home bar inside the scroll view */}
+          <div className="h-6 sm:hidden" />
         </form>
       </div>
     </div>
