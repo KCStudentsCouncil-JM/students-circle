@@ -75,34 +75,24 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     let suggestedUrgency: UrgencyLevel = urgency;
     let matchedReason = '';
 
-    // Technology keywords
     if (/wi-fi|wifi|internet|network|canvas|portal|login|computer|printer|server|software|password|screen|projector/.test(combined)) {
       suggestedCategory = 'technology';
       matchedReason = 'Detected IT & network keywords';
-    }
-    // Safety keywords
-    else if (/safety|police|theft|stairwell|dark|lighting|hazard|fire|smoke|lock|security|assault|emergency/.test(combined)) {
+    } else if (/safety|police|theft|stairwell|dark|lighting|hazard|fire|smoke|lock|security|assault|emergency/.test(combined)) {
       suggestedCategory = 'safety';
       suggestedUrgency = 'high';
       matchedReason = 'Detected campus safety alert keywords';
-    }
-    // Facilities keywords
-    else if (/leak|water|fountain|toilet|bathroom|restroom|ac|air condition|heating|hvac|elevator|door|window|roof|trash|desk|chair/.test(combined)) {
+    } else if (/leak|water|fountain|toilet|bathroom|restroom|ac|air condition|heating|hvac|elevator|door|window|roof|trash|desk|chair/.test(combined)) {
       suggestedCategory = 'facilities';
       matchedReason = 'Detected facility & infrastructure maintenance keywords';
-    }
-    // Academics keywords
-    else if (/prof|professor|grade|grading|exam|syllabus|course|credit|tutor|advising|lecture|lab session/.test(combined)) {
+    } else if (/prof|professor|grade|grading|exam|syllabus|course|credit|tutor|advising|lecture|lab session/.test(combined)) {
       suggestedCategory = 'academics';
       matchedReason = 'Detected academic & curriculum keywords';
-    }
-    // Student life keywords
-    else if (/event|fundraiser|bca|walk|club|social|housing|dorm|dining|food|recreation|gym/.test(combined)) {
+    } else if (/event|fundraiser|bca|walk|club|social|housing|dorm|dining|food|recreation|gym/.test(combined)) {
       suggestedCategory = 'student-life';
       matchedReason = 'Detected student community & life keywords';
     }
 
-    // Urgency heuristic
     if (/urgent|broken down|overheating|flooded|sparks|immediate|alarm|freezing|danger|emergency|hazard/.test(combined)) {
       suggestedUrgency = 'high';
     } else if (/minor|suggestion|would like|consider|whenever|cosmetic/.test(combined)) {
@@ -133,7 +123,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Upload photos AND videos from device gallery up to 20MB
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
     const files = e.target.files;
@@ -159,7 +148,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         }
 
         if (validation.mediaType === 'video') {
-          // Read video as Data URL
           const videoData = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -168,7 +156,6 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
           });
           newVideos.push(videoData);
         } else {
-          // Image: compress if large
           const compressed = await compressImage(file, 900, 0.75);
           newPhotos.push(compressed);
         }
@@ -432,7 +419,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               </p>
             )}
 
-               {/* Media Previews */}
+            {/* Media Previews */}
             {(photos.length > 0 || videos.length > 0) && (
               <div className="flex items-center gap-2.5 flex-wrap pt-1">
                 {/* Photo Previews */}

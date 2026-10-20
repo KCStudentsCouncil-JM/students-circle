@@ -38,7 +38,7 @@ export default function App() {
   const [loginRole, setLoginRole] = useState<'student' | 'admin'>('student');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNewFeedbackModalOpen, setIsNewFeedbackModalOpen] = useState(false);
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false); // NEW
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
   
   // Core Data
@@ -52,7 +52,6 @@ export default function App() {
   const [currentFilter, setCurrentFilter] = useState<NavFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  // pageView now includes 'home' and defaults to it
   const [pageView, setPageView] = useState<'home' | 'main' | 'detail' | 'student-list'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 1024);
 
@@ -115,7 +114,7 @@ export default function App() {
     }
   }, [allUsers, userProfile?.email]);
 
-  // ⭐ NEW: Online presence heartbeat (every 60s)
+  // Online presence heartbeat (every 60s)
   useEffect(() => {
     if (!userProfile?.email) return;
     updateUserLastActive(userProfile.email);
@@ -167,7 +166,6 @@ export default function App() {
     showToast('Request sent to campus administrators.');
   };
 
-  // Same login logic as before (with the pending-flow fix already applied)
   const handleGoogleLogin = async (simulatedUser?: { email: string; name: string; photoURL?: string }) => {
     try {
       let user: any = null;
@@ -205,7 +203,6 @@ export default function App() {
         }
         setPageView('home');
       } else {
-        // ✅ Do NOT auto-create; new students go through Onboarding
         if (!profile) {
           const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
           if (found) profile = found;
@@ -219,7 +216,6 @@ export default function App() {
     }
   };
 
-  // --- DATABASE ACTIONS (unchanged from your version) ---
   const handleDeleteReport = async (id: string) => {
     setReports(prev => prev.filter(r => r.id !== id));
     setSelectedId(null);
@@ -414,15 +410,24 @@ export default function App() {
       if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
       if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
       if (currentFilter === 'drafts' && item.status !== 'draft') return false;
+      
+      if (currentFilter === 'my-activity') {
+        if (!userProfile) return false;
+        const isAuthor = item.authorEmail === userProfile.email || item.author === userProfile.name;
+        const isEndorser = item.endorsers?.some(e => e.email === userProfile.email);
+        if (!isAuthor && !isEndorser) return false;
+      }
+
       if (currentFilter === 'facilities' && item.category !== 'facilities') return false;
       if (currentFilter === 'technology' && item.category !== 'technology') return false;
       if (currentFilter === 'academics' && item.category !== 'academics') return false;
       if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
       if (currentFilter === 'safety' && item.category !== 'safety') return false;
+      
       if (searchQuery.trim() && !matchesExactWords(`${item.title} ${item.description}`, searchQuery)) return false;
       return true;
     });
-  }, [reports, currentFilter, searchQuery]);
+  }, [reports, currentFilter, searchQuery, userProfile]);
 
   // --- RENDER LOGIC ---
   if (isLoadingAuth) {
@@ -545,11 +550,13 @@ export default function App() {
               currentFilter === 'in-review' ? 'In Review & Active' :
               currentFilter === 'resolved' ? 'Resolved Reports' :
               currentFilter === 'drafts' ? 'Drafts' :
+              currentFilter === 'my-activity' ? 'My Activity & Endorsed' :
               `${currentFilter.replace('-', ' ').toUpperCase()} Reports`
             } 
-            onNavigateToEvents={() => setCurrentFilter('events')} 
+            onNavigateToEvents={() => { setCurrentFilter('events'); setPageView('main'); }} 
             eventsCount={events.length} role={role} 
             onBulkUpdateStatus={handleBulkUpdateStatus}
+            onOpenNewModal={() => setIsNewFeedbackModalOpen(true)}
           />
         ) : (
           <FeedbackDetail 
@@ -640,7 +647,6 @@ export default function App() {
         />
       )}
 
-      {/* ⭐ ADMIN ANALYTICS MODAL — now properly wired */}
       <AdminAnalyticsModal
         isOpen={isAnalyticsOpen}
         onClose={() => setIsAnalyticsOpen(false)}
