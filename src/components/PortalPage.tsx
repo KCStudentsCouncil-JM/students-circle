@@ -57,7 +57,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           
           <button
             onClick={() => onSignInClick('student')}
-            className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-purple-100 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-600 bg-purple-50/40 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-slate-800 transition-all group cursor-pointer"
+            className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-purple-100 dark:border-slate-800 hover:border-purple-400 dark:hover:border-purple-600 bg-purple-50/40 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-slate-800 transition-all group cursor-pointer min-h-[72px]"
           >
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -87,7 +87,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           {!showAdminPrompt ? (
             <button
               onClick={() => setShowAdminPrompt(true)}
-              className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group cursor-pointer"
+              className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group cursor-pointer min-h-[72px]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -107,7 +107,8 @@ export const PortalPage: React.FC<PortalPageProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Staff Secret Key</label>
-                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Key: FORTIS2026</span>
+                  {/* CHANGED HINT HERE */}
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Text Dylon for it</span>
                 </div>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -115,8 +116,9 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                     type="password"
                     value={adminSecret}
                     onChange={(e) => setAdminSecret(e.target.value)}
-                    placeholder="Enter FORTIS2026"
-                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    /* CHANGED PLACEHOLDER HERE */
+                    placeholder="Text Dylon for it"
+                    className="w-full pl-9 pr-3 py-3 text-base sm:text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-[44px]"
                     autoFocus
                   />
                 </div>
@@ -126,13 +128,13 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                 <button 
                   type="button" 
                   onClick={() => setShowAdminPrompt(false)} 
-                  className="px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
+                  className="px-4 py-3 min-h-[44px] text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 bg-purple-950 dark:bg-purple-800 hover:bg-black text-white text-xs font-bold py-2 rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 bg-purple-950 dark:bg-purple-800 hover:bg-black text-white text-xs font-bold py-3 min-h-[44px] rounded-xl transition-colors cursor-pointer"
                 >
                   Verify & Continue
                 </button>
