@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   html, body {
     height: 100%;
@@ -16,6 +19,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+  }
+
+  /* Dark mode body styles */
+  .dark body {
+    background-color: #020617; /* slate-950 */
+    color: #f1f5f9; /* slate-100 */
   }
 }
 

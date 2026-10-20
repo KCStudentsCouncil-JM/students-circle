@@ -96,6 +96,25 @@ export default function App() {
     }
   }, []);
 
+  // 🆕 FIX #1b: Sync userProfile when allUsers list changes (e.g. admin approves a pending student)
+  // Without this, a "pending" user stays stuck on the pending screen until they re-login.
+  useEffect(() => {
+    if (!userProfile?.email) return;
+    const fresh = allUsers.find(
+      (u) => u.email.toLowerCase() === userProfile.email.toLowerCase()
+    );
+    if (
+      fresh &&
+      (fresh.status !== userProfile.status ||
+        fresh.role !== userProfile.role ||
+        fresh.name !== userProfile.name ||
+        fresh.photo !== userProfile.photo)
+    ) {
+      setUserProfile(fresh);
+      setRole(fresh.role);
+    }
+  }, [allUsers, userProfile?.email]);
+
   // 3. Keyboard Detection (for Mobile)
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
@@ -173,34 +192,25 @@ export default function App() {
           setUserProfile(updatedAdmin);
           setRole('admin');
         }
+        showToast(`Welcome back, ${profile?.name || user.displayName || 'Administrator'}!`);
       } else {
-        // Student role
+        // ✅ FIX #1: Student role — do NOT auto-create an approved profile.
+        // If no existing profile is found, leave userProfile as null so
+        // OnboardingScreen renders (which submits with status: 'pending').
         if (!profile) {
-          // If no existing profile, check if user exists in allUsers
           const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
           if (found) {
             profile = found;
-          } else {
-            // New student profile
-            profile = {
-              id: email,
-              name: user.displayName || user.name || 'Enrolled Student',
-              email,
-              role: 'student',
-              status: 'approved',
-              major: 'Computer Science',
-              classYear: "Class of '26",
-              title: "Computer Science · Class of '26",
-              photo: user.photoURL || '',
-              createdAt: new Date().toISOString()
-            };
-            await createUserProfile(profile);
           }
+          // else: profile remains null → OnboardingScreen will render
         }
         setUserProfile(profile);
-        setRole(profile.role);
+        setRole(profile?.role || 'student');
+        if (profile) {
+          showToast(`Welcome back, ${profile.name}!`);
+        }
+        // If profile is null, no toast — user goes straight to OnboardingScreen
       }
-      showToast(`Welcome back, ${profile?.name || user.displayName || 'User'}!`);
     } catch (error: any) {
       showToast(error.message || 'Login failed');
     }
@@ -490,8 +500,8 @@ export default function App() {
 
   if (isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-[#faf8fc] flex flex-col items-center justify-center text-purple-700 font-bold gap-3">
-        <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#faf8fc] dark:bg-slate-950 flex flex-col items-center justify-center text-purple-700 dark:text-purple-300 font-bold gap-3">
+        <div className="w-8 h-8 border-3 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin" />
         <span className="text-xs font-mono">Loading KC Students Circle...</span>
       </div>
     );
@@ -519,12 +529,12 @@ export default function App() {
 
   if (userProfile?.status === 'pending') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#faf8fc] p-4 text-center">
-        <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#faf8fc] dark:bg-slate-950 p-4 text-center">
+        <div className="w-16 h-16 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-full flex items-center justify-center mb-4">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-purple-950 mb-2">Approval Pending</h1>
-        <p className="text-purple-700 max-w-sm mb-6">Your student verification request is currently being reviewed by campus administrators. Please check back later.</p>
+        <h1 className="text-2xl font-bold text-purple-950 dark:text-purple-100 mb-2">Approval Pending</h1>
+        <p className="text-purple-700 dark:text-purple-300 max-w-sm mb-6">Your student verification request is currently being reviewed by campus administrators. Please check back later.</p>
         <button onClick={handleSignOut} className="text-sm font-bold text-rose-600 hover:underline cursor-pointer">Sign Out</button>
       </div>
     );
@@ -625,19 +635,19 @@ export default function App() {
 
       {/* MOBILE BOTTOM NAVIGATION */}
       {!isKeyboardActive && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-purple-100 px-3 py-2 flex items-center justify-around shadow-lg">
-          <button onClick={() => { setCurrentFilter('all'); setPageView('main'); }} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter !== 'events' && pageView === 'main' ? 'text-purple-900' : 'text-purple-400'}`}>
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-purple-100 dark:border-slate-800 px-3 py-2 flex items-center justify-around shadow-lg">
+          <button onClick={() => { setCurrentFilter('all'); setPageView('main'); }} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter !== 'events' && pageView === 'main' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'}`}>
             <Inbox className="w-4 h-4" />
             <span>Reports</span>
           </button>
-          <button onClick={() => setCurrentFilter('events')} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter === 'events' ? 'text-pink-600' : 'text-purple-400'}`}>
+          <button onClick={() => setCurrentFilter('events')} className={`flex flex-col items-center gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${currentFilter === 'events' ? 'text-pink-600 dark:text-pink-400' : 'text-purple-400'}`}>
             <Calendar className="w-4 h-4" />
             <span>Events</span>
           </button>
           <button onClick={() => setIsNewFeedbackModalOpen(true)} className="flex flex-col items-center justify-center -mt-4 w-11 h-11 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-md active:scale-95 transition-transform cursor-pointer">
             <Plus className="w-5 h-5" />
           </button>
-          <button onClick={() => setIsProfileModalOpen(true)} className="flex flex-col items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 transition-colors cursor-pointer">
+          <button onClick={() => setIsProfileModalOpen(true)} className="flex flex-col items-center gap-1 text-[10px] font-semibold text-purple-400 hover:text-purple-900 dark:hover:text-purple-200 transition-colors cursor-pointer">
             <UserIcon className="w-4 h-4" />
             <span>Profile</span>
           </button>
@@ -681,7 +691,7 @@ export default function App() {
 
       {/* TOAST NOTIFICATION */}
       {toastMessage && (
-        <div className="fixed bottom-16 md:bottom-5 right-5 z-50 bg-purple-950 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-16 md:bottom-5 right-5 z-50 bg-purple-950 dark:bg-purple-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-purple-800 dark:border-purple-700 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
