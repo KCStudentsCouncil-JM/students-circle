@@ -250,7 +250,15 @@ export default function App() {
     showToast(`Status updated to ${newStatus}.`);
   };
 
-  const handleAddActivity = async (id: string, message: string, activityRole: 'admin' | 'student', statusChange?: FeedbackStatus) => {
+  const handleAddActivity = async (
+    id: string, 
+    message: string, 
+    activityRole: 'admin' | 'student', 
+    statusChange?: FeedbackStatus, 
+    parentId?: string,
+    photos?: string[],
+    videos?: string[]
+  ) => {
     const r = reports.find(rep => rep.id === id);
     if (!r) return;
 
@@ -261,7 +269,10 @@ export default function App() {
       message,
       timestamp: new Date().toISOString(),
       statusChange,
-      badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined
+      badgeText: activityRole === 'admin' ? 'Official Campus Administrator' : undefined,
+      parentId,
+      photos: photos && photos.length > 0 ? photos : undefined,
+      videos: videos && videos.length > 0 ? videos : undefined,
     };
 
     const nextStatus = statusChange || r.status;

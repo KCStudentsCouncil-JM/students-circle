@@ -11,6 +11,9 @@ export interface ActivityItem {
   timestamp: string;
   statusChange?: FeedbackStatus;
   badgeText?: string;
+  parentId?: string; // Supports threaded replies
+  photos?: string[];
+  videos?: string[];
 }
 
 export interface Endorser {
@@ -42,20 +45,26 @@ export interface FeedbackReport {
   upvotes: number;
   hasUpvoted?: boolean;
   photos?: string[];
+  videos?: string[]; // Gallery video attachments (up to 20MB)
   endorsers?: Endorser[];
   activities: ActivityItem[];
   resolutionNotes?: string;
+  pinned?: boolean; // Admin pinned priority notice
 }
 
 export type RoleMode = 'student' | 'admin';
 export type EventCategory = 'bca-awareness' | 'academic' | 'student-life' | 'career' | 'athletics' | 'arts';
+export type EventType = 'single-day' | 'multi-day';
 
 export interface CampusEvent {
   id: string;
   title: string;
   description: string;
-  date: string;
-  time: string;
+  eventType?: EventType;
+  date: string; // Start date YYYY-MM-DD
+  endDate?: string; // Optional end date for multi-day events
+  durationDays?: number; // e.g. 3 days
+  time: string; // e.g., "2:00 PM - 5:00 PM" or "9:00 AM - 4:00 PM Daily"
   location: string;
   organizer: string;
   category: EventCategory;
@@ -68,12 +77,37 @@ export interface CampusEvent {
   isOfficialUniversityEvent: boolean;
   featured?: boolean;
   videoUrl?: string;
+  galleryPhotos?: string[]; // Event recap photo gallery
 }
 
 export type NavFilter = 
-  | 'all' | 'open' | 'in-review' | 'in-progress' | 'resolved' | 'drafts'
+  | 'all' | 'my-activity' | 'open' | 'in-review' | 'in-progress' | 'resolved' | 'drafts'
   | 'events' | 'initiatives' | 'issues' | 'facilities' | 'technology' 
   | 'academics' | 'student-life' | 'safety';
+
+// Notification system
+export interface InAppNotification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  type: 'status' | 'reply' | 'event' | 'pin';
+  linkReportId?: string;
+}
+
+// Quick Poll Data
+export interface QuickPoll {
+  id: string;
+  question: string;
+  options: Array<{
+    id: string;
+    text: string;
+    votes: number;
+  }>;
+  totalVotes: number;
+  votedOptionId?: string;
+}
 
 // Unified User Profile for everything
 export interface UserProfile {

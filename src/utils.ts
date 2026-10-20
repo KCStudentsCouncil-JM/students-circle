@@ -159,14 +159,46 @@ export function isValidImageFile(file: File): { valid: boolean; error?: string }
     };
   }
 
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > 20 * 1024 * 1024) {
     return {
       valid: false,
-      error: 'File size exceeds 10MB limit. Please choose a smaller photo.',
+      error: 'File size exceeds 20MB limit. Please choose a smaller photo.',
     };
   }
 
   return { valid: true };
+}
+
+/**
+ * Validate media files (Photos or Videos from gallery) up to 20MB
+ */
+export function isValidMediaFile(file: File): { valid: boolean; error?: string; mediaType: 'photo' | 'video' } {
+  const photoExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+  const videoExts = ['.mp4', '.webm', '.mov', '.ogg', '.m4v'];
+
+  const lowerName = file.name.toLowerCase();
+  const isPhoto = file.type.startsWith('image/') || photoExts.some(ext => lowerName.endsWith(ext));
+  const isVideo = file.type.startsWith('video/') || videoExts.some(ext => lowerName.endsWith(ext));
+
+  if (!isPhoto && !isVideo) {
+    return {
+      valid: false,
+      error: 'Unsupported format. Permitted formats: JPG, PNG, WebP, GIF, MP4, WebM, and MOV.',
+      mediaType: 'photo',
+    };
+  }
+
+  const MAX_MEDIA_BYTES = 20 * 1024 * 1024; // 20MB limit
+  if (file.size > MAX_MEDIA_BYTES) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      valid: false,
+      error: `File size (${sizeMb}MB) exceeds the 20MB campus limit. Please compress or select a shorter video/smaller image.`,
+      mediaType: isVideo ? 'video' : 'photo',
+    };
+  }
+
+  return { valid: true, mediaType: isVideo ? 'video' : 'photo' };
 }
 
 /**

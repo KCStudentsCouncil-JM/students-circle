@@ -32,11 +32,15 @@ export const OnboardingScreen: React.FC<Props> = ({ firebaseUser, onSubmit, onSi
     <div className="min-h-screen bg-[#faf8fc] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-purple-200 shadow-xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center mx-auto">
-            <ShieldAlert className="w-6 h-6" />
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md border border-purple-100 p-1 overflow-hidden">
+            <img 
+              src={`${import.meta.env.BASE_URL}KCBCALogo.png`} 
+              alt="KC BCA Logo" 
+              className="w-full h-full object-contain rounded-xl" 
+            />
           </div>
-          <h1 className="text-xl font-bold text-purple-950">Complete Your Profile</h1>
-          <p className="text-xs text-purple-700/80">Your details will be sent to admins for approval.</p>
+          <h1 className="text-xl font-bold text-purple-950">Complete Your Student Profile</h1>
+          <p className="text-xs text-purple-700/80">KC Students Circle · Verification Request</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
