@@ -65,7 +65,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
   // Calculate today's birthdays
   const todaysBirthdays = allUsers.filter(u => isBirthdayToday(u.birthday));
 
-  // Top 3 Trending reports across campus
+  // Top 3 Trending reports across school
   const trendingReports = useMemo(() => {
     return [...reports]
       .filter(r => r.status !== 'resolved' && r.status !== 'draft')
@@ -203,7 +203,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
               )}
             </div>
             <p className="text-xs text-purple-700/80 dark:text-purple-400 mt-0.5">
-              Explore reported campus issues, suggest event initiatives, and endorse peer proposals.
+              Explore reported school issues, suggest events, and support peer proposals.
             </p>
           </div>
 
@@ -231,7 +231,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                 className="bg-transparent border-none text-xs font-semibold text-purple-950 dark:text-purple-100 focus:outline-none cursor-pointer"
               >
                 <option value="newest">Newest First</option>
-                <option value="upvotes">Most Endorsed</option>
+                <option value="upvotes">Most Supported</option>
                 <option value="urgency">Highest Urgency</option>
               </select>
             </div>
@@ -271,7 +271,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
               }`}
             >
               <Sparkles className="w-3 h-3 text-pink-600 dark:text-pink-400" />
-              <span>Initiatives / Events</span>
+              <span>School Ideas</span>
             </button>
           </div>
 
@@ -345,7 +345,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                   <h2 className="text-lg font-extrabold tracking-tight flex items-center gap-2">
                     Happy Birthday! <PartyPopper className="w-5 h-5 text-amber-300" />
                   </h2>
-                  <p className="text-xs text-pink-100 font-medium">Join us in celebrating our KC Students today!</p>
+                  <p className="text-xs text-pink-100 font-medium">Join us in celebrating our fellow Fortis today!</p>
                 </div>
               </div>
 
@@ -368,15 +368,15 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
           </div>
         )}
 
-        {/* 2. TRENDING SECTION: Top 3 Most Endorsed Campus Tickets */}
+        {/* 2. TRENDING SECTION: Top 3 Most Supported Reports */}
         {trendingReports.length > 0 && activeFilterTitle === 'All Reports' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 flex items-center gap-1.5">
                 <Flame className="w-4 h-4 text-pink-600 dark:text-pink-400" />
-                <span>Trending Across Campus This Week</span>
+                <span>Trending Across KC This Week</span>
               </h2>
-              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-mono font-semibold">Highest Student Endorsements</span>
+              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-mono font-semibold">Highest Student Support</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -413,7 +413,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
             </div>
             <h3 className="text-sm font-bold text-purple-950 dark:text-purple-200">No reports found in this view</h3>
             <p className="text-xs text-purple-700/70 dark:text-purple-400 mt-1 max-w-sm mb-4">
-              There are no campus tickets matching your active filter or search keyword.
+              There are no school reports matching your active filter or search keyword.
             </p>
             {onOpenNewModal && (
               <button
@@ -482,7 +482,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
 
                         {isAuthorBirthday && (
                           <span className="text-[10px] bg-amber-100 text-amber-950 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5 shadow-2xs" title="Author has a birthday today!">
-                            🎂 Birthday Author
+                            🎂 Birthday
                           </span>
                         )}
 
@@ -557,7 +557,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                       <div className="flex items-center gap-2 shrink-0 ml-auto">
                         <button
                           onClick={(e) => onToggleUpvote(item.id, e)}
-                          title={hasUserUpvoted ? "Click to undo/retract endorsement" : "Endorse this report"}
+                          title={hasUserUpvoted ? "Click to undo/retract support" : "Support this report"}
                           className={`flex items-center gap-1 px-2.5 py-1.5 min-h-[32px] rounded-xl text-xs font-mono tabular-nums transition-colors cursor-pointer touch-manipulation ${
                             hasUserUpvoted
                               ? 'bg-pink-100/90 dark:bg-pink-950 text-pink-800 dark:text-pink-200 font-bold border border-pink-300 dark:border-pink-700 hover:bg-pink-200'

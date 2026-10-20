@@ -106,6 +106,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         }
 
         if (validation.mediaType === 'video') {
+          if (file.size > 15 * 1024 * 1024) {
+            setReplyMediaError('Video is too large (Max 15MB).');
+            setIsProcessingReplyMedia(false);
+            return;
+          }
+
           const videoData = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -132,7 +138,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
   const handleExportCSV = () => {
     if (!report) return;
     const endorsersList = report.endorsers || [];
-    const headers = ['Report ID', 'Report Title', 'Endorser Name', 'Student ID', 'Campus Role', 'Email', 'Endorsed At'];
+    const headers = ['Report ID', 'Report Title', 'Supporter Name', 'Student ID', 'Role', 'Email', 'Supported At'];
     const rows = endorsersList.map((end) => [
       `"${report.id}"`,
       `"${report.title.replace(/"/g, '""')}"`,
@@ -147,7 +153,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Endorsements_${report.id}.csv`);
+    link.setAttribute('download', `Supporters_${report.id}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -159,9 +165,9 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         <div className="w-16 h-16 rounded-2xl bg-purple-100/70 dark:bg-slate-800 border border-purple-200/80 dark:border-slate-700 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-3 shadow-xs">
           <MessageSquare className="w-8 h-8 stroke-[1.5]" />
         </div>
-        <h3 className="text-sm font-semibold text-purple-950 dark:text-purple-200">No Feedback Selected</h3>
+        <h3 className="text-sm font-semibold text-purple-950 dark:text-purple-200">No Report Selected</h3>
         <p className="text-xs text-purple-700/70 dark:text-purple-400 mt-1 max-w-xs text-center">
-          Choose a report or proposal from the list to inspect detailed specifications, status history, and administrative updates.
+          Choose a report or idea from the list to inspect detailed specifications, status history, and staff updates.
         </p>
       </div>
     );
@@ -209,7 +215,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-md border border-purple-200 dark:border-purple-800">
             <span className="w-2 h-2 rounded-full bg-purple-600" />
-            Open For Triage
+            Open For Review
           </span>
         );
       case 'in-review':
@@ -262,7 +268,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-slate-700 text-purple-950 dark:text-purple-200 font-semibold text-xs border border-purple-200/90 dark:border-slate-700 shadow-2xs transition-all cursor-pointer mr-0.5 active:scale-95 touch-manipulation"
-            title="Go back to main campus reports"
+            title="Go back to main school reports"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
             <span>Go Back</span>
@@ -280,7 +286,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
           <span className="text-xs text-purple-400 hidden sm:inline">·</span>
           <span className="text-xs font-medium text-purple-800/80 dark:text-purple-300 hidden sm:inline truncate max-w-[200px] md:max-w-none">
-            {report.type === 'initiative' ? 'Campus Initiative Pitch' : 'Issue / Defect Report'}
+            {report.type === 'initiative' ? 'School Idea Pitch' : 'Issue / Defect Report'}
           </span>
         </div>
 
@@ -310,10 +316,10 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                 ? 'bg-pink-100/90 dark:bg-pink-950/60 border-pink-400 text-pink-800 dark:text-pink-300 shadow-xs hover:bg-pink-200'
                 : 'bg-white dark:bg-slate-800 border-purple-200 dark:border-slate-700 text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-700'
             }`}
-            title={hasUserUpvoted ? "Click to undo/retract your endorsement" : "Endorse this report"}
+            title={hasUserUpvoted ? "Click to undo/retract your support" : "Support this report"}
           >
             <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600 dark:text-purple-400'}`} />
-            <span>{hasUserUpvoted ? 'Endorsed (Undo)' : 'Endorse'} ({report.upvotes})</span>
+            <span>{hasUserUpvoted ? 'Supported (Undo)' : 'Support'} ({report.upvotes})</span>
           </button>
 
           {/* Delete button */}
@@ -451,10 +457,10 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <div className="flex items-center justify-between flex-wrap gap-1">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-950 dark:text-purple-200">
                   <BadgeCheck className="w-4 h-4 text-purple-700 dark:text-purple-400 shrink-0" />
-                  <span>Administrative Audit: Verified Reporter Credentials</span>
+                  <span>Staff Only: Verified Reporter Credentials</span>
                 </div>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 font-semibold">
-                  Staff Only Access
+                  Confidential
                 </span>
               </div>
 
@@ -466,15 +472,15 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                   </span>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-purple-100 dark:border-slate-700">
-                  <span className="text-[10px] text-purple-400 block uppercase font-bold">Student ID & Program</span>
+                  <span className="text-[10px] text-purple-400 block uppercase font-bold">Student ID & Form</span>
                   <span className="font-semibold text-purple-950 dark:text-purple-200 truncate block">
                     #{report.authorStudentId || 'KC-STU-2022'} · {report.authorRole}
                   </span>
                 </div>
                 <div className="bg-white dark:bg-slate-900 p-2 rounded-xl border border-purple-100 dark:border-slate-700">
                   <span className="text-[10px] text-purple-400 block uppercase font-bold">Contact Email</span>
-                  <a href={`mailto:${report.authorEmail || 'student@campus.edu'}`} className="font-semibold text-purple-700 dark:text-purple-400 hover:underline truncate block break-all">
-                    {report.authorEmail || 'student@campus.edu'}
+                  <a href={`mailto:${report.authorEmail || 'student@kc.edu.jm'}`} className="font-semibold text-purple-700 dark:text-purple-400 hover:underline truncate block break-all">
+                    {report.authorEmail || 'student@kc.edu.jm'}
                   </a>
                 </div>
               </div>
@@ -541,7 +547,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 flex items-center gap-1.5">
                 <ThumbsUp className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                <span>Student Endorsements</span>
+                <span>Student Supporters</span>
               </h2>
               <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
                 {report.upvotes}
@@ -573,7 +579,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             <div className="rounded-2xl border border-purple-100 dark:border-slate-800 bg-[#faf8fc] dark:bg-slate-850 p-3.5 space-y-3">
               {(!report.endorsers || report.endorsers.length === 0) ? (
                 <div className="p-3 text-center text-[11px] text-purple-600/70 dark:text-purple-400">
-                  No registered endorsements yet. Click "Endorse" at the top to back this proposal!
+                  No registered supporters yet. Click "Support" at the top to back this proposal!
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -754,7 +760,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <label className="text-xs font-bold text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
                 <Send className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>
-                  {role === 'admin' ? 'Publish Official University Response' : 'Add Student Follow-up Note'}
+                  {role === 'admin' ? 'Publish Official Staff Response' : 'Add Student Follow-up Note'}
                 </span>
               </label>
 
@@ -784,8 +790,8 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               onChange={(e) => setReplyMessage(e.target.value)}
               placeholder={
                 role === 'admin'
-                  ? 'Type official campus update, dispatch details, or resolution notes...'
-                  : 'Add additional details, questions for administration, or updates...'
+                  ? 'Type official school update, maintenance details, or resolution notes...'
+                  : 'Add additional details, questions for staff, or updates...'
               }
               className="w-full text-xs p-3 rounded-2xl border border-purple-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100"
             />
@@ -828,7 +834,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
               <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-dashed border-purple-300 dark:border-slate-700 hover:border-purple-500 bg-white dark:bg-slate-800 text-[11px] font-semibold text-purple-800 dark:text-purple-300 cursor-pointer hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors">
                 <UploadCloud className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <span>{isProcessingReplyMedia ? 'Processing media...' : 'Attach Photo/Video (Max 20MB)'}</span>
+                <span>{isProcessingReplyMedia ? 'Processing media...' : 'Attach Photo/Video (Max 15MB)'}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"

@@ -8,53 +8,53 @@ const dynamicTodayBirthday = `2004-${currentMonth}-${currentDay}`;
 
 export const INITIAL_USERS: UserProfile[] = [
   {
-    id: 'dylonnnaocha@gmail.com',
+    id: 'headboy@kc.edu.jm',
     name: 'Dylon Ocha',
-    email: 'dylonnnaocha@gmail.com',
+    email: 'headboy@kc.edu.jm',
     role: 'student',
     status: 'approved',
     major: 'Natural Science',
-    classYear: "Class of '25",
+    classYear: "Upper 6",
     birthday: dynamicTodayBirthday,
-    title: "Science · Class of '25",
+    title: "Upper 6 Science · Head Boy",
     photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
     lastActiveAt: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
     createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: 'sarah.j@campus.edu',
+    id: 'sarah.j@kc.edu.jm',
     name: 'Sarah Jenkins',
-    email: 'sarah.j@campus.edu',
+    email: 'sarah.j@kc.edu.jm',
     role: 'student',
     status: 'approved',
-    major: 'Biochemistry',
-    classYear: "Class of '25",
+    major: 'Arts & Humanities',
+    classYear: "Form 5",
     birthday: '2003-05-14',
-    title: "Biochemistry · Class of '25",
+    title: "Form 5 Arts · Student Council",
     photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=256&q=80',
     lastActiveAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
     createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: 'marcus.v@campus.edu',
+    id: 'marcus.v@kc.edu.jm',
     name: 'Marcus Vance',
-    email: 'marcus.v@campus.edu',
+    email: 'marcus.v@kc.edu.jm',
     role: 'student',
     status: 'pending',
-    major: 'Mechanical Engineering',
-    classYear: "Class of '27",
+    major: 'Business',
+    classYear: "Form 4",
     birthday: '2005-11-03',
-    title: "Mechanical Engineering · Class of '27",
+    title: "Form 4 Business",
     photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&q=80',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
   },
   {
-    id: 'admin@campus.edu',
-    name: 'Campus Administrator',
-    email: 'admin@campus.edu',
+    id: 'principal@kc.edu.jm',
+    name: 'Principal Reid',
+    email: 'principal@kc.edu.jm',
     role: 'admin',
     status: 'approved',
-    title: 'Senior Campus Operations Director',
+    title: 'Principal, Kingston College',
     photo: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=256&q=80',
     lastActiveAt: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
@@ -64,19 +64,19 @@ export const INITIAL_USERS: UserProfile[] = [
 export const INITIAL_REPORTS: FeedbackReport[] = [
   {
     id: 'KCOI-1042',
-    title: 'AC Failure & Overheating in Engineering Block B - Lab 402',
+    title: 'AC Failure & Overheating in Computer Lab 2',
     type: 'issue',
     category: 'facilities',
     urgency: 'high',
     status: 'open',
-    description: 'The central cooling unit in Lab 402 stopped circulating cold air yesterday afternoon during afternoon lab sections. Room temperature reached 84°F, causing server rack temperature alarms to trigger and discomfort for 35+ enrolled students.',
-    location: 'Engineering Block B, Room 402',
-    department: 'Campus Facilities & Operations',
+    description: 'The AC unit in Computer Lab 2 stopped working during the Form 4 IT class. The room is extremely hot, and the computers are shutting down randomly due to overheating.',
+    location: 'Computer Lab 2, Melbourne Building',
+    department: 'Maintenance & Facilities',
     isAnonymous: false,
     author: 'Dylon Ocha',
-    authorRole: "Computer Science · Class of '26",
+    authorRole: "Upper 6 Science · Head Boy",
     authorRealName: 'Dylon Ocha',
-    authorEmail: 'dylonnnaocha@gmail.com',
+    authorEmail: 'headboy@kc.edu.jm',
     authorStudentId: 'KC-2022-8419',
     createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
     upvotes: 14,
@@ -84,148 +84,148 @@ export const INITIAL_REPORTS: FeedbackReport[] = [
       'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=75'
     ],
     endorsers: [
-      { id: 'end-1', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@campus.edu', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
-      { id: 'end-2', name: 'Dylon Ocha', role: 'Student', email: 'dylonnnaocha@gmail.com', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
-      { id: 'end-3', name: 'Marcus Vance', role: 'Student', email: 'marcus.v@campus.edu', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }
+      { id: 'end-1', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@kc.edu.jm', timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString() },
+      { id: 'end-2', name: 'Dylon Ocha', role: 'Student', email: 'headboy@kc.edu.jm', timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() },
+      { id: 'end-3', name: 'Marcus Vance', role: 'Student', email: 'marcus.v@kc.edu.jm', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }
     ],
     activities: [
       {
         id: 'act-101',
         author: 'Dylon Ocha',
         role: 'student',
-        message: 'Filed initial emergency report. Lab instructor advised reporting immediately before high-temperature hardware shutoff occurs.',
+        message: 'Reported to the IT teacher, he said we need to submit this here so the Principal can see.',
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 'act-102',
-        author: 'Campus Administrator',
+        author: 'Principal Reid',
         role: 'admin',
-        message: 'Ticket received by HVAC emergency dispatch team. Technician dispatched with replacement thermostat sensor for AHU-3.',
+        message: 'I have contacted the maintenance team. They will be looking at the compressor by tomorrow morning.',
         timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
         statusChange: 'open',
-        badgeText: 'Official Campus Administrator'
+        badgeText: 'Principal'
       }
     ]
   },
   {
     id: 'KCIS-2088',
-    title: 'Annual Breast Cancer Awareness 5K Campus Walk & Fundraiser',
+    title: 'Annual Breast Cancer Awareness 5K Walk & Tuck Shop Fundraiser',
     type: 'initiative',
     category: 'student-life',
     urgency: 'medium',
     status: 'in-review',
-    description: 'Proposing that the Student Council partner with the University Health Center to host a 5K solidarity walk around the campus perimeter for Breast Cancer Awareness month. Funds raised through pink ribbon merchandise and registration to be donated to local oncology research.',
-    location: 'Main Quad & Perimeter Campus Trail',
-    department: 'Student Affairs & Leadership',
+    description: 'Proposing that the Student Council partner with the Health & Family Life club to host a 5K solidarity walk around North Street for Breast Cancer Awareness month. Funds raised through pink ribbon sales and Tuck Shop treats will be donated to the Jamaica Cancer Society.',
+    location: 'North Street Campus & Main Field',
+    department: 'Clubs & Student Life',
     isAnonymous: false,
     author: 'Sarah Jenkins',
-    authorRole: "Biochemistry · Class of '25",
+    authorRole: "Form 5 Arts · Student Council",
     authorRealName: 'Sarah Jenkins',
-    authorEmail: 'sarah.j@campus.edu',
+    authorEmail: 'sarah.j@kc.edu.jm',
     authorStudentId: 'KC-2023-3921',
     createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString(),
     upvotes: 28,
     endorsers: [
-      { id: 'end-10', name: 'Dylon Ocha', role: 'Student', email: 'dylonnnaocha@gmail.com', timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString() },
-      { id: 'end-11', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@campus.edu', timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString() }
+      { id: 'end-10', name: 'Dylon Ocha', role: 'Student', email: 'headboy@kc.edu.jm', timestamp: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString() },
+      { id: 'end-11', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@kc.edu.jm', timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString() }
     ],
     activities: [
       {
         id: 'act-201',
         author: 'Sarah Jenkins',
         role: 'student',
-        message: 'Proposal drafted with student activities council. 4 student organizations have committed volunteer marshals.',
+        message: 'Draft proposal created. We need permission from the Dean of Discipline to use the main field.',
         timestamp: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 'act-202',
-        author: 'Campus Administrator',
+        author: 'Principal Reid',
         role: 'admin',
-        message: 'Approved in concept by Dean of Students. Currently coordinating route safety permits with Campus Safety & Police.',
+        message: 'Approved in concept. Please coordinate with the Bursar for the fundraising aspect and security for the route.',
         timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
         statusChange: 'in-review',
-        badgeText: 'Official Campus Administrator'
+        badgeText: 'Principal'
       }
     ]
   },
   {
     id: 'KCIRV-3115',
-    title: 'Severe Wi-Fi Latency & Packet Drop on Science Library 3rd Floor',
+    title: 'Severe Wi-Fi Latency in the Library',
     type: 'issue',
     category: 'technology',
     urgency: 'medium',
     status: 'in-progress',
-    description: 'During peak study hours (2 PM - 6 PM), access points on the 3rd floor quiet study zone drop connection repeatedly. Speeds drop below 0.8 Mbps, causing research portal timeouts.',
-    location: 'Science Library, 3rd Floor Quiet Zone',
-    department: 'Central Campus IT',
+    description: 'During lunch break and after school, the Wi-Fi in the library drops connection repeatedly. It is impossible to do research or use the online portals.',
+    location: 'KC Library, Upper Floor',
+    department: 'IT & Computer Lab',
     isAnonymous: true,
     author: 'Anonymous Student',
-    authorRole: 'Enrolled Student',
+    authorRole: 'Student',
     authorRealName: 'Marcus Vance',
-    authorEmail: 'marcus.v@campus.edu',
+    authorEmail: 'marcus.v@kc.edu.jm',
     authorStudentId: 'KC-2024-5102',
     createdAt: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString(),
     upvotes: 19,
     endorsers: [
-      { id: 'end-21', name: 'Dylon Ocha', role: 'Student', email: 'dylonnnaocha@gmail.com', timestamp: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString() }
+      { id: 'end-21', name: 'Dylon Ocha', role: 'Student', email: 'headboy@kc.edu.jm', timestamp: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString() }
     ],
     activities: [
       {
         id: 'act-301',
         author: 'Anonymous Student',
         role: 'student',
-        message: 'Issue confirmed across MacBook, ThinkPad, and mobile test devices.',
+        message: 'Tested on multiple phones and laptops, it is definitely the router.',
         timestamp: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 'act-302',
-        author: 'Campus Administrator',
+        author: 'Principal Reid',
         role: 'admin',
-        message: 'IT Network Ops identified a failing PoE switch port on AP-LIB-304. Replacement hardware scheduled for installation during midnight maintenance window.',
+        message: 'The IT department has identified a faulty switch. A replacement part has been ordered.',
         timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
         statusChange: 'in-progress',
-        badgeText: 'Central Campus IT'
+        badgeText: 'IT Department'
       }
     ]
   },
   {
     id: 'KCRS-4009',
-    title: 'Rapid Hydration Station Filter Replacement in Student Union',
+    title: 'Water Fountain in Courtyard is Broken',
     type: 'issue',
     category: 'facilities',
     urgency: 'low',
     status: 'resolved',
-    description: 'The Elkay filtered water fountain indicator light turned red next to the food court entrance.',
-    location: 'Student Union, Level 1 Food Court Entrance',
-    department: 'Campus Facilities & Operations',
+    description: 'The main water fountain near the courtyard is leaking and not cooling the water.',
+    location: 'Main Courtyard',
+    department: 'Maintenance & Facilities',
     isAnonymous: false,
     author: 'Dylon Ocha',
-    authorRole: "Computer Science · Class of '26",
+    authorRole: "Upper 6 Science · Head Boy",
     authorRealName: 'Dylon Ocha',
-    authorEmail: 'dylonnnaocha@gmail.com',
+    authorEmail: 'headboy@kc.edu.jm',
     authorStudentId: 'KC-2022-8419',
     createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
     upvotes: 9,
-    resolutionNotes: 'Brand new certified filter installed and water flow rate calibrated. Status indicator verified green.',
+    resolutionNotes: 'Replaced the cooling filter and fixed the leak.',
     endorsers: [
-      { id: 'end-31', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@campus.edu', timestamp: new Date(Date.now() - 65 * 60 * 60 * 1000).toISOString() }
+      { id: 'end-31', name: 'Sarah Jenkins', role: 'Student', email: 'sarah.j@kc.edu.jm', timestamp: new Date(Date.now() - 65 * 60 * 60 * 1000).toISOString() }
     ],
     activities: [
       {
         id: 'act-401',
         author: 'Dylon Ocha',
         role: 'student',
-        message: 'Filter indicator light is solid red.',
+        message: 'Water is warm and there is a puddle.',
         timestamp: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
       },
       {
         id: 'act-402',
-        author: 'Campus Administrator',
+        author: 'Principal Reid',
         role: 'admin',
-        message: 'Facilities maintenance completed filter replacement and sanitary flush. Unit tested at optimal flow rate.',
+        message: 'Maintenance fixed it this morning.',
         timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
         statusChange: 'resolved',
-        badgeText: 'Campus Facilities & Operations'
+        badgeText: 'Maintenance'
       }
     ]
   }
@@ -234,38 +234,38 @@ export const INITIAL_REPORTS: FeedbackReport[] = [
 export const INITIAL_EVENTS: CampusEvent[] = [
   {
     id: 'KCEV-501',
-    title: '🎗️ Breast Cancer Awareness Solidarity Walk & Vigil',
-    description: 'Join faculty, students, and advocates for our annual BCA solidarity walk around the campus quad, followed by a tribute celebration and health screening info booth.',
+    title: '🎗️ Breast Cancer Awareness Solidarity Walk',
+    description: 'Join the KC family for our annual BCA solidarity walk around the North Street campus, followed by a short ceremony and health screening info booth.',
     date: '2026-10-24',
     time: '4:00 PM - 6:30 PM',
-    location: 'Campus Main Quad & Health Pavilion',
-    organizer: "KC Students' Council & Health Wellness Center",
+    location: 'North Street Main Field',
+    organizer: "KC Student Council & Health Club",
     category: 'bca-awareness',
     eventType: 'single-day',
     rsvps: 184,
-    tags: ['BCA Month', 'Solidarity', 'Wellness', 'Campus Life'],
+    tags: ['BCA Month', 'Solidarity', 'Wellness', 'Fortis'],
     capacity: 350,
     isOfficialUniversityEvent: true,
     featured: true,
     videoUrl: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
-    attendees: ['dylonnnaocha@gmail.com', 'sarah.j@campus.edu']
+    attendees: ['headboy@kc.edu.jm', 'sarah.j@kc.edu.jm']
   },
   {
     id: 'KCEV-502',
-    title: 'Fall 2026 Tech & Engineering Career Expo',
-    description: 'Connect with over 45 industry recruiters, defense and software engineering firms offering internships, co-ops, and full-time positions.',
+    title: 'Annual ISSA Boys & Girls Championships (Champs) Send-Off',
+    description: 'Wear your purple and white! We are sending off the KC Track & Field team to Champs with a massive pep rally on the field.',
     date: '2026-10-28',
     time: '10:00 AM - 3:00 PM',
-    location: 'Student Athletic Center Gymnasium',
-    organizer: 'University Career & Professional Development',
-    category: 'career',
+    location: 'KC Main Field',
+    organizer: 'Sports Department & Old Boys Association',
+    category: 'athletics',
     eventType: 'single-day',
     rsvps: 312,
-    tags: ['Career', 'Internships', 'Networking', 'Tech'],
+    tags: ['Champs', 'Track & Field', 'Fortis', 'Purple & White'],
     capacity: 600,
     isOfficialUniversityEvent: true,
     featured: false,
-    attendees: ['dylonnnaocha@gmail.com']
+    attendees: ['headboy@kc.edu.jm']
   },
   {
     id: 'KCEV-503',
@@ -275,8 +275,8 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     endDate: '2026-11-08',
     durationDays: 3,
     time: '9:00 AM - 6:00 PM Daily',
-    location: 'Computer Science Innovation Hub, 2nd Floor',
-    organizer: 'Association for Computing Machinery (ACM) Student Chapter',
+    location: 'Computer Lab 1 & 2',
+    organizer: 'IT Department & Computer Club',
     category: 'academic',
     eventType: 'multi-day',
     rsvps: 120,
@@ -284,23 +284,23 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     capacity: 150,
     isOfficialUniversityEvent: true,
     featured: true,
-    attendees: ['dylonnnaocha@gmail.com', 'marcus.v@campus.edu']
+    attendees: ['headboy@kc.edu.jm', 'marcus.v@kc.edu.jm']
   },
   {
     id: 'KCEV-504',
-    title: 'Inter-Collegiate Fall Soccer Derby',
-    description: 'Cheer on the KC Varsity Soccer team against our cross-town rivals! Free student admission with KC Student ID and halftime penalty kick challenge.',
+    title: 'Inter-Form Football Derby (Form 5 vs Upper 6)',
+    description: 'The ultimate showdown on the field! Come out and support your form in the lunchtime football derby. Free entry for all students.',
     date: '2026-10-31',
-    time: '6:00 PM - 8:30 PM',
-    location: 'University Stadium Field 1',
-    organizer: 'Campus Athletics Department',
+    time: '12:00 PM - 1:00 PM',
+    location: 'KC Main Field',
+    organizer: 'Sports Department',
     category: 'athletics',
     eventType: 'single-day',
     rsvps: 245,
-    tags: ['Soccer', 'Athletics', 'School Spirit'],
+    tags: ['Football', 'Sports', 'Inter-Form'],
     capacity: 1200,
     isOfficialUniversityEvent: true,
     featured: false,
-    attendees: ['sarah.j@campus.edu']
+    attendees: ['sarah.j@kc.edu.jm']
   }
 ];

@@ -45,8 +45,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 }) => {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
-  const [classYear, setClassYear] = useState(user.classYear || "Class of '26");
-  const [major, setMajor] = useState(user.major || 'Computer Science');
+  const [classYear, setClassYear] = useState(user.classYear || "2026");
+  const [major, setMajor] = useState(user.major || 'Form 5');
   const [birthday, setBirthday] = useState(user.birthday || '');
   const [photo, setPhoto] = useState(user.photo || PRESET_AVATARS[0].url);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -142,7 +142,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 )}
               </div>
               <p className="text-xs text-purple-700/80 dark:text-purple-400">
-                Google Student Identity & Birthday Highlight Settings
+                Student Identity & Birthday Settings
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div>
                 <p className="font-bold text-pink-800 dark:text-pink-300">Birthday Highlight Activated!</p>
                 <p className="text-[11px] text-purple-800 dark:text-purple-300">
-                  You are prominently highlighted with a celebratory halo and birthday cake badge across campus reports, comments, and the top bar today!
+                  You are prominently highlighted with a celebratory halo and birthday cake badge across school reports, comments, and the top bar today!
                 </p>
               </div>
             </div>
@@ -217,7 +217,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Name & Google Email */}
+          {/* Name & Email */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
@@ -236,7 +236,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
                 <Mail className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                <span>Google Email</span>
+                <span>Email</span>
               </label>
               <input
                 type="email"
@@ -248,18 +248,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Class Year & Major */}
+          {/* Class Year & Form */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
                 <GraduationCap className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                <span>Class Year</span>
+                <span>Year</span>
               </label>
               <input
                 type="text"
                 value={classYear}
                 onChange={(e) => setClassYear(e.target.value)}
-                placeholder="Class of '26"
+                placeholder="2026"
                 className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
@@ -267,13 +267,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
                 <BookOpen className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                <span>Major / Program</span>
+                <span>Form / Stream</span>
               </label>
               <input
                 type="text"
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
-                placeholder="Computer Science"
+                placeholder="Form 5 Science"
                 className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
               />
             </div>
@@ -284,7 +284,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-purple-950 dark:text-purple-200 flex items-center gap-1">
                 <Cake className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                <span>Birthday (Day of Celebration)</span>
+                <span>Birthday</span>
               </label>
               <button
                 type="button"
@@ -312,10 +312,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </button>
               )}
             </div>
-
-            <p className="text-[10px] text-purple-700/80 dark:text-purple-400">
-              When your birthday matches the current date, your profile is automatically highlighted with a celebratory halo and birthday cake badge across campus reports!
-            </p>
           </div>
 
           {/* Backup & Restore Section */}
@@ -323,12 +319,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
-                <span>Campus Data Vault & Backup</span>
+                <span>Data Vault & Backup</span>
               </span>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Resilience v1</span>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-              Prevent losing customized profiles and tickets if browser cache or storage is cleared:
+              Prevent losing customized profiles and reports if browser cache is cleared:
             </p>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
               {onExportBackup && (
@@ -338,14 +334,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                 >
                   <Download className="w-3 h-3 text-purple-600 dark:text-pink-400" />
-                  <span>Download Backup (.json)</span>
+                  <span>Download Backup</span>
                 </button>
               )}
 
               {onImportBackup && (
                 <label className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
                   <Upload className="w-3 h-3 text-purple-600 dark:text-pink-400" />
-                  <span>Restore from Backup</span>
+                  <span>Restore Backup</span>
                   <input
                     type="file"
                     accept=".json,application/json"

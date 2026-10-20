@@ -16,18 +16,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setHasError(false);
+    setIsLoading(true);
 
     if (!src) {
       setBlobUrl(null);
+      setIsLoading(false);
       return;
     }
 
     // Regular URLs (http, blob, youtube, etc.) can be used directly
     if (!src.startsWith('data:')) {
       setBlobUrl(src);
+      setIsLoading(false);
       return;
     }
 
@@ -52,6 +56,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } catch (e) {
       console.error('Failed to convert video data URL to blob URL:', e);
       setHasError(true);
+    } finally {
+      setIsLoading(false);
     }
 
     return () => {
@@ -61,14 +67,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   if (hasError) {
     return (
-      <div className={`flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-4 ${className}`}>
-        <AlertTriangle className="w-6 h-6 mb-1" />
-        <span className="text-xs">Video unavailable</span>
+      <div className={`flex flex-col items-center justify-center bg-slate-900 text-slate-400 p-4 border border-rose-500/30 rounded-xl ${className}`}>
+        <AlertTriangle className="w-6 h-6 mb-1 text-rose-500" />
+        <span className="text-xs text-center font-semibold text-rose-400">Video Format Unsupported</span>
+        <span className="text-[10px] text-center mt-1">Please upload an MP4 or WebM file.</span>
       </div>
     );
   }
 
-  if (!blobUrl) {
+  if (isLoading || !blobUrl) {
     return (
       <div className={`flex items-center justify-center bg-slate-900 text-slate-400 ${className}`}>
         <Play className="w-6 h-6 opacity-50 animate-pulse" />
@@ -79,24 +86,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   if (thumbnail) {
     return (
       <video
+        key={blobUrl}
         src={blobUrl}
         preload="metadata"
         muted
         playsInline
         title={title}
         className={className}
+        onError={() => setHasError(true)}
       />
     );
   }
 
   return (
     <video
+      key={blobUrl}
       src={blobUrl}
       controls
       preload="metadata"
       playsInline
       title={title}
       className={className}
+      onError={() => setHasError(true)}
     />
   );
 };

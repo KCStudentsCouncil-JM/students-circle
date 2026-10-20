@@ -52,9 +52,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenStudentList,
   onOpenAnalytics,
 }) => {
-  // Quick Poll state (Campus Decision Pulse)
+  // Quick Poll state (School Pulse)
   const [pollVoted, setPollVoted] = useState<'yes' | 'no' | null>(() => {
-    return (localStorage.getItem('campus_poll_voted') as 'yes' | 'no') || null;
+    return (localStorage.getItem('school_poll_voted') as 'yes' | 'no') || null;
   });
   const [yesVotes, setYesVotes] = useState(148);
   const [noVotes, setNoVotes] = useState(24);
@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (choice === 'yes') setYesVotes(v => v + 1);
     else setNoVotes(v => v + 1);
     setPollVoted(choice);
-    localStorage.setItem('campus_poll_voted', choice);
+    localStorage.setItem('school_poll_voted', choice);
   };
 
   const totalPollVotes = yesVotes + noVotes;
@@ -95,8 +95,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number; highlight?: boolean }> = [
     { id: 'all', label: 'All Reports', icon: <Inbox className="w-4 h-4" />, count: counts.all },
-    { id: 'my-activity', label: 'My Activity & Endorsed', icon: <UserCheck className="w-4 h-4 text-purple-600 dark:text-pink-400" />, count: counts.myActivity },
-    { id: 'events', label: 'Upcoming Events', icon: <Calendar className="w-4 h-4 text-pink-500" />, count: counts.events, highlight: true },
+    { id: 'my-activity', label: 'My Activity & Supported', icon: <UserCheck className="w-4 h-4 text-purple-600 dark:text-pink-400" />, count: counts.myActivity },
+    { id: 'events', label: 'School Events', icon: <Calendar className="w-4 h-4 text-pink-500" />, count: counts.events, highlight: true },
     { id: 'open', label: 'Open Issues', icon: <AlertCircle className="w-4 h-4 text-purple-600 dark:text-purple-400" />, count: counts.open },
     { id: 'in-review', label: 'In Review & Active', icon: <Clock className="w-4 h-4 text-pink-600 dark:text-pink-400" />, count: counts.inReview },
     { id: 'resolved', label: 'Resolved', icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />, count: counts.resolved },
@@ -104,11 +104,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const categoryItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number }> = [
-    { id: 'facilities', label: 'Facilities & Infrastructure', icon: <Wrench className="w-3.5 h-3.5" />, count: counts.facilities },
-    { id: 'technology', label: 'Technology & IT', icon: <Wifi className="w-3.5 h-3.5" />, count: counts.technology },
-    { id: 'academics', label: 'Academics & Schedule', icon: <GraduationCap className="w-3.5 h-3.5" />, count: counts.academics },
-    { id: 'student-life', label: 'Student Life & Events', icon: <Sparkles className="w-3.5 h-3.5" />, count: counts.studentLife },
-    { id: 'safety', label: 'Safety & Security', icon: <ShieldAlert className="w-3.5 h-3.5" />, count: counts.safety },
+    { id: 'facilities', label: 'Maintenance & Classrooms', icon: <Wrench className="w-3.5 h-3.5" />, count: counts.facilities },
+    { id: 'technology', label: 'IT Lab & Computers', icon: <Wifi className="w-3.5 h-3.5" />, count: counts.technology },
+    { id: 'academics', label: 'Academic Affairs & Forms', icon: <GraduationCap className="w-3.5 h-3.5" />, count: counts.academics },
+    { id: 'student-life', label: 'Clubs & Sports', icon: <Sparkles className="w-3.5 h-3.5" />, count: counts.studentLife },
+    { id: 'safety', label: 'Security & Discipline', icon: <ShieldAlert className="w-3.5 h-3.5" />, count: counts.safety },
   ];
 
   const handleItemClick = (id: NavFilter) => {
@@ -155,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 text-white font-medium text-xs py-2.5 px-3 rounded-xl shadow-xs transition-all border border-purple-800 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Feedback / Initiative</span>
+            <span>New Report / School Idea</span>
           </button>
 
           {/* Navigation Items */}
@@ -238,24 +238,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Campus Pulse Quick Poll Widget */}
+          {/* School Pulse Quick Poll Widget */}
           <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/50 dark:from-slate-850 dark:to-purple-950/30 rounded-2xl border border-purple-200/80 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-purple-950 dark:text-purple-300 flex items-center gap-1">
                 <Vote className="w-3 h-3 text-pink-600" />
-                <span>Campus Pulse Poll</span>
+                <span>School Pulse Poll</span>
               </span>
               <span className="text-[9px] font-mono text-purple-600 dark:text-purple-400">{totalPollVotes} votes</span>
             </div>
 
             <p className="text-xs font-semibold text-purple-950 dark:text-purple-200 leading-snug">
-              Should Science Library extend quiet hours to 24/7 during midterm exams?
+              Should the library extend opening hours during exam week?
             </p>
 
             {pollVoted ? (
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between text-[11px] font-bold text-purple-900 dark:text-purple-200">
-                  <span>Yes, absolutely</span>
+                  <span>Yes, definitely</span>
                   <span>{yesPct}% ({yesVotes})</span>
                 </div>
                 <div className="w-full h-2 bg-purple-200 dark:bg-slate-700 rounded-full overflow-hidden">
@@ -301,7 +301,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full py-2 px-2 text-xs font-bold text-purple-950 dark:text-purple-200 bg-purple-100 dark:bg-slate-800 hover:bg-purple-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-purple-200 dark:border-slate-700 shadow-2xs cursor-pointer"
                 >
                   <BarChart3 className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
-                  <span>Operations Analytics</span>
+                  <span>School Analytics</span>
                 </button>
               )}
 
@@ -351,7 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Breast Cancer Awareness</span>
             </div>
             <p className="text-[11px] text-purple-900/70 dark:text-slate-400 leading-relaxed">
-              Honoring survivors, fighters, and campus advocates throughout October.
+              Honoring survivors, fighters, and advocates throughout October.
             </p>
           </div>
         </div>

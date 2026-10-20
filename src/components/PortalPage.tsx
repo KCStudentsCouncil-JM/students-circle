@@ -16,7 +16,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
   const [showAdminPrompt, setShowAdminPrompt] = useState(false);
   const [adminSecret, setAdminSecret] = useState('');
   const [adminError, setAdminError] = useState('');
-  const ADMIN_KEY = "CAMPUS2026";
+  const ADMIN_KEY = "FORTIS2026";
 
   const handleAdminVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +25,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
       setShowAdminPrompt(false);
       onSignInClick('admin');
     } else {
-      setAdminError('Invalid Secret Key!! HAHA YOU THOUGHT, text Dylon');
+      setAdminError('Invalid Staff Key. Please check with the Principal.');
     }
   };
 
@@ -38,16 +38,16 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           <div className="w-36 h-36 sm:w-40 sm:h-40 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto shadow-xl overflow-hidden border border-purple-100 dark:border-slate-800 p-1.5 transition-transform hover:scale-105 duration-200">
             <img 
               src={`${import.meta.env.BASE_URL}KCBCALogo.png`} 
-              alt="KC Students Circle Logo" 
+              alt="Kingston College Logo" 
               className="w-full h-full object-contain rounded-2xl" 
             />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-purple-950 dark:text-purple-100 tracking-tight">
-              KC Students Circle
+              Kingston College
             </h1>
             <p className="text-xs sm:text-sm text-purple-700/80 dark:text-purple-300 mt-1">
-              University Student Voice, Initiatives & Leadership Hub
+              Fortis Cadere Cedere Non Potest
             </p>
           </div>
         </div>
@@ -64,8 +64,8 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div className="text-left">
-                <h3 className="font-bold text-sm sm:text-base text-purple-950 dark:text-purple-100">Login as Student</h3>
-                <p className="text-xs text-purple-600 dark:text-purple-400">Submit reports, upvote proposals & RSVP</p>
+                <h3 className="font-bold text-sm sm:text-base text-purple-950 dark:text-purple-100">Student Login</h3>
+                <p className="text-xs text-purple-600 dark:text-purple-400">Submit reports, support ideas & RSVP</p>
               </div>
             </div>
             <span className="text-xs font-bold text-purple-700 dark:text-pink-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -94,8 +94,8 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">Login as Campus Admin</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Triage issues, verify student profiles & manage</p>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">Staff / Admin Login</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Triage reports & manage student profiles</p>
                 </div>
               </div>
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -106,8 +106,8 @@ export const PortalPage: React.FC<PortalPageProps> = ({
             <form onSubmit={handleAdminVerify} className="space-y-3 animate-in fade-in slide-in-from-top-2 p-3 bg-purple-50/30 dark:bg-slate-800/50 rounded-2xl border border-purple-100 dark:border-slate-800">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Admin Secret Key</label>
-                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Key: Breast Cancer POPS</span>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Staff Secret Key</label>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-mono">Key: FORTIS2026</span>
                 </div>
                 <div className="relative">
                   <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -115,7 +115,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                     type="password"
                     value={adminSecret}
                     onChange={(e) => setAdminSecret(e.target.value)}
-                    placeholder="Text Dylon for key"
+                    placeholder="Enter FORTIS2026"
                     className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                     autoFocus
                   />
@@ -141,7 +141,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           )}
         </div>
 
-        {/* Live Campus Stats summary */}
+        {/* Live School Stats summary */}
         <div className="flex items-center justify-around py-3 px-4 bg-white/70 dark:bg-slate-900/70 rounded-2xl border border-purple-100 dark:border-slate-800 text-center text-xs">
           <div>
             <span className="block font-bold text-purple-950 dark:text-purple-200 font-mono">{reports.length}</span>
@@ -152,12 +152,12 @@ export const PortalPage: React.FC<PortalPageProps> = ({
             <span className="block font-bold text-pink-600 dark:text-pink-400 font-mono">
               {reports.filter(r => r.type === 'initiative').length}
             </span>
-            <span className="text-[10px] text-purple-600 dark:text-purple-400">Initiatives</span>
+            <span className="text-[10px] text-purple-600 dark:text-purple-400">School Ideas</span>
           </div>
           <div className="h-6 w-px bg-purple-200 dark:bg-slate-800" />
           <div>
             <span className="block font-bold text-emerald-600 dark:text-emerald-400 font-mono">{events.length}</span>
-            <span className="text-[10px] text-purple-600 dark:text-purple-400">Campus Events</span>
+            <span className="text-[10px] text-purple-600 dark:text-purple-400">School Events</span>
           </div>
         </div>
       </div>

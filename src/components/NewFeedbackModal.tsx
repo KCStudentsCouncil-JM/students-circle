@@ -75,22 +75,22 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     let suggestedUrgency: UrgencyLevel = urgency;
     let matchedReason = '';
 
-    if (/wi-fi|wifi|internet|network|canvas|portal|login|computer|printer|server|software|password|screen|projector/.test(combined)) {
+    if (/wi-fi|wifi|internet|network|computer|printer|server|software|password|screen|projector|lab/.test(combined)) {
       suggestedCategory = 'technology';
-      matchedReason = 'Detected IT & network keywords';
-    } else if (/safety|police|theft|stairwell|dark|lighting|hazard|fire|smoke|lock|security|assault|emergency/.test(combined)) {
+      matchedReason = 'Detected IT Lab & network keywords';
+    } else if (/safety|police|theft|stairwell|dark|lighting|hazard|fire|smoke|lock|security|fight|bully/.test(combined)) {
       suggestedCategory = 'safety';
       suggestedUrgency = 'high';
-      matchedReason = 'Detected campus safety alert keywords';
-    } else if (/leak|water|fountain|toilet|bathroom|restroom|ac|air condition|heating|hvac|elevator|door|window|roof|trash|desk|chair/.test(combined)) {
+      matchedReason = 'Detected security or discipline alert keywords';
+    } else if (/leak|water|fountain|toilet|bathroom|restroom|ac|air condition|heating|hvac|elevator|door|window|roof|trash|desk|chair|classroom/.test(combined)) {
       suggestedCategory = 'facilities';
-      matchedReason = 'Detected facility & infrastructure maintenance keywords';
-    } else if (/prof|professor|grade|grading|exam|syllabus|course|credit|tutor|advising|lecture|lab session/.test(combined)) {
+      matchedReason = 'Detected maintenance & classroom keywords';
+    } else if (/teacher|form|grade|grading|exam|syllabus|course|credit|tutor|advising|lecture|homework/.test(combined)) {
       suggestedCategory = 'academics';
-      matchedReason = 'Detected academic & curriculum keywords';
-    } else if (/event|fundraiser|bca|walk|club|social|housing|dorm|dining|food|recreation|gym/.test(combined)) {
+      matchedReason = 'Detected academic & class keywords';
+    } else if (/event|fundraiser|bca|walk|club|social|tuck shop|dining|food|recreation|gym|champs|football/.test(combined)) {
       suggestedCategory = 'student-life';
-      matchedReason = 'Detected student community & life keywords';
+      matchedReason = 'Detected clubs, sports & school life keywords';
     }
 
     if (/urgent|broken down|overheating|flooded|sparks|immediate|alarm|freezing|danger|emergency|hazard/.test(combined)) {
@@ -148,6 +148,12 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         }
 
         if (validation.mediaType === 'video') {
+          if (file.size > 15 * 1024 * 1024) {
+            setUploadError('Video is too large (Max 15MB). Please trim the video or take a shorter clip.');
+            setIsProcessingMedia(false);
+            return;
+          }
+          
           const videoData = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -196,10 +202,10 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
       location: location.trim(),
       photos: photos.length > 0 ? photos : undefined,
       videos: videos.length > 0 ? videos : undefined,
-      department: category === 'facilities' ? 'Campus Facilities & Operations' : category === 'technology' ? 'Central Campus IT' : category === 'safety' ? 'Campus Safety & Police' : category === 'academics' ? 'Academic Affairs Office' : 'Student Affairs & Leadership',
+      department: category === 'facilities' ? 'Maintenance & Facilities' : category === 'technology' ? 'IT & Computer Lab' : category === 'safety' ? 'Security & Discipline' : category === 'academics' ? 'Academic Affairs' : 'Clubs & Student Life',
       isAnonymous,
       author: isAnonymous ? 'Anonymous Student' : (currentUser?.name || 'Student'),
-      authorRole: isAnonymous ? 'Enrolled Student' : (currentUser?.title || 'Undergraduate Student'),
+      authorRole: isAnonymous ? 'Student' : (currentUser?.title || 'Student'),
       authorRealName: currentUser?.name,
       authorEmail: currentUser?.email,
       authorStudentId: currentUser?.id,
@@ -223,10 +229,10 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100 tracking-tight">
-                New Campus Report or Initiative
+                New School Report or Idea
               </h2>
               <p className="text-[11px] text-purple-700/80 dark:text-purple-400">
-                Submit an issue or propose a new student initiative
+                Submit a school issue or propose a new club/sports idea
               </p>
             </div>
           </div>
@@ -253,10 +259,10 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl space-y-2 animate-in slide-in-from-top-1">
               <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-bold text-xs">
                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>Possible Duplicate Ticket Detected</span>
+                <span>Possible Duplicate Report Detected</span>
               </div>
               <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
-                A similar active report exists on campus. You can endorse it instead of filing a duplicate:
+                A similar active report exists. You can support it instead of filing a duplicate:
               </p>
               <div className="space-y-1.5 pt-1">
                 {potentialDuplicates.slice(0, 2).map((dup) => (
@@ -273,7 +279,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                         className="text-[10px] font-bold text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 px-2.5 py-1 rounded-md border border-pink-200 dark:border-pink-800 shrink-0 cursor-pointer flex items-center gap-1"
                       >
                         <ThumbsUp className="w-3 h-3 text-pink-600" />
-                        <span>Endorse Existing</span>
+                        <span>Support Existing</span>
                       </button>
                     )}
                   </div>
@@ -290,18 +296,18 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <input type="radio" name="feedbackType" value="issue" checked={feedbackType === 'issue'} onChange={() => setFeedbackType('issue')} className="mt-0.5 w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer" />
                 <div>
                   <div className="font-bold text-sm text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
-                    <Wrench className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Report Issue or Defect
+                    <Wrench className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Report Issue or Problem
                   </div>
-                  <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Facilities malfunction, Wi-Fi outage, campus hazard.</p>
+                  <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Broken AC, Wi-Fi issues, maintenance.</p>
                 </div>
               </label>
               <label className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${feedbackType === 'initiative' ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 shadow-xs' : 'border-purple-100 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-purple-50/30'}`}>
                 <input type="radio" name="feedbackType" value="initiative" checked={feedbackType === 'initiative'} onChange={() => setFeedbackType('initiative')} className="mt-0.5 w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer" />
                 <div>
                   <div className="font-bold text-sm text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-pink-600 dark:text-pink-400" /> Propose Campus Initiative
+                    <Sparkles className="w-4 h-4 text-pink-600 dark:text-pink-400" /> Propose School Idea
                   </div>
-                  <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Propose events, club fundraisers, or student amenities.</p>
+                  <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Propose events, club fundraisers, or new amenities.</p>
                 </div>
               </label>
             </div>
@@ -328,7 +334,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               maxLength={120}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={feedbackType === 'issue' ? 'e.g., Broken AC in Lab 402' : 'e.g., Annual Pink Ribbon 5K Campus Walk'}
+              placeholder={feedbackType === 'issue' ? 'e.g., Broken AC in Form 5 Classroom' : 'e.g., Inter-Form Football Tournament'}
               className={`w-full text-base sm:text-sm p-3 rounded-xl border bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-2 transition-all ${errors.title ? 'border-rose-400 focus:ring-rose-200' : 'border-purple-200 dark:border-slate-700 focus:border-purple-600 focus:ring-purple-200'}`}
             />
             {errors.title && <p className="text-[11px] text-rose-600 font-medium">{errors.title}</p>}
@@ -343,11 +349,11 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 onChange={(e) => setCategory(e.target.value as Category)}
                 className="w-full text-base sm:text-sm p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-200"
               >
-                <option value="facilities">Facilities & Operations</option>
-                <option value="technology">Central Campus IT & Tech</option>
-                <option value="academics">Academic Affairs</option>
-                <option value="student-life">Student Life & Community</option>
-                <option value="safety">Campus Safety & Police</option>
+                <option value="facilities">Maintenance & Classrooms</option>
+                <option value="technology">IT Lab & Computers</option>
+                <option value="academics">Academic Affairs & Forms</option>
+                <option value="student-life">Clubs, Sports & Student Life</option>
+                <option value="safety">Security & Discipline</option>
               </select>
             </div>
 
@@ -383,7 +389,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g., Engineering Block B, Room 402"
+                placeholder="e.g., Melbourne Building, Room 12"
                 className={`w-full text-base sm:text-sm pl-9 pr-3 py-3 rounded-xl border bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-2 transition-all ${errors.location ? 'border-rose-400 focus:ring-rose-200' : 'border-purple-200 dark:border-slate-700 focus:border-purple-600 focus:ring-purple-200'}`}
               />
             </div>
@@ -408,9 +414,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span>Media Attachments (Photos & Videos up to 20MB)</span>
+                <span>Media Attachments (Photos & Videos up to 15MB)</span>
               </label>
-              <span className="text-[10px] text-purple-500 font-mono">Max 20MB / file</span>
+              <span className="text-[10px] text-purple-500 font-mono">Max 15MB / file</span>
             </div>
 
             {uploadError && (
@@ -466,10 +472,10 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <UploadCloud className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 <div className="text-left">
                   <span className="text-xs sm:text-sm font-bold block">
-                    {isProcessingMedia ? 'Compressing and importing media...' : 'Upload Photos or Videos from Gallery'}
+                    {isProcessingMedia ? 'Compressing and importing media...' : 'Upload Photos or Videos'}
                   </span>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 block">
-                    Supports JPG, PNG, WebP, MP4, WebM (Max 20MB per file)
+                    Supports JPG, PNG, WebP, MP4, WebM (Max 15MB)
                   </span>
                 </div>
                 <input
@@ -498,7 +504,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <Shield className="w-4 h-4 text-pink-600" /> Submit Anonymously to Peers
               </label>
               <p className="text-xs text-purple-800/70 dark:text-purple-400 leading-snug mt-0.5">
-                Your public author identity will be masked as "Anonymous Student". Campus operations maintains confidential verification.
+                Your public author identity will be masked as "Anonymous Student". Staff maintains confidential verification.
               </p>
             </div>
           </div>
@@ -507,7 +513,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         {/* Footer */}
         <div className="px-4 sm:px-6 py-4 bg-white dark:bg-slate-900 border-t border-purple-100 dark:border-slate-800 flex items-center justify-between shrink-0 pb-safe">
           <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5 hidden sm:flex">
-            <Ribbon className="w-4 h-4 text-pink-500" /> BCA Month Solidarity
+            <Ribbon className="w-4 h-4 text-pink-500" /> Fortis Cadere Cedere Non Potest
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button 

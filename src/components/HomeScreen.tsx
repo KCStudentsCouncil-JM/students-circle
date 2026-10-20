@@ -131,7 +131,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {isMyBirthday && ' 🎂'}
                 </h1>
                 <p className="text-xs sm:text-sm text-white/80 font-medium">
-                  {currentUser.major || 'Student'} · {currentUser.classYear || 'Class of 2026'}
+                  {currentUser.major || 'Student'} · {currentUser.classYear || 'Form 5'}
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           {isMyBirthday && (
             <div className="relative z-10 mt-4 bg-white/20 backdrop-blur-sm rounded-2xl p-3 flex items-center gap-2 text-sm font-bold">
               <PartyPopper className="w-5 h-5 text-amber-300" />
-              <span>Happy Birthday! The whole campus is celebrating with you today 🎉</span>
+              <span>Happy Birthday! The whole school is celebrating with you today 🎉</span>
             </div>
           )}
         </div>
@@ -166,7 +166,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {[
             {
-              label: 'Open Tickets',
+              label: 'Open Issues',
               value: reports.filter((r) => r.status === 'open').length,
               icon: <Inbox className="w-4 h-4" />,
               color: 'text-purple-700 dark:text-purple-300',
@@ -224,9 +224,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <Inbox className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">My Active Tickets</h2>
+                  <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">My Active Reports</h2>
                   <p className="text-[10px] text-purple-500 dark:text-purple-400">
-                    Reports you authored or endorsed
+                    Reports you created or supported
                   </p>
                 </div>
               </div>
@@ -243,7 +243,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div className="p-6 text-center">
                   <MessageSquare className="w-8 h-8 mx-auto mb-2 text-purple-300 opacity-60" />
                   <p className="text-xs font-semibold text-purple-950 dark:text-purple-200">
-                    No active tickets
+                    No active reports
                   </p>
                   <p className="text-[11px] text-purple-500 dark:text-purple-400 mt-0.5 mb-3">
                     Submit your first report to get started.
@@ -291,7 +291,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         {endorsed && (
                           <>
                             <span>·</span>
-                            <span className="text-pink-600 dark:text-pink-400 font-bold">Endorsed</span>
+                            <span className="text-pink-600 dark:text-pink-400 font-bold">Supported</span>
                           </>
                         )}
                       </div>
@@ -312,7 +312,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div>
                   <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">Trending This Week</h2>
                   <p className="text-[10px] text-purple-500 dark:text-purple-400">
-                    Highest student endorsements
+                    Highest student support
                   </p>
                 </div>
               </div>
@@ -495,7 +495,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div>
                 <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">Upcoming Events</h2>
                 <p className="text-[10px] text-purple-500 dark:text-purple-400">
-                  {myEvents.length > 0 ? `You're going to ${myEvents.length} event${myEvents.length > 1 ? 's' : ''}` : 'RSVP to save your spot'}
+                  {myEvents.length > 0 ? `You're attending ${myEvents.length} event${myEvents.length > 1 ? 's' : ''}` : 'RSVP to save your spot'}
                 </p>
               </div>
             </div>

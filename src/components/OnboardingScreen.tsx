@@ -3,7 +3,7 @@ import { UserProfile } from '../types';
 import { Ribbon, ArrowRight, ShieldAlert } from 'lucide-react';
 
 interface Props {
-  firebaseUser: any; // from firebase auth
+  firebaseUser: any;
   onSubmit: (profile: UserProfile) => void;
   onSignOut: () => void;
 }
@@ -35,17 +35,17 @@ export const OnboardingScreen: React.FC<Props> = ({ firebaseUser, onSubmit, onSi
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md border border-purple-100 p-1 overflow-hidden">
             <img 
               src={`${import.meta.env.BASE_URL}KCBCALogo.png`} 
-              alt="KC BCA Logo" 
+              alt="KC Logo" 
               className="w-full h-full object-contain rounded-xl" 
             />
           </div>
-          <h1 className="text-xl font-bold text-purple-950">Complete Your Student Profile</h1>
-          <p className="text-xs text-purple-700/80">KC Students Circle · Verification Request</p>
+          <h1 className="text-xl font-bold text-purple-950">Complete Student Profile</h1>
+          <p className="text-xs text-purple-700/80">Kingston College · Verification Request</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs font-semibold text-purple-900 block mb-1">Email</label>
+            <label className="text-xs font-semibold text-purple-900 block mb-1">School Email</label>
             <input disabled type="text" value={firebaseUser.email} className="w-full p-2.5 text-xs border border-purple-200 rounded-lg bg-slate-50 text-slate-500" />
           </div>
           <div>
@@ -53,12 +53,12 @@ export const OnboardingScreen: React.FC<Props> = ({ firebaseUser, onSubmit, onSi
             <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2.5 text-xs border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-purple-900 block mb-1">Academic Focus (Major)</label>
-            <input required type="text" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Computer Science" className="w-full p-2.5 text-xs border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500" />
+            <label className="text-xs font-semibold text-purple-900 block mb-1">Form / Stream (e.g. Form 5 Science)</label>
+            <input required type="text" value={major} onChange={e => setMajor(e.target.value)} placeholder="e.g. Form 4 Business" className="w-full p-2.5 text-xs border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500" />
           </div>
           <div>
-            <label className="text-xs font-semibold text-purple-900 block mb-1">Class Year</label>
-            <input required type="text" value={classYear} onChange={e => setClassYear(e.target.value)} placeholder="e.g. Class of '26" className="w-full p-2.5 text-xs border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500" />
+            <label className="text-xs font-semibold text-purple-900 block mb-1">Year (e.g. 2026)</label>
+            <input required type="text" value={classYear} onChange={e => setClassYear(e.target.value)} placeholder="e.g. 2026" className="w-full p-2.5 text-xs border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500" />
           </div>
 
           <button type="submit" className="w-full py-3 bg-purple-800 hover:bg-purple-900 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2">
