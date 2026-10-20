@@ -24,7 +24,6 @@ import {
   Layers,
   UploadCloud,
   Play,
-  Film
 } from 'lucide-react';
 
 interface EventsSectionProps {
@@ -70,7 +69,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [newTags, setNewTags] = useState('Campus, Student Life');
   const [newCapacity, setNewCapacity] = useState('250');
 
-  // Gallery & Link Media (Photos and Videos up to 20MB)
+  // Gallery & Link Media (Photos and Videos up to 15MB)
   const [newVideoUrl, setNewVideoUrl] = useState(''); 
   const [galleryVideoFileName, setGalleryVideoFileName] = useState<string | null>(null);
   const [newGalleryPhotoUrl, setNewGalleryPhotoUrl] = useState('');
@@ -108,7 +107,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     const isMulti = event.eventType === 'multi-day' && event.endDate;
     const dateFormatted = event.date.replace(/-/g, '');
     
-    // In RFC 5545, DTEND;VALUE=DATE is non-inclusive, so add 1 day to the end date
     const getNextDayFormatted = (isoDate: string) => {
       try {
         const parts = isoDate.split('-');
@@ -160,7 +158,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     }
   };
 
-  // Gallery Photos File Upload (Max 20MB)
   const handleGalleryPhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setMediaUploadError(null);
     const files = e.target.files;
@@ -196,7 +193,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     }
   };
 
-  // Gallery Video File Upload (Max 20MB)
   const handleGalleryVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setMediaUploadError(null);
     const file = e.target.files?.[0];
@@ -208,7 +204,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       return;
     }
     if (validation.mediaType !== 'video') {
-      setMediaUploadError('Please select a valid video file (.mp4, .webm, .mov) up to 20MB.');
+      setMediaUploadError('Please select a valid video file (.mp4 or .webm) up to 15MB.');
       return;
     }
 
@@ -243,7 +239,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       return;
     }
 
-    // Calculate duration in days if multi-day
     let durationDays = 1;
     if (newEventType === 'multi-day' && newEndDate) {
       const startMs = new Date(newDate).getTime();
@@ -251,7 +246,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       durationDays = Math.max(1, Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
     }
 
-    // Construct final time from X to Y
     let computedTime = '';
     if (isCustomTime && newTimeCustom.trim()) {
       computedTime = newTimeCustom.trim();
@@ -413,7 +407,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           <div className="flex items-center gap-2.5">
             <button
               onClick={onBackToReports}
-              className="flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] rounded-xl bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-slate-700 text-purple-950 dark:text-purple-200 font-semibold text-xs border border-purple-200 dark:border-slate-700 shadow-2xs transition-all cursor-pointer touch-manipulation active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-xl bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-slate-700 text-purple-950 dark:text-purple-200 font-semibold text-xs border border-purple-200 dark:border-slate-700 shadow-2xs transition-all cursor-pointer touch-manipulation active:scale-95"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
               <span>Back to Reports</span>
@@ -440,7 +434,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search events..."
-                className="w-full text-xs pl-8 pr-7 py-1.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-purple-50/60 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                className="w-full text-base sm:text-xs pl-8 pr-7 py-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-purple-50/60 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
               />
             </div>
 
@@ -448,7 +442,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             {role === 'admin' && (
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-800 to-slate-900 hover:from-purple-900 hover:to-black text-white px-3 py-1.5 min-h-[36px] rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-purple-800 to-slate-900 hover:from-purple-900 hover:to-black text-white px-3 py-1.5 min-h-[44px] rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer touch-manipulation active:scale-95"
               >
                 <Plus className="w-3.5 h-3.5 text-pink-400" />
                 <span>Publish Event</span>
@@ -473,7 +467,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id as any)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 touch-manipulation ${
+                className={`px-3 py-2 min-h-[36px] rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 touch-manipulation ${
                   isSelected
                     ? cat.accent
                       ? 'bg-pink-600 text-white shadow-2xs'
@@ -489,7 +483,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       </div>
 
       {/* Main Content: Scrollable Grid */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 space-y-5 momentum-scroll">
         {filteredEvents.length === 0 ? (
           <div className="p-12 text-center text-purple-950/60 dark:text-purple-400 flex flex-col items-center justify-center min-h-[260px] bg-white dark:bg-slate-900 rounded-3xl border border-purple-100 dark:border-slate-800">
             <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-slate-800 flex items-center justify-center text-purple-500 mb-3">
@@ -497,7 +491,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
             </div>
             <h3 className="text-sm font-bold text-purple-950 dark:text-purple-200">No events found</h3>
             <p className="text-xs text-purple-700/70 dark:text-purple-400 mt-1 max-w-sm">
-              No campus events match your selected category or search filter.
+              No school events match your selected category or search filter.
             </p>
           </div>
         ) : (
@@ -549,10 +543,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                             e.stopPropagation(); 
                             setEventToDelete(evt.id); 
                           }}
-                          className="text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 p-1.5 rounded-lg transition-colors cursor-pointer"
+                          className="text-rose-500 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 p-2 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                           title="Delete Event permanently"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -577,7 +571,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                             setActiveGalleryEvent(evt);
                             setGalleryIndex(0);
                           }}
-                          className="w-full flex items-center justify-between p-2 rounded-xl bg-purple-50/70 dark:bg-slate-800 border border-purple-200/80 dark:border-slate-700 text-xs font-semibold text-purple-950 dark:text-purple-200 hover:bg-purple-100 transition-colors cursor-pointer"
+                          className="w-full flex items-center justify-between p-2 rounded-xl bg-purple-50/70 dark:bg-slate-800 border border-purple-200/80 dark:border-slate-700 text-xs font-semibold text-purple-950 dark:text-purple-200 hover:bg-purple-100 transition-colors cursor-pointer min-h-[44px]"
                         >
                           <span className="flex items-center gap-1.5">
                             <ImageIcon className="w-3.5 h-3.5 text-pink-600" />
@@ -612,14 +606,14 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                       <button
                         onClick={() => handleDownloadIcs(evt)}
                         title="Download .ics calendar invite"
-                        className="p-1.5 rounded-xl text-purple-600 dark:text-purple-400 hover:text-purple-950 hover:bg-purple-100 dark:hover:bg-slate-800 transition-colors cursor-pointer touch-manipulation"
+                        className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-purple-600 dark:text-purple-400 hover:text-purple-950 hover:bg-purple-100 dark:hover:bg-slate-800 transition-colors cursor-pointer touch-manipulation"
                       >
-                        <Download className="w-3.5 h-3.5" />
+                        <Download className="w-4 h-4" />
                       </button>
 
                       <button
                         onClick={() => onToggleRsvp(evt.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1 ${
+                        className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1 ${
                           hasUserRsvpd
                             ? 'bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-300 dark:border-pink-800 font-bold shadow-2xs'
                             : 'bg-purple-800 dark:bg-purple-700 hover:bg-purple-900 text-white shadow-2xs'
@@ -641,7 +635,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       {isAddModalOpen && role === 'admin' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-purple-950/50 backdrop-blur-xs select-none">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-purple-200 dark:border-slate-800 w-full max-w-lg max-h-[94dvh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-200">
-            <div className="px-5 py-4 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50/80 to-white dark:from-slate-900 dark:to-slate-800">
+            <div className="px-5 py-4 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50/80 to-white dark:from-slate-900 dark:to-slate-800 pt-safe">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-purple-800 dark:bg-purple-700 text-white flex items-center justify-center shadow-xs">
                   <Calendar className="w-4 h-4" />
@@ -653,14 +647,13 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-purple-400 hover:text-purple-900 dark:hover:text-purple-100 p-1 rounded-lg cursor-pointer"
+                className="text-purple-400 hover:text-purple-900 dark:hover:text-purple-100 p-2 rounded-lg cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateEventSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs select-text">
-              {/* Event Type: Single Day vs Multi-Day */}
+            <form onSubmit={handleCreateEventSubmit} className="flex-1 overflow-y-auto p-5 space-y-3.5 text-xs select-text momentum-scroll">
               <div className="space-y-1">
                 <label className="font-bold text-purple-950 dark:text-purple-200 block">Event Schedule Format *</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -696,12 +689,11 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g., Campus Innovation Sprint 2026"
-                  className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                  className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.title && <p className="text-rose-600 text-[10px]">{formErrors.title}</p>}
               </div>
 
-              {/* Dates & Times: One-Day from X to Y OR Multi-Day from X to Y */}
               {newEventType === 'single-day' ? (
                 <div className="p-3 bg-purple-50/70 dark:bg-slate-800/70 rounded-2xl border border-purple-200 dark:border-slate-700 space-y-2.5">
                   <div className="flex items-center justify-between">
@@ -724,7 +716,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                       type="date"
                       value={newDate}
                       onChange={(e) => setNewDate(e.target.value)}
-                      className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
+                      className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                     />
                   </div>
 
@@ -737,7 +729,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                           value={newStartTime}
                           onChange={(e) => setNewStartTime(e.target.value)}
                           placeholder="e.g. 10:00 AM"
-                          className="w-full p-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium text-xs"
+                          className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                         />
                         <div className="flex gap-1 flex-wrap pt-0.5">
                           {['9:00 AM', '10:00 AM', '1:00 PM', '2:00 PM', '6:00 PM'].map(preset => (
@@ -745,7 +737,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                               key={preset}
                               type="button"
                               onClick={() => setNewStartTime(preset)}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
+                              className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
                             >
                               {preset}
                             </button>
@@ -760,7 +752,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                           value={newEndTime}
                           onChange={(e) => setNewEndTime(e.target.value)}
                           placeholder="e.g. 1:00 PM"
-                          className="w-full p-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium text-xs"
+                          className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                         />
                         <div className="flex gap-1 flex-wrap pt-0.5">
                           {['12:00 PM', '1:00 PM', '3:00 PM', '5:00 PM', '8:00 PM'].map(preset => (
@@ -768,7 +760,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                               key={preset}
                               type="button"
                               onClick={() => setNewEndTime(preset)}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
+                              className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
                             >
                               {preset}
                             </button>
@@ -784,7 +776,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         value={newTimeCustom}
                         onChange={(e) => setNewTimeCustom(e.target.value)}
                         placeholder="e.g. 10:00 AM - 1:00 PM EST"
-                        className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                        className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                       />
                     </div>
                   )}
@@ -819,7 +811,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         type="date"
                         value={newDate}
                         onChange={(e) => setNewDate(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
+                        className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                       />
                     </div>
                     <div className="space-y-1">
@@ -828,13 +820,12 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         type="date"
                         value={newEndDate}
                         onChange={(e) => setNewEndDate(e.target.value)}
-                        className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
+                        className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                       />
                     </div>
                   </div>
                   {formErrors.endDate && <p className="text-rose-600 text-[10px]">{formErrors.endDate}</p>}
 
-                  {/* Calculated Duration Days Preview */}
                   {newDate && newEndDate && (
                     <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-purple-100/70 dark:bg-slate-900 border border-purple-200 dark:border-slate-700 text-[11px] text-purple-900 dark:text-purple-200 font-semibold">
                       <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
@@ -853,7 +844,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                           value={newStartTime}
                           onChange={(e) => setNewStartTime(e.target.value)}
                           placeholder="e.g. 9:00 AM"
-                          className="w-full p-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium text-xs"
+                          className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                         />
                         <div className="flex gap-1 flex-wrap pt-0.5">
                           {['8:30 AM', '9:00 AM', '10:00 AM', '1:00 PM'].map(preset => (
@@ -861,7 +852,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                               key={preset}
                               type="button"
                               onClick={() => setNewStartTime(preset)}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
+                              className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
                             >
                               {preset}
                             </button>
@@ -876,7 +867,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                           value={newEndTime}
                           onChange={(e) => setNewEndTime(e.target.value)}
                           placeholder="e.g. 5:00 PM"
-                          className="w-full p-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium text-xs"
+                          className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 font-medium"
                         />
                         <div className="flex gap-1 flex-wrap pt-0.5">
                           {['3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'].map(preset => (
@@ -884,7 +875,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                               key={preset}
                               type="button"
                               onClick={() => setNewEndTime(preset)}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
+                              className="text-[10px] px-2 py-1 rounded bg-purple-100 dark:bg-slate-700 text-purple-900 dark:text-purple-200 hover:bg-purple-200 cursor-pointer"
                             >
                               {preset}
                             </button>
@@ -900,7 +891,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         value={newTimeCustom}
                         onChange={(e) => setNewTimeCustom(e.target.value)}
                         placeholder="e.g. 9:00 AM - 5:00 PM Daily"
-                        className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                        className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                       />
                     </div>
                   )}
@@ -919,7 +910,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value as EventCategory)}
-                  className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                  className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 >
                   <option value="student-life">Student Life & Community</option>
                   <option value="bca-awareness">🎗️ Breast Cancer Awareness (BCA)</option>
@@ -937,7 +928,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
                   placeholder="e.g., Student Union Lawn & Main Quad"
-                  className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                  className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.location && <p className="text-rose-600 text-[10px]">{formErrors.location}</p>}
               </div>
@@ -949,7 +940,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   placeholder="Event details, registration guidelines..."
-                  className="w-full p-2.5 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                  className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
                 {formErrors.description && <p className="text-rose-600 text-[10px]">{formErrors.description}</p>}
               </div>
@@ -960,36 +951,35 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 </div>
               )}
 
-              {/* 4. GALLERY VIDEOS (Max 20MB) & External Links */}
+              {/* 4. GALLERY VIDEOS (Max 15MB) & External Links */}
               <div className="p-3 bg-purple-50 dark:bg-slate-800 rounded-2xl border border-purple-200 dark:border-slate-700 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
                     <Video className="w-4 h-4 text-pink-600" /> 
-                    <span>Attach Video Promo / Trailer (Max 20MB)</span>
+                    <span>Attach Video Promo / Trailer (Max 15MB)</span>
                   </label>
                   <span className="text-[10px] font-mono text-purple-500">Device Gallery or URL</span>
                 </div>
 
-                {/* Upload from Gallery Button */}
                 <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-purple-300 dark:border-slate-600 hover:border-purple-500 bg-white dark:bg-slate-900 hover:bg-purple-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-purple-950 dark:text-purple-200">
                   <UploadCloud className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <span className="text-xs font-semibold">
-                    {isProcessingMedia ? 'Processing Video...' : 'Upload Video from Gallery (Max 20MB)'}
+                    {isProcessingMedia ? 'Processing Video...' : 'Upload Video from Gallery (Max 15MB)'}
                   </span>
                   <input
                     type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/mov"
+                    accept="video/mp4,video/webm"
                     onChange={handleGalleryVideoUpload}
                     disabled={isProcessingMedia}
                     className="hidden"
                   />
                 </label>
 
-                {/* Video Preview if Uploaded */}
+                {/* SAFE VIDEO PREVIEW */}
                 {newVideoUrl && (
                   <div className="relative rounded-xl overflow-hidden border border-purple-300 dark:border-slate-600 bg-black aspect-video mt-2">
-                    {newVideoUrl.startsWith('data:video') || newVideoUrl.endsWith('.mp4') || newVideoUrl.endsWith('.mov') || newVideoUrl.endsWith('.webm') ? (
-                      <video src={newVideoUrl} controls className="w-full h-full object-contain" />
+                    {newVideoUrl.startsWith('data:video') || newVideoUrl.endsWith('.mp4') || newVideoUrl.endsWith('.webm') ? (
+                      <VideoPlayer src={newVideoUrl} className="w-full h-full object-contain" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-xs p-2 text-center">
                         External video link attached: {newVideoUrl.slice(0, 40)}...
@@ -1001,7 +991,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         setNewVideoUrl('');
                         setGalleryVideoFileName(null);
                       }}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow cursor-pointer text-xs font-bold"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow cursor-pointer text-xs font-bold z-10"
                       title="Remove attached video"
                     >
                       ×
@@ -1014,7 +1004,6 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   </div>
                 )}
 
-                {/* Alternative URL input */}
                 <div className="pt-1">
                   <input 
                     type="url" 
@@ -1023,13 +1012,13 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                       setNewVideoUrl(e.target.value);
                       setGalleryVideoFileName(null);
                     }} 
-                    className="w-full p-2 text-xs rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 placeholder:text-purple-400/80" 
+                    className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400 placeholder:text-purple-400/80" 
                     placeholder="Or paste YouTube or direct video URL" 
                   />
                 </div>
               </div>
 
-              {/* 5. EVENT PHOTOS: Upload from Gallery (Max 20MB) & URLs */}
+              {/* 5. EVENT PHOTOS */}
               <div className="p-3 bg-pink-50/50 dark:bg-slate-800 rounded-2xl border border-pink-200 dark:border-slate-700 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="font-bold text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
@@ -1041,11 +1030,10 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   </span>
                 </div>
 
-                {/* Upload Photos from Gallery Button */}
                 <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-pink-300 dark:border-slate-600 hover:border-pink-500 bg-white dark:bg-slate-900 hover:bg-pink-50 dark:hover:bg-slate-800 transition-colors cursor-pointer text-purple-950 dark:text-purple-200">
                   <UploadCloud className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                   <span className="text-xs font-semibold">
-                    {isProcessingMedia ? 'Compressing & importing...' : 'Upload Photos from Gallery (Max 20MB)'}
+                    {isProcessingMedia ? 'Compressing & importing...' : 'Upload Photos from Gallery'}
                   </span>
                   <input
                     type="file"
@@ -1057,25 +1045,23 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   />
                 </label>
 
-                {/* Add Photo by URL */}
                 <div className="flex gap-2">
                   <input
                     type="url"
                     value={newGalleryPhotoUrl}
                     onChange={(e) => setNewGalleryPhotoUrl(e.target.value)}
                     placeholder="Or paste online photo URL..."
-                    className="flex-1 p-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-purple-950 dark:text-purple-100 text-xs focus:outline-none"
+                    className="flex-1 p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAddGalleryPhotoUrl}
-                    className="px-3 py-1.5 bg-pink-600 text-white rounded-xl font-bold cursor-pointer hover:bg-pink-700 text-xs"
+                    className="px-4 py-2 bg-pink-600 text-white rounded-xl font-bold cursor-pointer hover:bg-pink-700 text-xs min-h-[44px]"
                   >
                     Add URL
                   </button>
                 </div>
 
-                {/* Gallery Photos Preview Grid */}
                 {galleryPhotosList.length > 0 && (
                   <div className="flex gap-2 flex-wrap pt-1">
                     {galleryPhotosList.map((url, i) => (
@@ -1095,17 +1081,17 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 )}
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-purple-100 dark:border-slate-800">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-purple-100 dark:border-slate-800 pb-safe">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-3 py-2 rounded-xl text-purple-800 dark:text-purple-300 hover:bg-purple-100 cursor-pointer"
+                  className="px-4 py-3 min-h-[44px] rounded-xl text-purple-800 dark:text-purple-300 hover:bg-purple-100 cursor-pointer text-xs font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-purple-900 text-white font-semibold shadow-xs hover:bg-purple-950 cursor-pointer"
+                  className="px-5 py-3 min-h-[44px] rounded-xl bg-purple-900 text-white font-semibold shadow-xs hover:bg-purple-950 cursor-pointer text-xs"
                 >
                   Publish Event
                 </button>
@@ -1139,7 +1125,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
               <button
                 type="button"
                 onClick={() => setEventToDelete(null)}
-                className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer"
+                className="px-4 py-2.5 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -1151,7 +1137,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   }
                   setEventToDelete(null);
                 }}
-                className="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                className="px-5 py-2.5 min-h-[44px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
               >
                 Confirm Delete
               </button>
@@ -1164,7 +1150,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
       {activeGalleryEvent && activeGalleryEvent.galleryPhotos && (
         <div 
           onClick={() => setActiveGalleryEvent(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md select-none"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md select-none pb-safe pt-safe"
         >
           <div 
             onClick={e => e.stopPropagation()} 
@@ -1172,7 +1158,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
           >
             <button
               onClick={() => setActiveGalleryEvent(null)}
-              className="absolute -top-10 right-0 text-white/80 hover:text-white p-2 cursor-pointer"
+              className="absolute -top-12 right-0 text-white/80 hover:text-white p-2 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
               <X className="w-6 h-6" />
             </button>
@@ -1195,15 +1181,15 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 <>
                   <button
                     onClick={() => setGalleryIndex(prev => (prev > 0 ? prev - 1 : activeGalleryEvent.galleryPhotos!.length - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 cursor-pointer"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 cursor-pointer"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
                   <button
                     onClick={() => setGalleryIndex(prev => (prev < activeGalleryEvent.galleryPhotos!.length - 1 ? prev + 1 : 0))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 cursor-pointer"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
                 </>
               )}
