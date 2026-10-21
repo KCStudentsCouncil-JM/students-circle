@@ -26,7 +26,6 @@ jobs:
         with:
           node-version: 20
 
-      # 👇 THIS IS THE FIX: Adding --ignore-scripts=false
       - name: Install dependencies
         run: npm install --legacy-peer-deps --ignore-scripts=false
 
