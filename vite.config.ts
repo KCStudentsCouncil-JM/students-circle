@@ -32,8 +32,9 @@ export default defineConfig(({ command }) => {
           background_color: '#faf8fc',
           display: 'standalone',
           orientation: 'portrait',
-          scope: '/',
-          start_url: '/',
+          // 👇 THE FIX: Use the dynamic base path instead of hardcoded '/'
+          scope: base,
+          start_url: base,
           icons: [
             {
               src: 'pwa-192x192.png',
