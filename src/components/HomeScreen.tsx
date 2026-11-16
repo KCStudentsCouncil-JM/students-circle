@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { FeedbackReport, CampusEvent, UserProfile, isBirthdayToday } from '../types';
-import { calculateSlaInfo, formatReportId, formatEventId } from '../utils';
+import { FeedbackReport, CampusEvent, UserProfile, CampusAnnouncement, RoleMode, isBirthdayToday } from '../types';
+import { NoticeBoard, NoticeAnnouncementPayload } from './NoticeBoard';
+import { calculateSlaInfo, formatReportId, formatEventId, parseLocalDate } from '../utils';
 import {
   Sparkles, Calendar, ThumbsUp, Cake, PartyPopper, Inbox,
   ArrowRight, Plus, MessageSquare, Flame, MapPin, Users,
@@ -9,9 +10,16 @@ import {
 
 interface HomeScreenProps {
   currentUser: UserProfile;
+  role?: RoleMode;
   reports: FeedbackReport[];
   events: CampusEvent[];
   allUsers: UserProfile[];
+  announcements?: CampusAnnouncement[];
+  onAddAnnouncement?: (payload: NoticeAnnouncementPayload) => void;
+  onUpdateAnnouncement?: (id: string, updates: NoticeAnnouncementPayload) => void;
+  onDeleteAnnouncement?: (id: string) => void;
+  onVoteAnnouncementPoll?: (announcementId: string, optionId: string) => void;
+  onToggleAnnouncementPin?: (announcementId: string) => void;
   onSelectReport: (id: string) => void;
   onToggleUpvote: (id: string, e: React.MouseEvent) => void;
   onNavigateToEvents: () => void;
@@ -22,9 +30,16 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   currentUser,
+  role = 'student',
   reports,
   events,
   allUsers,
+  announcements = [],
+  onAddAnnouncement,
+  onUpdateAnnouncement,
+  onDeleteAnnouncement,
+  onVoteAnnouncementPoll,
+  onToggleAnnouncementPin,
   onSelectReport,
   onToggleUpvote,
   onNavigateToEvents,
@@ -47,7 +62,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             (r.authorEmail === currentUser.email || r.author === currentUser.name) ||
             r.endorsers?.some((e) => e.email === currentUser.email)
         )
-        .filter((r) => r.status !== 'resolved' && r.status !== 'draft')
+        .filter((r) => r.status !== 'resolved' && r.status !== 'draft' && r.status !== 'rejected')
         .slice(0, 3),
     [reports, currentUser]
   );
@@ -70,8 +85,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     return [...events]
-      .filter((e) => new Date(e.date).getTime() >= startOfToday.getTime())
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter((e) => {
+        const endOrStart = e.endDate ? parseLocalDate(e.endDate) : parseLocalDate(e.date);
+        return endOrStart.getTime() >= startOfToday.getTime();
+      })
+      .sort((a, b) => parseLocalDate(a.date).getTime() - parseLocalDate(b.date).getTime())
       .slice(0, 4);
   }, [events]);
 
@@ -212,6 +230,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           ))}
         </div>
+
+        {/* ========== CAMPUS NOTICE BOARD ========== */}
+        <NoticeBoard
+          announcements={announcements}
+          role={role}
+          currentUserEmail={currentUser.email}
+          variant="card"
+          onAddAnnouncement={onAddAnnouncement}
+          onUpdateAnnouncement={onUpdateAnnouncement}
+          onDeleteAnnouncement={onDeleteAnnouncement}
+          onVotePoll={onVoteAnnouncementPoll}
+          onTogglePin={onToggleAnnouncementPin}
+        />
 
         {/* ========== MAIN GRID ========== */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
@@ -518,7 +549,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             ) : (
               upcomingEvents.map((e) => {
                 const isGoing = e.attendees?.includes(currentUser.email);
-                const dateObj = new Date(e.date);
+                const dateObj = parseLocalDate(e.date);
                 return (
                   <button
                     key={e.id}

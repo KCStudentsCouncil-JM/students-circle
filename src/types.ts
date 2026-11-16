@@ -88,28 +88,25 @@ export type NavFilter =
   | 'events' | 'initiatives' | 'issues' | 'facilities' | 'technology' 
   | 'academics' | 'student-life' | 'safety';
 
-// Notification system
-export interface InAppNotification {
+// Official Campus Announcements (Notice Board)
+export type NoticeBoardItemType = 'notice' | 'update' | 'alert' | 'poll';
+
+export interface NoticePollOption {
   id: string;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  type: 'status' | 'reply' | 'event' | 'pin';
-  linkReportId?: string;
+  label: string;
+  voters: string[];
 }
 
-// Quick Poll Data
-export interface QuickPoll {
+export interface CampusAnnouncement {
   id: string;
-  question: string;
-  options: Array<{
-    id: string;
-    text: string;
-    votes: number;
-  }>;
-  totalVotes: number;
-  votedOptionId?: string;
+  type?: NoticeBoardItemType;
+  title: string;
+  message: string;
+  author: string;
+  createdAt: string;
+  updatedAt?: string;
+  pinned?: boolean;
+  pollOptions?: NoticePollOption[];
 }
 
 // Unified User Profile for everything

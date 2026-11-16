@@ -1,10 +1,52 @@
-import { FeedbackReport, CampusEvent, UserProfile } from './types';
+import { FeedbackReport, CampusEvent, UserProfile, CampusAnnouncement } from './types';
+import { formatLocalDateIso } from './utils';
 
-// Helper to get today's month and day for realistic birthday demonstration
+// Helper to get today's month and day for birthday support
 const now = new Date();
 const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
 const currentDay = String(now.getDate()).padStart(2, '0');
 const dynamicTodayBirthday = `2004-${currentMonth}-${currentDay}`;
+
+const getFutureIsoDate = (daysAhead: number): string => {
+  const d = new Date(now);
+  d.setDate(d.getDate() + daysAhead);
+  return formatLocalDateIso(d);
+};
+
+export const INITIAL_ANNOUNCEMENTS: CampusAnnouncement[] = [
+  {
+    id: 'ann-101',
+    type: 'notice',
+    title: 'Midterm Extended Library Hours',
+    message: 'Library quiet zones are open until 6:00 PM on weekdays for Midterm preparation. Senior Prefects are on duty.',
+    author: 'Principal Reid',
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    pinned: true,
+  },
+  {
+    id: 'ann-102',
+    type: 'poll',
+    title: 'Preferred Inter-Form Sports Afternoon Format',
+    message: 'Cast your vote for next month’s house & inter-form afternoon schedule.',
+    author: "Kingston College Students' Council",
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+    pinned: false,
+    pollOptions: [
+      { id: 'opt-1', label: '7-a-Side Football & Relays', voters: ['headboy@kc.edu.jm'] },
+      { id: 'opt-2', label: 'Basketball & Track Meet', voters: ['sarah.j@kc.edu.jm'] },
+      { id: 'opt-3', label: 'Mixed House Field Games', voters: [] },
+    ],
+  },
+  {
+    id: 'ann-103',
+    type: 'update',
+    title: 'Computer Lab 2 Maintenance Scheduled',
+    message: 'IT & Maintenance will inspect the AC compressor tomorrow at 7:30 AM before first period.',
+    author: 'Principal Reid',
+    createdAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
+    pinned: false,
+  },
+];
 
 export const INITIAL_USERS: UserProfile[] = [
   {
@@ -236,7 +278,7 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     id: 'KCEV-501',
     title: '💜 Fortis Purple & White Spirit Assembly & Mentorship Forum',
     description: 'Join the entire student body, faculty, and visiting Old Boys for the annual Fortis Leadership Assembly, featuring academic award presentations and Upper 6 mentorship sessions.',
-    date: '2026-10-24',
+    date: getFutureIsoDate(3),
     time: '8:30 AM - 11:30 AM',
     location: 'North Street Main Auditorium',
     organizer: "Kingston College Students' Council",
@@ -247,14 +289,13 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     capacity: 450,
     isOfficialUniversityEvent: true,
     featured: true,
-    videoUrl: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk',
     attendees: ['headboy@kc.edu.jm', 'sarah.j@kc.edu.jm']
   },
   {
     id: 'KCEV-502',
     title: 'Annual ISSA Boys & Girls Championships (Champs) Send-Off',
     description: 'Wear your purple and white! We are sending off the KC Track & Field team to Champs with a massive pep rally on the field.',
-    date: '2026-10-28',
+    date: getFutureIsoDate(7),
     time: '10:00 AM - 3:00 PM',
     location: 'KC Main Field',
     organizer: 'Sports Department & Old Boys Association',
@@ -271,8 +312,8 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     id: 'KCEV-503',
     title: 'Campus Hackathon: Build for Good 2026',
     description: 'A 3-day sprint building applications that improve student accessibility, local sustainability, and campus civic engagement. Mentors & hardware provided!',
-    date: '2026-11-06',
-    endDate: '2026-11-08',
+    date: getFutureIsoDate(12),
+    endDate: getFutureIsoDate(14),
     durationDays: 3,
     time: '9:00 AM - 6:00 PM Daily',
     location: 'Computer Lab 1 & 2',
@@ -290,7 +331,7 @@ export const INITIAL_EVENTS: CampusEvent[] = [
     id: 'KCEV-504',
     title: 'Inter-Form Football Derby (Form 5 vs Upper 6)',
     description: 'The ultimate showdown on the field! Come out and support your form in the lunchtime football derby. Free entry for all students.',
-    date: '2026-10-31',
+    date: getFutureIsoDate(16),
     time: '12:00 PM - 1:00 PM',
     location: 'KC Main Field',
     organizer: 'Sports Department',

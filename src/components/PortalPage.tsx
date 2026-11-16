@@ -87,7 +87,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           {!showAdminPrompt ? (
             <button
               onClick={() => setShowAdminPrompt(true)}
-              className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group cursor-pointer min-h-[72px]"
+              className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all group cursor-pointer min-h-[72px]"
             >
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
@@ -146,13 +146,15 @@ export const PortalPage: React.FC<PortalPageProps> = ({
         {/* Live School Stats summary */}
         <div className="flex items-center justify-around py-3 px-4 bg-white/70 dark:bg-slate-900/70 rounded-2xl border border-purple-100 dark:border-slate-800 text-center text-xs">
           <div>
-            <span className="block font-bold text-purple-950 dark:text-purple-200 font-mono">{reports.length}</span>
+            <span className="block font-bold text-purple-950 dark:text-purple-200 font-mono">
+              {reports.filter(r => r.status !== 'draft' && r.status !== 'pending-review').length}
+            </span>
             <span className="text-[10px] text-purple-600 dark:text-purple-400">Total Reports</span>
           </div>
           <div className="h-6 w-px bg-purple-200 dark:bg-slate-800" />
           <div>
             <span className="block font-bold text-purple-700 dark:text-purple-300 font-mono">
-              {reports.filter(r => r.type === 'initiative').length}
+              {reports.filter(r => r.type === 'initiative' && r.status !== 'draft' && r.status !== 'pending-review').length}
             </span>
             <span className="text-[10px] text-purple-600 dark:text-purple-400">School Ideas</span>
           </div>

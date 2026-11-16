@@ -26,16 +26,18 @@ import {
   ThumbsUp,
   Video,
   Play,
-  Zap
+  Zap,
+  FileEdit
 } from 'lucide-react';
 
 interface NewFeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (report: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>) => void;
+  onSubmit: (report: Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'>, editingId?: string) => void;
   existingReports?: FeedbackReport[];
   onSelectExistingReport?: (id: string) => void;
   currentUser: UserProfile | null;
+  editingReport?: FeedbackReport | null;
 }
 
 export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
@@ -45,6 +47,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   existingReports = [],
   onSelectExistingReport,
   currentUser,
+  editingReport = null,
 }) => {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>('issue');
   const [title, setTitle] = useState('');
@@ -65,6 +68,34 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   const [debouncedDescription, setDebouncedDescription] = useState(description);
 
   useEffect(() => {
+    if (!isOpen) return;
+    if (editingReport) {
+      setFeedbackType(editingReport.type);
+      setTitle(editingReport.title);
+      setCategory(editingReport.category);
+      setUrgency(editingReport.urgency);
+      setLocation(editingReport.location);
+      setDescription(editingReport.description);
+      setIsAnonymous(editingReport.isAnonymous);
+      setPhotos(editingReport.photos || []);
+      setVideos(editingReport.videos || []);
+    } else {
+      setFeedbackType('issue');
+      setTitle('');
+      setCategory('facilities');
+      setUrgency('medium');
+      setLocation('');
+      setDescription('');
+      setIsAnonymous(false);
+      setPhotos([]);
+      setVideos([]);
+    }
+    setErrors({});
+    setUploadError(null);
+    setAiTriageMessage(null);
+  }, [isOpen, editingReport]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedTitle(title);
       setDebouncedDescription(description);
@@ -73,8 +104,11 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   }, [title, description]);
 
   const potentialDuplicates = useMemo(() => {
-    return findPotentialDuplicates(debouncedTitle, debouncedDescription, existingReports);
-  }, [debouncedTitle, debouncedDescription, existingReports]);
+    const activeCandidates = existingReports.filter(
+      (r) => r.id !== editingReport?.id && r.status !== 'draft' && r.status !== 'rejected'
+    );
+    return findPotentialDuplicates(debouncedTitle, debouncedDescription, activeCandidates);
+  }, [debouncedTitle, debouncedDescription, existingReports, editingReport?.id]);
 
   if (!isOpen) return null;
 
@@ -128,6 +162,16 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     if (!cleanDesc) newErrors.description = 'Description cannot be empty or contain only spaces.';
     else if (cleanDesc.length < 10) newErrors.description = 'Please provide more details (minimum 10 non-space characters).';
 
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateDraft = () => {
+    const newErrors: Record<string, string> = {};
+    const cleanTitle = title.replace(/\s+/g, '');
+    if (!cleanTitle || cleanTitle.length < 3) {
+      newErrors.title = 'Please enter at least 3 characters in the title to save a draft.';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -197,28 +241,40 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     setAiTriageMessage(null);
   };
 
+  const buildPayload = (status: FeedbackReport['status']): Omit<FeedbackReport, 'id' | 'createdAt' | 'upvotes' | 'activities'> => ({
+    title: title.trim(),
+    type: feedbackType,
+    category,
+    urgency,
+    status,
+    description: description.trim(),
+    location: location.trim(),
+    photos: photos.length > 0 ? photos : undefined,
+    videos: videos.length > 0 ? videos : undefined,
+    department: category === 'facilities' ? 'Maintenance & Facilities' : category === 'technology' ? 'IT & Computer Lab' : category === 'safety' ? 'Security & Discipline' : category === 'academics' ? 'Academic Affairs' : 'Clubs & Student Life',
+    isAnonymous,
+    author: isAnonymous ? 'Anonymous Student' : (currentUser?.name || 'Student'),
+    authorRole: isAnonymous ? 'Student' : (currentUser?.title || 'Student'),
+    authorRealName: currentUser?.name,
+    authorEmail: currentUser?.email,
+    authorStudentId: currentUser?.id,
+  });
+
+  const handleSaveDraft = () => {
+    if (!validateDraft()) return;
+    onSubmit(buildPayload('draft'), editingReport?.id);
+    resetForm();
+    onClose();
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    onSubmit({
-      title: title.trim(),
-      type: feedbackType,
-      category,
-      urgency,
-      status: feedbackType === 'initiative' ? 'pending-review' : 'open',
-      description: description.trim(),
-      location: location.trim(),
-      photos: photos.length > 0 ? photos : undefined,
-      videos: videos.length > 0 ? videos : undefined,
-      department: category === 'facilities' ? 'Maintenance & Facilities' : category === 'technology' ? 'IT & Computer Lab' : category === 'safety' ? 'Security & Discipline' : category === 'academics' ? 'Academic Affairs' : 'Clubs & Student Life',
-      isAnonymous,
-      author: isAnonymous ? 'Anonymous Student' : (currentUser?.name || 'Student'),
-      authorRole: isAnonymous ? 'Student' : (currentUser?.title || 'Student'),
-      authorRealName: currentUser?.name,
-      authorEmail: currentUser?.email,
-      authorStudentId: currentUser?.id,
-    });
+    onSubmit(
+      buildPayload(feedbackType === 'initiative' ? 'pending-review' : 'open'),
+      editingReport?.id
+    );
     resetForm();
     onClose();
   };
@@ -238,10 +294,16 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-purple-950 dark:text-purple-100 tracking-tight">
-                New School Report or Idea
+                {editingReport
+                  ? editingReport.status === 'draft'
+                    ? 'Edit Saved Draft'
+                    : 'Revise & Resubmit Proposal'
+                  : 'New School Report or Idea'}
               </h2>
               <p className="text-[11px] text-purple-700/80 dark:text-purple-400">
-                Submit a school issue or propose a new club/sports idea
+                {editingReport
+                  ? 'Update details below and publish or save your changes'
+                  : 'Submit a school issue or propose a new club/sports idea'}
               </p>
             </div>
           </div>
@@ -300,7 +362,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 block">1. Submission Category</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${feedbackType === 'issue' ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 shadow-xs' : 'border-purple-100 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-purple-50/30'}`}>
+              <label className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${feedbackType === 'issue' ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 shadow-xs' : 'border-purple-100 dark:border-slate-800 bg-white dark:bg-slate-800/60 hover:bg-purple-50/30'}`}>
                 <input type="radio" name="feedbackType" value="issue" checked={feedbackType === 'issue'} onChange={() => setFeedbackType('issue')} className="mt-0.5 w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer" />
                 <div>
                   <div className="font-bold text-sm text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
@@ -309,7 +371,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                   <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Broken AC, Wi-Fi issues, maintenance.</p>
                 </div>
               </label>
-              <label className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${feedbackType === 'initiative' ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 shadow-xs' : 'border-purple-100 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-purple-50/30'}`}>
+              <label className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition-all ${feedbackType === 'initiative' ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 shadow-xs' : 'border-purple-100 dark:border-slate-800 bg-white dark:bg-slate-800/60 hover:bg-purple-50/30'}`}>
                 <input type="radio" name="feedbackType" value="initiative" checked={feedbackType === 'initiative'} onChange={() => setFeedbackType('initiative')} className="mt-0.5 w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer" />
                 <div>
                   <div className="font-bold text-sm text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
@@ -516,17 +578,34 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             <button 
               type="button" 
               onClick={() => { resetForm(); onClose(); }} 
-              className="flex-1 sm:flex-none px-4 py-3 text-sm font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="px-3.5 py-3 text-sm font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
+            {(!editingReport || editingReport.status === 'draft') && (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={isProcessingMedia}
+                className="px-3.5 py-3 text-sm font-semibold text-purple-900 dark:text-purple-200 bg-purple-50 dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-slate-700 border border-purple-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <FileEdit className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span>{editingReport ? 'Update Draft' : 'Save Draft'}</span>
+              </button>
+            )}
             <button 
               type="button" 
               onClick={handleSubmit} 
               disabled={isProcessingMedia}
-              className="flex-[2] sm:flex-none px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-900 hover:to-indigo-800 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-none px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-900 hover:to-indigo-800 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
-              {isProcessingMedia ? 'Processing...' : 'Submit Report'}
+              {isProcessingMedia
+                ? 'Processing...'
+                : editingReport?.status === 'draft'
+                ? 'Publish Report'
+                : editingReport
+                ? 'Resubmit'
+                : 'Submit Report'}
             </button>
           </div>
         </div>

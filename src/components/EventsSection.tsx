@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { CampusEvent, EventCategory, EventType, RoleMode, UserProfile } from '../types';
-import { formatEventId, isValidMediaFile, compressImage } from '../utils';
+import { formatEventId, isValidMediaFile, compressImage, formatLocalDateIso, parseLocalDate } from '../utils';
 import { 
   Calendar, 
   Clock, 
@@ -52,8 +52,12 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newEventType, setNewEventType] = useState<EventType>('single-day');
-  const [newDate, setNewDate] = useState('2026-10-24');
-  const [newEndDate, setNewEndDate] = useState('2026-10-27');
+  const [newDate, setNewDate] = useState(() => formatLocalDateIso(new Date()));
+  const [newEndDate, setNewEndDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return formatLocalDateIso(d);
+  });
   
   // Specific Start Time (X) and End Time (Y)
   const [newStartTime, setNewStartTime] = useState('10:00 AM');
@@ -62,7 +66,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
   const [isCustomTime, setIsCustomTime] = useState(false);
 
   const [newLocation, setNewLocation] = useState('');
-  const [newOrganizer, setNewOrganizer] = useState('Campus Student Activities Board');
+  const [newOrganizer, setNewOrganizer] = useState("Kingston College Students' Council");
   const [newCategory, setNewCategory] = useState<EventCategory>('student-life');
   const [newTags, setNewTags] = useState('Campus, Student Life');
   const [newCapacity, setNewCapacity] = useState('250');
@@ -147,6 +151,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleAddGalleryPhotoUrl = () => {
@@ -229,8 +234,16 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
     const errors: Record<string, string> = {};
     if (!newTitle.trim()) errors.title = 'Title is required';
     if (!newLocation.trim()) errors.location = 'Location is required';
+    if (!newOrganizer.trim()) errors.organizer = 'Host / Organizer is required';
     if (!newDesc.trim()) errors.description = 'Description is required';
-    if (newEventType === 'multi-day' && !newEndDate) errors.endDate = 'End date is required for multi-day events';
+    if (!newDate) errors.date = 'Event date is required';
+    if (newEventType === 'multi-day') {
+      if (!newEndDate) {
+        errors.endDate = 'End date is required for multi-day events';
+      } else if (parseLocalDate(newEndDate).getTime() < parseLocalDate(newDate).getTime()) {
+        errors.endDate = 'End date cannot be earlier than start date';
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -239,8 +252,8 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
 
     let durationDays = 1;
     if (newEventType === 'multi-day' && newEndDate) {
-      const startMs = new Date(newDate).getTime();
-      const endMs = new Date(newEndDate).getTime();
+      const startMs = parseLocalDate(newDate).getTime();
+      const endMs = parseLocalDate(newEndDate).getTime();
       durationDays = Math.max(1, Math.round((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1);
     }
 
@@ -431,7 +444,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search events..."
-                className="w-full text-base sm:text-xs pl-8 pr-7 py-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-purple-50/60 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
+                className="w-full text-base sm:text-xs pl-8 pr-7 py-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-purple-50/60 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
               />
             </div>
 
@@ -522,7 +535,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                             </span>
                             {getCategoryBadge(evt.category)}
                             {isMultiDay && (
-                              <span className="text-[9px] font-bold bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 px-1.5 py-0.2 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-0.5">
+                              <span className="text-[9px] font-bold bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-200 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 flex items-center gap-0.5">
                                 <Layers className="w-2.5 h-2.5" /> {evt.durationDays ? `${evt.durationDays} Days` : 'Multi-day'}
                               </span>
                             )}
@@ -608,17 +621,25 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                         <Download className="w-4 h-4" />
                       </button>
 
-                      <button
-                        onClick={() => onToggleRsvp(evt.id)}
-                        className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all cursor-pointer touch-manipulation flex items-center gap-1 ${
-                          hasUserRsvpd
-                            ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-800 font-bold shadow-2xs'
-                            : 'bg-purple-800 dark:bg-purple-700 hover:bg-purple-900 text-white shadow-2xs'
-                        }`}
-                      >
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${hasUserRsvpd ? 'text-purple-700 dark:text-purple-300' : 'text-purple-200'}`} />
-                        <span>{hasUserRsvpd ? 'Going' : 'RSVP'}</span>
-                      </button>
+                      {(() => {
+                        const isFull = Boolean(evt.capacity && evt.rsvps >= evt.capacity && !hasUserRsvpd);
+                        return (
+                          <button
+                            onClick={() => onToggleRsvp(evt.id)}
+                            disabled={isFull}
+                            className={`px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all touch-manipulation flex items-center gap-1 ${
+                              hasUserRsvpd
+                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-800 font-bold shadow-2xs cursor-pointer'
+                                : isFull
+                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 cursor-not-allowed'
+                                : 'bg-purple-800 dark:bg-purple-700 hover:bg-purple-900 text-white shadow-2xs cursor-pointer'
+                            }`}
+                          >
+                            <CheckCircle2 className={`w-3.5 h-3.5 ${hasUserRsvpd ? 'text-purple-700 dark:text-purple-300' : isFull ? 'text-slate-400' : 'text-purple-200'}`} />
+                            <span>{hasUserRsvpd ? 'Going' : isFull ? 'Event Full' : 'RSVP'}</span>
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -939,6 +960,7 @@ export const EventsSection: React.FC<EventsSectionProps> = ({
                   placeholder="e.g., KC Students' Council, Sixth Form Association"
                   className="w-full p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-base sm:text-xs text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-1 focus:ring-purple-400"
                 />
+                {formErrors.organizer && <p className="text-rose-600 text-[10px]">{formErrors.organizer}</p>}
               </div>
 
               <div className="space-y-1">

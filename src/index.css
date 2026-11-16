@@ -3,6 +3,10 @@
 /* Enable class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --breakpoint-xs: 30rem;
+}
+
 @layer base {
   html, body {
     height: 100%;

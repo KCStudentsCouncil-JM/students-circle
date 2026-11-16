@@ -28,6 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
     try {
       localStorage.removeItem('campus_feedback_reports');
       localStorage.removeItem('campus_events');
+      localStorage.removeItem('campus_announcements');
       localStorage.removeItem('school_poll_voted');
     } catch {
       // ignore

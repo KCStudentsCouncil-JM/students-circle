@@ -1,8 +1,8 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, User as FirebaseUser, Auth, signOut } from 'firebase/auth';
-import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc, arrayUnion } from 'firebase/firestore';
-import { FeedbackReport, CampusEvent, UserProfile, ActivityItem, FeedbackStatus } from './types';
-import { INITIAL_REPORTS, INITIAL_EVENTS, INITIAL_USERS } from './mockData';
+import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc, arrayUnion, runTransaction } from 'firebase/firestore';
+import { FeedbackReport, CampusEvent, UserProfile, ActivityItem, FeedbackStatus, CampusAnnouncement } from './types';
+import { INITIAL_REPORTS, INITIAL_EVENTS, INITIAL_USERS, INITIAL_ANNOUNCEMENTS } from './mockData';
 import { safeLocalStorageSet } from './utils';
 
 export const firebaseConfig = {
@@ -40,12 +40,14 @@ export { app, auth, db };
 const STORAGE_KEY_REPORTS = 'campus_feedback_reports';
 const STORAGE_KEY_EVENTS = 'campus_events';
 const STORAGE_KEY_USERS = 'campus_users';
+const STORAGE_KEY_ANNOUNCEMENTS = 'campus_announcements';
 const STORAGE_KEY_ACTIVE_USER = 'campus_active_user';
 
 // Local storage listeners for real-time reactivity in fallback mode
 const reportListeners = new Set<(reports: FeedbackReport[]) => void>();
 const eventListeners = new Set<(events: CampusEvent[]) => void>();
 const userListeners = new Set<(users: UserProfile[]) => void>();
+const announcementListeners = new Set<(announcements: CampusAnnouncement[]) => void>();
 
 function notifyReportListeners() {
   const data = getLocalReports();
@@ -58,6 +60,10 @@ function notifyEventListeners() {
 function notifyUserListeners() {
   const data = getLocalUsers();
   userListeners.forEach(cb => cb(data));
+}
+function notifyAnnouncementListeners() {
+  const data = getLocalAnnouncements();
+  announcementListeners.forEach(cb => cb(data));
 }
 
 function getLocalReports(): FeedbackReport[] {
@@ -99,17 +105,29 @@ function getLocalUsers(): UserProfile[] {
   }
 }
 
+function getLocalAnnouncements(): CampusAnnouncement[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENTS);
+    if (!raw) {
+      safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, INITIAL_ANNOUNCEMENTS);
+      return [...INITIAL_ANNOUNCEMENTS];
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    return [...INITIAL_ANNOUNCEMENTS];
+  }
+}
+
 export async function signInWithGoogleReal(): Promise<FirebaseUser | any> {
   if (auth && googleProvider) {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   }
-  // Simulated fallback user for demo mode when Firebase keys are not set
   const fallbackUser = {
     displayName: 'Dylon Ocha',
-    email: 'dylonnnaocha@gmail.com',
+    email: 'headboy@kc.edu.jm',
     photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80',
-    uid: 'demo-dylon-uid',
+    uid: 'kc-headboy-uid',
   };
   localStorage.setItem(STORAGE_KEY_ACTIVE_USER, JSON.stringify(fallbackUser));
   return fallbackUser;
@@ -417,4 +435,132 @@ export async function deleteEventFromDb(id: string) {
   const next = events.filter(e => e.id !== id);
   safeLocalStorageSet(STORAGE_KEY_EVENTS, next);
   notifyEventListeners();
+}
+
+// --- ANNOUNCEMENT FUNCTIONS ---
+
+function sortAnnouncements(list: CampusAnnouncement[]): CampusAnnouncement[] {
+  return [...list].sort((a, b) => {
+    const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+    if (pinDiff !== 0) return pinDiff;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+}
+
+export function subscribeToAnnouncements(callback: (announcements: CampusAnnouncement[]) => void) {
+  if (db) {
+    try {
+      return onSnapshot(collection(db, 'announcements'), (snapshot) => {
+        const data = snapshot.docs.map(d => ({ ...d.data(), id: d.id } as CampusAnnouncement));
+        if (data.length > 0) {
+          const sorted = sortAnnouncements(data);
+          callback(sorted);
+          safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, sorted);
+        } else {
+          callback(sortAnnouncements(getLocalAnnouncements()));
+        }
+      }, (err) => {
+        console.warn('Firestore announcements subscription error, using local fallback:', err);
+        callback(sortAnnouncements(getLocalAnnouncements()));
+      });
+    } catch (e) {
+      console.warn('Firestore subscribeToAnnouncements error:', e);
+    }
+  }
+  callback(sortAnnouncements(getLocalAnnouncements()));
+  announcementListeners.add(callback);
+  return () => { announcementListeners.delete(callback); };
+}
+
+export async function saveAnnouncementToDb(announcement: CampusAnnouncement) {
+  if (db) {
+    try {
+      await setDoc(doc(db, 'announcements', announcement.id), sanitizeData(announcement));
+    } catch (e) {
+      console.warn('Firestore saveAnnouncementToDb error:', e);
+    }
+  }
+  const existing = getLocalAnnouncements();
+  const next = sortAnnouncements([announcement, ...existing.filter(a => a.id !== announcement.id)]);
+  safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, next);
+  notifyAnnouncementListeners();
+}
+
+export async function updateAnnouncementInDb(id: string, updates: Partial<CampusAnnouncement>) {
+  const existing = getLocalAnnouncements();
+  const current = existing.find(a => a.id === id);
+  const merged = current ? { ...current, ...updates, id } : { ...updates, id };
+
+  if (db) {
+    try {
+      await setDoc(doc(db, 'announcements', id), sanitizeData(merged), { merge: true });
+    } catch (e) {
+      console.warn('Firestore updateAnnouncementInDb error:', e);
+    }
+  }
+
+  const next = sortAnnouncements(
+    existing.some(a => a.id === id)
+      ? existing.map(a => (a.id === id ? { ...a, ...updates } : a))
+      : existing
+  );
+  safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, next);
+  notifyAnnouncementListeners();
+}
+
+export async function voteAnnouncementPollInDb(id: string, voterEmail: string, optionId: string) {
+  const normalizedVoter = voterEmail.trim().toLowerCase();
+  if (!normalizedVoter) return;
+
+  const applyVote = (item: CampusAnnouncement): CampusAnnouncement => {
+    const options = item.pollOptions || [];
+    const target = options.find(o => o.id === optionId);
+    const alreadyVotedThisOption = Boolean(
+      target?.voters.some(v => v.toLowerCase() === normalizedVoter)
+    );
+    const updatedOptions = options.map(opt => {
+      const filteredVoters = (opt.voters || []).filter(v => v.toLowerCase() !== normalizedVoter);
+      if (opt.id === optionId && !alreadyVotedThisOption) {
+        return { ...opt, voters: [...filteredVoters, voterEmail] };
+      }
+      return { ...opt, voters: filteredVoters };
+    });
+    return { ...item, pollOptions: updatedOptions };
+  };
+
+  if (db) {
+    try {
+      const ref = doc(db, 'announcements', id);
+      await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const base = snap.exists()
+          ? ({ ...snap.data(), id: snap.id } as CampusAnnouncement)
+          : getLocalAnnouncements().find(a => a.id === id);
+        if (!base) return;
+        const updated = applyVote(base);
+        tx.set(ref, sanitizeData(updated), { merge: true });
+      });
+    } catch (e) {
+      console.warn('Firestore voteAnnouncementPollInDb error:', e);
+    }
+  }
+
+  const existing = getLocalAnnouncements();
+  const next = sortAnnouncements(existing.map(a => (a.id === id ? applyVote(a) : a)));
+  safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, next);
+  notifyAnnouncementListeners();
+}
+
+export async function deleteAnnouncementFromDb(id: string) {
+  if (db) {
+    try {
+      await deleteDoc(doc(db, 'announcements', id));
+    } catch (e) {
+      console.warn('Firestore deleteAnnouncementFromDb error:', e);
+    }
+  }
+  const existing = getLocalAnnouncements();
+  const next = sortAnnouncements(existing.filter(a => a.id !== id));
+  safeLocalStorageSet(STORAGE_KEY_ANNOUNCEMENTS, next);
+  notifyAnnouncementListeners();
 }

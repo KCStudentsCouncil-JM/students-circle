@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavFilter, FeedbackReport, RoleMode, UserProfile } from '../types';
+import { NavFilter, FeedbackReport, RoleMode, UserProfile, CampusAnnouncement } from '../types';
+import { NoticeBoard, NoticeAnnouncementPayload } from './NoticeBoard';
 import { 
   Inbox, 
   AlertCircle, 
@@ -18,7 +19,6 @@ import {
   Users,
   UserCheck,
   BarChart3,
-  Megaphone,
   CheckSquare
 } from 'lucide-react';
 
@@ -30,6 +30,12 @@ interface SidebarProps {
   role: RoleMode;
   currentUser?: UserProfile | null;
   eventsCount?: number;
+  announcements?: CampusAnnouncement[];
+  onAddAnnouncement?: (payload: NoticeAnnouncementPayload) => void;
+  onUpdateAnnouncement?: (id: string, updates: NoticeAnnouncementPayload) => void;
+  onDeleteAnnouncement?: (id: string) => void;
+  onVoteAnnouncementPoll?: (announcementId: string, optionId: string) => void;
+  onToggleAnnouncementPin?: (announcementId: string) => void;
   onClose?: () => void;
   onSignOut?: () => void;
   onExportBackup?: () => void;
@@ -45,37 +51,63 @@ export const Sidebar: React.FC<SidebarProps> = ({
   role,
   currentUser,
   eventsCount = 6,
+  announcements = [],
+  onAddAnnouncement,
+  onUpdateAnnouncement,
+  onDeleteAnnouncement,
+  onVoteAnnouncementPoll,
+  onToggleAnnouncementPin,
   onClose,
   onSignOut,
   onExportBackup,
   onOpenStudentList,
   onOpenAnalytics,
 }) => {
+
+  const isReportVisible = (r: FeedbackReport) => {
+    if (r.status === 'draft') return false;
+    if (r.status === 'pending-review') {
+      const isAuthor = currentUser && (r.authorEmail === currentUser.email || r.author === currentUser.name);
+      return role === 'admin' || Boolean(isAuthor);
+    }
+    return true;
+  };
+
+  const visibleReports = reports.filter(isReportVisible);
+
   // Compute counts
-  const myActivityCount = reports.filter((r) => {
+  const myActivityCount = visibleReports.filter((r) => {
     if (!currentUser?.email) return false;
     const isAuthor = r.authorEmail === currentUser.email || r.author === currentUser.name;
     const isEndorser = r.endorsers?.some(e => e.email === currentUser.email);
     return isAuthor || isEndorser;
   }).length;
 
+  const myDraftsCount = reports.filter((r) => {
+    if (r.status !== 'draft') return false;
+    if (!currentUser) return false;
+    return r.authorEmail === currentUser.email || r.author === currentUser.name;
+  }).length;
+
   const pendingApprovalsCount = reports.filter(r => r.type === 'initiative' && r.status === 'pending-review').length;
 
   const counts = {
-    all: reports.filter(r => r.status !== 'pending-review' || role === 'admin' || r.authorEmail === currentUser?.email).length,
+    all: visibleReports.length,
     myActivity: myActivityCount,
     pendingApprovals: pendingApprovalsCount,
-    open: reports.filter((r) => r.status === 'open').length,
-    inReview: reports.filter((r) => r.status === 'in-review' || r.status === 'in-progress').length,
-    resolved: reports.filter((r) => r.status === 'resolved').length,
-    drafts: reports.filter((r) => r.status === 'draft').length,
+    open: visibleReports.filter((r) => r.status === 'open').length,
+    inReview: visibleReports.filter((r) => r.status === 'in-review' || r.status === 'in-progress').length,
+    resolved: visibleReports.filter((r) => r.status === 'resolved').length,
+    drafts: myDraftsCount,
     events: eventsCount,
-    facilities: reports.filter((r) => r.category === 'facilities').length,
-    technology: reports.filter((r) => r.category === 'technology').length,
-    academics: reports.filter((r) => r.category === 'academics').length,
-    studentLife: reports.filter((r) => r.category === 'student-life').length,
-    safety: reports.filter((r) => r.category === 'safety').length,
+    facilities: visibleReports.filter((r) => r.category === 'facilities').length,
+    technology: visibleReports.filter((r) => r.category === 'technology').length,
+    academics: visibleReports.filter((r) => r.category === 'academics').length,
+    studentLife: visibleReports.filter((r) => r.category === 'student-life').length,
+    safety: visibleReports.filter((r) => r.category === 'safety').length,
   };
+
+
 
   const navItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number }> = [
     { id: 'all', label: 'All Reports', icon: <Inbox className="w-5 h-5 sm:w-4 sm:h-4" />, count: counts.all },
@@ -227,27 +259,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Campus Announcements Widget (Replaced Quick Poll) */}
-          <div className="p-3 bg-gradient-to-br from-purple-50 to-indigo-50/60 dark:from-slate-850 dark:to-purple-950/40 rounded-2xl border border-purple-200/80 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-950 dark:text-purple-300 flex items-center gap-1.5">
-                <Megaphone className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
-                <span>Notice Board</span>
-              </span>
-              <span className="text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-1.5 py-0.5 rounded">
-                Official
-              </span>
-            </div>
-
-            <div className="space-y-1.5 text-xs text-purple-950 dark:text-purple-200">
-              <p className="font-semibold leading-snug">
-                Library extended study hours now open for Midterm preparation.
-              </p>
-              <p className="text-[11px] text-purple-700/80 dark:text-purple-400 leading-normal">
-                Quiet zones open until 6:00 PM. Senior Prefects on duty.
-              </p>
-            </div>
-          </div>
+          {/* Campus Announcements Widget (Live, Typed & Admin Editable) */}
+          <NoticeBoard
+            announcements={announcements}
+            role={role}
+            currentUserEmail={currentUser?.email}
+            variant="sidebar"
+            onAddAnnouncement={onAddAnnouncement}
+            onUpdateAnnouncement={onUpdateAnnouncement}
+            onDeleteAnnouncement={onDeleteAnnouncement}
+            onVotePoll={onVoteAnnouncementPoll}
+            onTogglePin={onToggleAnnouncementPin}
+          />
         </div>
 
         {/* Bottom Actions & Controls (Fixed) */}

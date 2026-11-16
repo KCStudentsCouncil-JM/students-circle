@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
-  FeedbackReport, NavFilter, RoleMode, FeedbackStatus, ActivityItem, CampusEvent, UserProfile 
+  FeedbackReport, NavFilter, RoleMode, FeedbackStatus, ActivityItem, CampusEvent, UserProfile, CampusAnnouncement 
 } from './types';
 import { 
   matchesExactWords, exportCampusDataBackup, formatReportId 
@@ -9,9 +9,11 @@ import {
   auth, isFirebaseConfigured, subscribeToReports, subscribeToEvents, saveReportToDb, updateReportInDb, 
   appendActivityToReportInDb, deleteReportFromDb, saveEventToDb, updateEventInDb, deleteEventFromDb,
   subscribeToUsers, createUserProfile, approveUserInDb, rejectUserInDb, removeUserInDb,
-  getUserProfile, signOutReal, signInWithGoogleReal, updateUserLastActive
+  getUserProfile, signOutReal, signInWithGoogleReal, updateUserLastActive,
+  subscribeToAnnouncements, saveAnnouncementToDb, updateAnnouncementInDb, voteAnnouncementPollInDb, deleteAnnouncementFromDb
 } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { NoticeAnnouncementPayload } from './components/NoticeBoard';
 
 import { TopBar } from './components/TopBar';
 import { Sidebar } from './components/Sidebar';
@@ -39,6 +41,7 @@ export default function App() {
   const [loginRole, setLoginRole] = useState<'student' | 'admin'>('student');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNewFeedbackModalOpen, setIsNewFeedbackModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<FeedbackReport | null>(null);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isKeyboardActive, setIsKeyboardActive] = useState(false);
   
@@ -46,6 +49,7 @@ export default function App() {
   const [reports, setReports] = useState<FeedbackReport[]>([]);
   const [events, setEvents] = useState<CampusEvent[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [announcements, setAnnouncements] = useState<CampusAnnouncement[]>([]);
   
   // UI State
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -61,7 +65,8 @@ export default function App() {
     const unsubR = subscribeToReports(setReports);
     const unsubE = subscribeToEvents(setEvents);
     const unsubU = subscribeToUsers(setAllUsers);
-    return () => { unsubR(); unsubE(); unsubU(); };
+    const unsubA = subscribeToAnnouncements(setAnnouncements);
+    return () => { unsubR(); unsubE(); unsubU(); unsubA(); };
   }, []);
 
   // 2. Auth state
@@ -249,19 +254,25 @@ export default function App() {
     showToast(`Event deleted.`);
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: FeedbackStatus) => {
+  const handleUpdateStatus = async (id: string, newStatus: FeedbackStatus, adminNote?: string) => {
     const r = reports.find(rep => rep.id === id);
     if (!r) return;
     const newActivity: ActivityItem = {
       id: `act-${Date.now()}`, author: userProfile?.name || 'Admin', role: 'admin',
-      message: `Status manually changed to ${newStatus.toUpperCase()}.`,
+      message: adminNote?.trim()
+        ? `${adminNote.trim()} (Status changed to ${newStatus.toUpperCase()})`
+        : `Status manually changed to ${newStatus.toUpperCase()}.`,
       timestamp: new Date().toISOString(), statusChange: newStatus,
       badgeText: 'Official Staff'
     };
+    const extraUpdates: Partial<FeedbackReport> =
+      newStatus === 'resolved' && adminNote?.trim()
+        ? { resolutionNotes: adminNote.trim() }
+        : {};
     setReports(prev => prev.map(rep => rep.id === id ? { 
-      ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] 
+      ...rep, status: newStatus, ...extraUpdates, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-    await appendActivityToReportInDb(id, newActivity, newStatus);
+    await appendActivityToReportInDb(id, newActivity, newStatus, extraUpdates);
     showToast(`Status updated to ${newStatus}.`);
   };
 
@@ -280,10 +291,14 @@ export default function App() {
       videos: videos && videos.length > 0 ? videos : undefined,
     };
     const nextStatus = statusChange || r.status;
+    const extraUpdates: Partial<FeedbackReport> =
+      statusChange === 'resolved' && message.trim()
+        ? { resolutionNotes: message.trim() }
+        : {};
     setReports(prev => prev.map(rep => rep.id === id ? { 
-      ...rep, status: nextStatus, activities: [...(rep.activities || []), newActivity] 
+      ...rep, status: nextStatus, ...extraUpdates, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-    await appendActivityToReportInDb(id, newActivity, statusChange);
+    await appendActivityToReportInDb(id, newActivity, statusChange, extraUpdates);
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Reply posted.');
   };
 
@@ -318,6 +333,10 @@ export default function App() {
     if (!evt) return;
     const attendees = evt.attendees || [];
     const hasUserRsvpd = attendees.includes(userProfile.email);
+    if (!hasUserRsvpd && evt.capacity && evt.rsvps >= evt.capacity) {
+      showToast('This event has reached full capacity.');
+      return;
+    }
     const nextCount = hasUserRsvpd ? Math.max(0, evt.rsvps - 1) : evt.rsvps + 1;
     const updatedAttendees = hasUserRsvpd ? attendees.filter(e => e !== userProfile.email) : [...attendees, userProfile.email];
     setEvents(prev => prev.map(e => e.id === id ? { ...e, rsvps: nextCount, attendees: updatedAttendees } : e));
@@ -326,18 +345,131 @@ export default function App() {
   };
 
   const handleAddEvent = async (newEventData: Omit<CampusEvent, 'id' | 'rsvps' | 'hasRsvpd'>) => {
-    const newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
-    const fullEvent: CampusEvent = { ...newEventData, id: newId, rsvps: 1, attendees: [userProfile?.email || ''] };
+    let newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
+    while (events.some(e => e.id === newId)) {
+      newId = `KCEV-${Math.floor(210 + Math.random() * 780)}`;
+    }
+    const fullEvent: CampusEvent = {
+      ...newEventData,
+      id: newId,
+      rsvps: userProfile?.email ? 1 : 0,
+      attendees: userProfile?.email ? [userProfile.email] : [],
+    };
     setEvents(prev => [fullEvent, ...prev]);
     await saveEventToDb(fullEvent);
     showToast(`Event published!`);
+  };
+
+  const handleTogglePin = async (id: string) => {
+    if (role !== 'admin') return;
+    const r = reports.find((rep) => rep.id === id);
+    if (!r) return;
+    const nextPinned = !r.pinned;
+    setReports(prev => prev.map(rep => rep.id === id ? { ...rep, pinned: nextPinned } : rep));
+    await updateReportInDb(id, { pinned: nextPinned });
+    showToast(nextPinned ? 'Report pinned to top of feed.' : 'Report unpinned.');
+  };
+
+  const handleAddAnnouncement = async (payload: NoticeAnnouncementPayload) => {
+    if (role !== 'admin') return;
+    const newAnnouncement: CampusAnnouncement = {
+      id: `ann-${Date.now()}`,
+      type: payload.type || 'notice',
+      title: payload.title.trim(),
+      message: payload.message.trim(),
+      author: userProfile?.name || "Students' Council",
+      createdAt: new Date().toISOString(),
+      pinned: Boolean(payload.pinned),
+      pollOptions: payload.pollOptions,
+    };
+    setAnnouncements(prev => {
+      const next = [newAnnouncement, ...prev];
+      return next.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)));
+    });
+    await saveAnnouncementToDb(newAnnouncement);
+    showToast(`${payload.type === 'poll' ? 'Poll' : payload.type === 'alert' ? 'Alert' : payload.type === 'update' ? 'Update' : 'Notice'} posted to board.`);
+  };
+
+  const handleUpdateAnnouncement = async (id: string, updates: NoticeAnnouncementPayload) => {
+    if (role !== 'admin') return;
+    const nowIso = new Date().toISOString();
+    const patch: Partial<CampusAnnouncement> = {
+      type: updates.type,
+      title: updates.title.trim(),
+      message: updates.message.trim(),
+      pinned: Boolean(updates.pinned),
+      pollOptions: updates.pollOptions,
+      updatedAt: nowIso,
+    };
+    setAnnouncements(prev =>
+      prev
+        .map(a => (a.id === id ? { ...a, ...patch } : a))
+        .sort((a, b) => {
+          const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+          if (pinDiff !== 0) return pinDiff;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        })
+    );
+    await updateAnnouncementInDb(id, patch);
+    showToast('Notice board item updated.');
+  };
+
+  const handleToggleAnnouncementPin = async (id: string) => {
+    if (role !== 'admin') return;
+    const target = announcements.find(a => a.id === id);
+    if (!target) return;
+    const nextPinned = !target.pinned;
+    setAnnouncements(prev =>
+      prev
+        .map(a => (a.id === id ? { ...a, pinned: nextPinned } : a))
+        .sort((a, b) => {
+          const pinDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+          if (pinDiff !== 0) return pinDiff;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        })
+    );
+    await updateAnnouncementInDb(id, { pinned: nextPinned });
+    showToast(nextPinned ? 'Notice pinned to top.' : 'Notice unpinned.');
+  };
+
+  const handleVoteAnnouncementPoll = async (announcementId: string, optionId: string) => {
+    if (!userProfile?.email) return;
+    const voterEmail = userProfile.email;
+    const normalized = voterEmail.trim().toLowerCase();
+    setAnnouncements(prev =>
+      prev.map(ann => {
+        if (ann.id !== announcementId) return ann;
+        const options = ann.pollOptions || [];
+        const target = options.find(o => o.id === optionId);
+        const alreadyVoted = Boolean(target?.voters.some(v => v.toLowerCase() === normalized));
+        return {
+          ...ann,
+          pollOptions: options.map(opt => {
+            const filtered = (opt.voters || []).filter(v => v.toLowerCase() !== normalized);
+            if (opt.id === optionId && !alreadyVoted) {
+              return { ...opt, voters: [...filtered, voterEmail] };
+            }
+            return { ...opt, voters: filtered };
+          }),
+        };
+      })
+    );
+    await voteAnnouncementPollInDb(announcementId, voterEmail, optionId);
+    showToast('Poll vote recorded.');
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (role !== 'admin') return;
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    await deleteAnnouncementFromDb(id);
+    showToast('Notice removed.');
   };
 
   const handleToggleUpvote = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!userProfile) return;
     const r = reports.find((rep) => rep.id === id);
-    if (!r) return;
+    if (!r || r.status === 'draft') return;
     const existingEndorsers = r.endorsers || [];
     const isAlreadyEndorsed = existingEndorsers.some((end) => end.email === userProfile.email);
     let updatedEndorsers;
@@ -345,18 +477,124 @@ export default function App() {
       updatedEndorsers = existingEndorsers.filter((end) => end.email !== userProfile.email);
       showToast(`Support retracted.`);
     } else {
-      updatedEndorsers = [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.role, email: userProfile.email, timestamp: new Date().toISOString() }, ...existingEndorsers];
+      updatedEndorsers = [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.title || userProfile.role, email: userProfile.email, timestamp: new Date().toISOString() }, ...existingEndorsers];
       showToast(`Support added.`);
     }
-    setReports(prev => prev.map(rep => rep.id === id ? { ...rep, upvotes: updatedEndorsers.length, endorsers: updatedEndorsers } : rep));
-    await updateReportInDb(id, { upvotes: updatedEndorsers.length, endorsers: updatedEndorsers });
+    const nextUpvotes = isAlreadyEndorsed ? Math.max(0, r.upvotes - 1) : r.upvotes + 1;
+    setReports(prev => prev.map(rep => rep.id === id ? { ...rep, upvotes: nextUpvotes, endorsers: updatedEndorsers } : rep));
+    await updateReportInDb(id, { upvotes: nextUpvotes, endorsers: updatedEndorsers });
   };
 
-  const handleCreateReport = async (newReportData: any) => {
-    let prefix = newReportData.type === 'initiative' ? 'KCIS' : newReportData.status === 'open' ? 'KCOI' : 'KCIRV';
-    const newId = `${prefix}-${Math.floor(1050 + Math.random() * 8900)}`;
+  const handlePublishDraft = async (id: string) => {
+    const r = reports.find(rep => rep.id === id);
+    if (!r || r.status !== 'draft') return;
     const nowIso = new Date().toISOString();
-    const initialStatus: FeedbackStatus = newReportData.type === 'initiative' ? 'pending-review' : (newReportData.status || 'open');
+    const nextStatus: FeedbackStatus = r.type === 'initiative' ? 'pending-review' : 'open';
+    const hasEndorsers = (r.endorsers?.length || 0) > 0;
+    const endorsers = hasEndorsers
+      ? r.endorsers
+      : userProfile?.email
+      ? [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.title || userProfile.role, email: userProfile.email, timestamp: nowIso }]
+      : [];
+    const newActivity: ActivityItem = {
+      id: `act-${Date.now()}`,
+      author: r.isAnonymous ? 'Anonymous Student' : (userProfile?.name || 'Student'),
+      role: 'student',
+      message: r.type === 'initiative'
+        ? "Published draft proposal for Students' Council review."
+        : 'Published draft report.',
+      timestamp: nowIso,
+      statusChange: nextStatus,
+    };
+    const updatedReport: FeedbackReport = {
+      ...r,
+      status: nextStatus,
+      createdAt: nowIso,
+      upvotes: r.upvotes > 0 ? r.upvotes : 1,
+      endorsers,
+      activities: [...(r.activities || []), newActivity],
+    };
+    setReports(prev => prev.map(rep => rep.id === id ? updatedReport : rep));
+    await saveReportToDb(updatedReport);
+    showToast(r.type === 'initiative' ? 'Draft submitted for council review!' : 'Draft published!');
+  };
+
+  const handleSaveOrUpdateReport = async (newReportData: any, editingId?: string) => {
+    const nowIso = new Date().toISOString();
+
+    if (editingId) {
+      const existing = reports.find(r => r.id === editingId);
+      if (!existing) return;
+
+      const isDraftSave = newReportData.status === 'draft';
+      const nextStatus: FeedbackStatus = isDraftSave
+        ? 'draft'
+        : newReportData.type === 'initiative'
+        ? 'pending-review'
+        : 'open';
+
+      const publishingFromDraft = existing.status === 'draft' && nextStatus !== 'draft';
+      const resubmittingDeclined = existing.status === 'rejected' && nextStatus !== 'draft';
+
+      const newActivity: ActivityItem = {
+        id: `act-${Date.now()}`,
+        author: newReportData.isAnonymous ? 'Anonymous Student' : (userProfile?.name || 'Student'),
+        role: 'student',
+        message: isDraftSave
+          ? 'Updated draft.'
+          : resubmittingDeclined
+          ? 'Revised and resubmitted proposal for council review.'
+          : publishingFromDraft
+          ? (newReportData.type === 'initiative' ? "Published proposal for Students' Council review." : 'Published draft report.')
+          : 'Updated report details.',
+        timestamp: nowIso,
+        ...(existing.status !== nextStatus ? { statusChange: nextStatus } : {}),
+      };
+
+      const endorsers =
+        nextStatus !== 'draft' && (!existing.endorsers || existing.endorsers.length === 0) && userProfile?.email
+          ? [{ id: `end-${Date.now()}`, name: userProfile.name, role: userProfile.title || userProfile.role, email: userProfile.email, timestamp: nowIso }]
+          : existing.endorsers;
+
+      const updatedReport: FeedbackReport = {
+        ...existing,
+        ...newReportData,
+        id: editingId,
+        status: nextStatus,
+        createdAt: publishingFromDraft ? nowIso : existing.createdAt,
+        upvotes: nextStatus === 'draft' ? 0 : (existing.upvotes > 0 ? existing.upvotes : 1),
+        endorsers,
+        rejectionReason: resubmittingDeclined ? undefined : existing.rejectionReason,
+        activities: [...(existing.activities || []), newActivity],
+      };
+
+      setReports(prev => prev.map(rep => rep.id === editingId ? updatedReport : rep));
+      await saveReportToDb(updatedReport);
+      setEditingReport(null);
+      setSelectedId(editingId);
+      setPageView('detail');
+      showToast(
+        isDraftSave
+          ? 'Draft updated.'
+          : resubmittingDeclined
+          ? 'Proposal revised and resubmitted!'
+          : 'Report published!'
+      );
+      return;
+    }
+
+    const isDraft = newReportData.status === 'draft';
+    const initialStatus: FeedbackStatus = isDraft
+      ? 'draft'
+      : newReportData.type === 'initiative'
+      ? 'pending-review'
+      : (newReportData.status || 'open');
+
+    const prefix = isDraft ? 'KCDRF' : newReportData.type === 'initiative' ? 'KCIS' : 'KCOI';
+    let newId = `${prefix}-${Math.floor(1050 + Math.random() * 8900)}`;
+    while (reports.some(r => r.id === newId)) {
+      newId = `${prefix}-${Math.floor(1050 + Math.random() * 8900)}`;
+    }
 
     const createdReport: FeedbackReport = {
       ...newReportData, 
@@ -368,15 +606,29 @@ export default function App() {
       authorRealName: userProfile?.name,
       authorStudentId: userProfile?.id,
       createdAt: nowIso, 
-      upvotes: 1,
-      endorsers: [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
-      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: newReportData.type === 'initiative' ? 'Submitted proposal for Students\' Council review.' : 'Submitted report.', timestamp: nowIso }],
+      upvotes: isDraft ? 0 : 1,
+      endorsers: isDraft
+        ? []
+        : [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.title || userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
+      activities: [{
+        id: `act-${Date.now()}`,
+        author: newReportData.isAnonymous ? 'Anonymous Student' : (userProfile?.name || 'Student'),
+        role: 'student',
+        message: isDraft
+          ? 'Saved report as draft.'
+          : newReportData.type === 'initiative'
+          ? "Submitted proposal for Students' Council review."
+          : 'Submitted report.',
+        timestamp: nowIso,
+      }],
     };
     setReports((prev) => [createdReport, ...prev]);
     await saveReportToDb(createdReport);
     setSelectedId(newId); 
     setPageView('detail');
-    if (createdReport.type === 'initiative') {
+    if (isDraft) {
+      showToast('Draft saved! View it anytime under Drafts.');
+    } else if (createdReport.type === 'initiative') {
       showToast('Initiative proposal submitted for council review!');
     } else {
       showToast(`Report ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
@@ -463,7 +715,7 @@ export default function App() {
   };
 
   const handleExportBackup = () => {
-    exportCampusDataBackup(reports, events, userProfile);
+    exportCampusDataBackup(reports, events, userProfile, announcements);
     showToast('Data backup downloaded.');
   };
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -473,16 +725,25 @@ export default function App() {
     reader.onload = async (event) => {
       try {
         const backup = JSON.parse(event.target?.result as string);
-        if (Array.isArray(backup?.reports)) {
+        if (!backup || (!Array.isArray(backup.reports) && !Array.isArray(backup.events) && !Array.isArray(backup.announcements))) {
+          showToast('Invalid backup file: no reports, events, or announcements found.');
+          return;
+        }
+        if (Array.isArray(backup.reports)) {
           setReports(backup.reports);
           for (const rep of backup.reports) await saveReportToDb(rep);
         }
-        if (Array.isArray(backup?.events)) {
+        if (Array.isArray(backup.events)) {
           setEvents(backup.events);
           for (const ev of backup.events) await saveEventToDb(ev);
         }
-        if (backup?.user) {
+        if (Array.isArray(backup.announcements)) {
+          setAnnouncements(backup.announcements);
+          for (const ann of backup.announcements) await saveAnnouncementToDb(ann);
+        }
+        if (backup.user && backup.user.email) {
           setUserProfile(backup.user);
+          setRole(backup.user.role || 'student');
           await createUserProfile(backup.user);
         }
         showToast('Backup restored successfully!');
@@ -496,26 +757,37 @@ export default function App() {
 
   const filteredReports = useMemo(() => {
     return reports.filter(item => {
+      const isAuthor = Boolean(
+        userProfile && (item.authorEmail === userProfile.email || item.author === userProfile.name)
+      );
+      const searchableText = `${formatReportId(item.id, item.type, item.status)} ${item.id} ${item.title} ${item.description} ${item.location} ${item.isAnonymous ? '' : item.author}`;
+
       // Pending council approvals view (admin only)
       if (currentFilter === 'pending-approvals') {
-        return item.status === 'pending-review';
+        if (item.status !== 'pending-review') return false;
+        return !searchQuery.trim() || matchesExactWords(searchableText, searchQuery);
       }
 
+      // Drafts filter shows only current user's drafts
+      if (currentFilter === 'drafts') {
+        if (item.status !== 'draft' || !isAuthor) return false;
+        return !searchQuery.trim() || matchesExactWords(searchableText, searchQuery);
+      }
+
+      // Never show drafts outside the Drafts tab
+      if (item.status === 'draft') return false;
+
       // Hide pending-review reports from general feed unless author or admin
-      if (item.status === 'pending-review') {
-        const isAuthor = userProfile && (item.authorEmail === userProfile.email || item.author === userProfile.name);
-        const isAdmin = role === 'admin';
-        if (!isAuthor && !isAdmin) return false;
+      if (item.status === 'pending-review' && !isAuthor && role !== 'admin') {
+        return false;
       }
 
       if (currentFilter === 'open' && item.status !== 'open') return false;
       if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
       if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
-      if (currentFilter === 'drafts' && item.status !== 'draft') return false;
       
       if (currentFilter === 'my-activity') {
         if (!userProfile) return false;
-        const isAuthor = item.authorEmail === userProfile.email || item.author === userProfile.name;
         const isEndorser = item.endorsers?.some(e => e.email === userProfile.email);
         if (!isAuthor && !isEndorser) return false;
       }
@@ -526,7 +798,7 @@ export default function App() {
       if (currentFilter === 'student-life' && item.category !== 'student-life') return false;
       if (currentFilter === 'safety' && item.category !== 'safety') return false;
       
-      if (searchQuery.trim() && !matchesExactWords(`${item.title} ${item.description}`, searchQuery)) return false;
+      if (searchQuery.trim() && !matchesExactWords(searchableText, searchQuery)) return false;
       return true;
     });
   }, [reports, currentFilter, searchQuery, userProfile, role]);
@@ -554,6 +826,7 @@ export default function App() {
           isOpen={isGooglePickerOpen} 
           onClose={() => setIsGooglePickerOpen(false)} 
           targetRole={loginRole} 
+          existingUsers={allUsers}
           onSelectAccount={(simulated) => handleGoogleLogin(simulated)} 
         />
       </>
@@ -582,9 +855,15 @@ export default function App() {
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-[#faf8fc] dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased overflow-hidden select-none transition-colors">
       <TopBar 
         searchQuery={searchQuery} 
-        onSearchChange={setSearchQuery} 
-        onOpenNewModal={() => setIsNewFeedbackModalOpen(true)} 
-        totalCount={reports.length} 
+        onSearchChange={(q) => {
+          setSearchQuery(q);
+          if (q.trim() && (pageView === 'home' || pageView === 'detail' || currentFilter === 'events')) {
+            setCurrentFilter('all');
+            setPageView('main');
+          }
+        }} 
+        onOpenNewModal={() => { setEditingReport(null); setIsNewFeedbackModalOpen(true); }} 
+        totalCount={reports.filter(r => r.status !== 'draft').length} 
         openCount={reports.filter(r => r.status === 'open').length} 
         currentUser={userProfile} 
         onSignOut={handleSignOut} 
@@ -601,11 +880,17 @@ export default function App() {
           <Sidebar 
             currentFilter={currentFilter} 
             onSelectFilter={(f) => { setCurrentFilter(f); setPageView('main'); }} 
-            onOpenNewModal={() => setIsNewFeedbackModalOpen(true)} 
+            onOpenNewModal={() => { setEditingReport(null); setIsNewFeedbackModalOpen(true); }} 
             reports={reports} 
             role={role} 
             currentUser={userProfile}
-            eventsCount={events.length} 
+            eventsCount={events.length}
+            announcements={announcements}
+            onAddAnnouncement={handleAddAnnouncement}
+            onUpdateAnnouncement={handleUpdateAnnouncement}
+            onDeleteAnnouncement={handleDeleteAnnouncement}
+            onVoteAnnouncementPoll={handleVoteAnnouncementPoll}
+            onToggleAnnouncementPin={handleToggleAnnouncementPin}
             onClose={() => setIsSidebarOpen(false)} 
             onSignOut={handleSignOut} 
             onExportBackup={handleExportBackup} 
@@ -617,19 +902,27 @@ export default function App() {
         {pageView === 'home' ? (
           <HomeScreen
             currentUser={userProfile}
+            role={role}
             reports={reports}
             events={events}
             allUsers={allUsers}
+            announcements={announcements}
+            onAddAnnouncement={handleAddAnnouncement}
+            onUpdateAnnouncement={handleUpdateAnnouncement}
+            onDeleteAnnouncement={handleDeleteAnnouncement}
+            onVoteAnnouncementPoll={handleVoteAnnouncementPoll}
+            onToggleAnnouncementPin={handleToggleAnnouncementPin}
             onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }}
             onToggleUpvote={handleToggleUpvote}
             onNavigateToEvents={() => { setCurrentFilter('events'); setPageView('main'); }}
             onNavigateToReports={() => { setCurrentFilter('all'); setPageView('main'); }}
-            onOpenNewModal={() => setIsNewFeedbackModalOpen(true)}
+            onOpenNewModal={() => { setEditingReport(null); setIsNewFeedbackModalOpen(true); }}
             onOpenProfile={() => setIsProfileModalOpen(true)}
           />
         ) : pageView === 'student-list' && role === 'admin' ? (
           <AdminStudentList 
-            allUsers={allUsers} 
+            allUsers={allUsers}
+            currentUserEmail={userProfile.email}
             onApprove={handleApproveUser} 
             onReject={handleRejectUser} 
             onRemove={handleRemoveUser} 
@@ -667,18 +960,27 @@ export default function App() {
             onNavigateToEvents={() => { setCurrentFilter('events'); setPageView('main'); }} 
             eventsCount={events.length} role={role} 
             onBulkUpdateStatus={handleBulkUpdateStatus}
-            onOpenNewModal={() => setIsNewFeedbackModalOpen(true)}
+            onOpenNewModal={() => { setEditingReport(null); setIsNewFeedbackModalOpen(true); }}
           />
         ) : (
           <FeedbackDetail 
             report={reports.find(r => r.id === selectedId) || null} 
-            role={role} currentUser={userProfile as any} 
-            onUpdateStatus={handleUpdateStatus} onAddActivity={handleAddActivity} 
+            role={role}
+            currentUser={userProfile as any}
+            allUsers={allUsers}
+            onUpdateStatus={handleUpdateStatus}
+            onAddActivity={handleAddActivity} 
             onToggleUpvote={handleToggleUpvote} 
             onBack={() => setPageView('main')} 
-            onDeleteReport={handleDeleteReport} 
+            onDeleteReport={handleDeleteReport}
+            onTogglePin={handleTogglePin}
             onApproveInitiative={handleApproveInitiative}
             onRejectInitiative={handleRejectInitiative}
+            onEditReport={(rep) => {
+              setEditingReport(rep);
+              setIsNewFeedbackModalOpen(true);
+            }}
+            onPublishDraft={handlePublishDraft}
           />
         )}
       </div>
@@ -705,7 +1007,7 @@ export default function App() {
             <span>Reports</span>
           </button>
           <button
-            onClick={() => setIsNewFeedbackModalOpen(true)}
+            onClick={() => { setEditingReport(null); setIsNewFeedbackModalOpen(true); }}
             className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-gradient-to-r from-purple-800 to-indigo-700 text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
           >
             <Plus className="w-6 h-6" />
@@ -732,13 +1034,14 @@ export default function App() {
       {/* MODALS */}
       <NewFeedbackModal
         isOpen={isNewFeedbackModalOpen}
-        onClose={() => setIsNewFeedbackModalOpen(false)}
-        onSubmit={handleCreateReport}
+        onClose={() => { setIsNewFeedbackModalOpen(false); setEditingReport(null); }}
+        onSubmit={handleSaveOrUpdateReport}
         existingReports={reports}
         onSelectExistingReport={(id) => {
-          setSelectedId(id); setPageView('detail'); setIsNewFeedbackModalOpen(false);
+          setSelectedId(id); setPageView('detail'); setIsNewFeedbackModalOpen(false); setEditingReport(null);
         }}
         currentUser={userProfile}
+        editingReport={editingReport}
       />
 
       {userProfile && (

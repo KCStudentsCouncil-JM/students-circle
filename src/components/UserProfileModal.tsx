@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, isBirthdayToday } from '../types';
 import { isValidImageFile, compressImage } from '../utils';
 import { 
@@ -51,6 +51,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [photo, setPhoto] = useState(user.photo || PRESET_AVATARS[0].url);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isCompressingAvatar, setIsCompressingAvatar] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(user.name);
+      setEmail(user.email);
+      setClassYear(user.classYear || '2026');
+      setMajor(user.major || 'Form 5 Science');
+      setBirthday(user.birthday || '');
+      setPhoto(user.photo || PRESET_AVATARS[0].url);
+      setAvatarError(null);
+    }
+  }, [user, isOpen]);
 
   if (!isOpen) return null;
 
@@ -112,7 +124,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-indigo-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0 rounded-t-3xl sm:rounded-t-3xl pt-safe">
+        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-indigo-50/40 to-white dark:from-slate-800 dark:via-purple-950/20 dark:to-slate-900 shrink-0 rounded-t-3xl sm:rounded-t-3xl pt-safe">
           <div className="flex items-center gap-3">
             <div className={`relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0 ${
               isToday ? 'border-amber-400 ring-2 ring-amber-400 ring-offset-2 animate-pulse' : 'border-purple-200 dark:border-slate-700'
@@ -236,14 +248,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1">
                 <Mail className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                <span>Email</span>
+                <span>School Email</span>
               </label>
               <input
                 type="email"
-                required
+                disabled
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 text-purple-950 dark:text-purple-100"
+                title="Account email cannot be changed"
+                className="w-full bg-slate-100 dark:bg-slate-800/60 border border-purple-200 dark:border-slate-700 rounded-xl px-3 py-3 text-base sm:text-xs text-slate-500 dark:text-slate-400 cursor-not-allowed"
               />
             </div>
           </div>

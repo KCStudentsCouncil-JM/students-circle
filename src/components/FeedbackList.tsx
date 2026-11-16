@@ -231,7 +231,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
               >
                 <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Upcoming Events</span>
-                <span className="bg-purple-200/70 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                <span className="bg-purple-200/70 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold">
                   {eventsCount}
                 </span>
               </button>
@@ -449,8 +449,10 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                 ? item.endorsers?.some((e) => e.email === currentUser.email) 
                 : false;
 
-              const authorUser = allUsers.find(u => u.name === item.author || (item.authorEmail && u.email === item.authorEmail));
-              const isAuthorBirthday = authorUser ? isBirthdayToday(authorUser.birthday) : (item.author === 'Dylon Ocha');
+              const authorUser = !item.isAnonymous
+                ? allUsers.find(u => (item.authorEmail && u.email.toLowerCase() === item.authorEmail.toLowerCase()) || u.name === item.author)
+                : undefined;
+              const isAuthorBirthday = Boolean(!item.isAnonymous && authorUser?.status === 'approved' && isBirthdayToday(authorUser.birthday));
 
               const formattedId = formatReportId(item.id, item.type, item.status);
 
@@ -556,7 +558,7 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
                             Urgent
                           </span>
                         )}
-                        {item.status !== 'resolved' && (
+                        {item.status !== 'resolved' && item.status !== 'draft' && item.status !== 'rejected' && (
                           <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded flex items-center gap-1 ${
                             sla.isBreached 
                               ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold' 

@@ -114,6 +114,27 @@ export function getAuthoritativeTimestamp(): number {
  * - Medium urgency: 48h SLA
  * - Low urgency: 72h SLA
  */
+export function parseLocalDate(dateStr: string): Date {
+  if (!dateStr) return new Date(NaN);
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+      return new Date(year, month, day);
+    }
+  }
+  return new Date(dateStr);
+}
+
+export function formatLocalDateIso(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function calculateSlaInfo(createdAt: string, urgency: UrgencyLevel, status: FeedbackStatus) {
   const createdMs = new Date(createdAt).getTime();
   const targetHours = urgency === 'high' ? 24 : urgency === 'medium' ? 48 : 72;
@@ -121,9 +142,10 @@ export function calculateSlaInfo(createdAt: string, urgency: UrgencyLevel, statu
   const nowMs = getAuthoritativeTimestamp();
 
   const isResolved = status === 'resolved';
+  const isInactive = status === 'draft' || status === 'rejected';
   const remainingMs = deadlineMs - nowMs;
   const remainingHours = Math.round(remainingMs / (1000 * 60 * 60));
-  const isBreached = remainingMs < 0 && !isResolved;
+  const isBreached = remainingMs < 0 && !isResolved && !isInactive;
 
   return {
     targetHours,
@@ -133,6 +155,10 @@ export function calculateSlaInfo(createdAt: string, urgency: UrgencyLevel, statu
     isResolved,
     label: isResolved
       ? 'SLA Met & Verified'
+      : status === 'draft'
+      ? 'Draft (Not Submitted)'
+      : status === 'rejected'
+      ? 'Closed / Declined'
       : isBreached
       ? `SLA Breached (${Math.abs(remainingHours)}h overdue)`
       : `${remainingHours}h remaining for triage`,
@@ -294,13 +320,14 @@ export function safeLocalStorageSet(key: string, value: any): boolean {
 /**
  * Backup export & restore utility so users never lose data if browser cache is cleared.
  */
-export function exportCampusDataBackup(reports: any[], events: any[], user: any) {
+export function exportCampusDataBackup(reports: any[], events: any[], user: any, announcements: any[] = []) {
   const backup = {
-    version: '1.0',
+    version: '1.1',
     exportedAt: new Date().toISOString(),
     user,
     reports,
     events,
+    announcements,
   };
 
   const jsonStr = JSON.stringify(backup, null, 2);

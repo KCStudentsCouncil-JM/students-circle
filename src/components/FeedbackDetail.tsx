@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { FeedbackReport, FeedbackStatus, RoleMode, UserProfile, isBirthdayToday } from '../types';
 import { calculateSlaInfo, formatReportId, isValidMediaFile, compressImage } from '../utils';
@@ -31,13 +31,15 @@ import {
   CornerDownRight,
   UploadCloud,
   Check,
-  XCircle
+  XCircle,
+  FileEdit
 } from 'lucide-react';
 
 interface FeedbackDetailProps {
   report: FeedbackReport | null;
   role: RoleMode;
   currentUser?: UserProfile | null;
+  allUsers?: UserProfile[];
   onUpdateStatus: (id: string, status: FeedbackStatus, adminNote?: string) => void;
   onAddActivity: (
     id: string, 
@@ -54,12 +56,15 @@ interface FeedbackDetailProps {
   onTogglePin?: (id: string) => void;
   onApproveInitiative?: (id: string) => void;
   onRejectInitiative?: (id: string, reason?: string) => void;
+  onEditReport?: (report: FeedbackReport) => void;
+  onPublishDraft?: (id: string) => void;
 }
 
 export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
   report,
   role,
   currentUser,
+  allUsers = [],
   onUpdateStatus,
   onAddActivity,
   onToggleUpvote,
@@ -68,6 +73,8 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
   onTogglePin,
   onApproveInitiative,
   onRejectInitiative,
+  onEditReport,
+  onPublishDraft,
 }) => {
   const [replyMessage, setReplyMessage] = useState('');
   const [selectedStatusChange, setSelectedStatusChange] = useState<FeedbackStatus | ''>('');
@@ -83,6 +90,19 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
   const [replyVideos, setReplyVideos] = useState<string[]>([]);
   const [replyMediaError, setReplyMediaError] = useState<string | null>(null);
   const [isProcessingReplyMedia, setIsProcessingReplyMedia] = useState(false);
+
+  useEffect(() => {
+    setReplyMessage('');
+    setSelectedStatusChange('');
+    setReplyingToItem(null);
+    setReplyPhotos([]);
+    setReplyVideos([]);
+    setReplyMediaError(null);
+    setRejectionReasonInput('');
+    setIsDeleteModalOpen(false);
+    setIsRejectModalOpen(false);
+    setPreviewPhoto(null);
+  }, [report?.id]);
 
   const handleReplyMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setReplyMediaError(null);
@@ -152,14 +172,16 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
       `"${end.timestamp}"`
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `Supporters_${report.id}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   if (!report) {
@@ -176,11 +198,34 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
     );
   }
 
-  const isAuthor = 
-    currentUser?.name === report.author || 
-    currentUser?.name === report.authorRealName || 
-    (currentUser?.email && report.authorEmail === currentUser.email);
+  const isAuthor = Boolean(
+    currentUser && (
+      currentUser.name === report.author || 
+      currentUser.name === report.authorRealName || 
+      (currentUser.email && report.authorEmail === currentUser.email)
+    )
+  );
   const canDelete = role === 'admin' || isAuthor;
+
+  if (report.status === 'draft' && !isAuthor) {
+    return (
+      <div className="flex-1 bg-white dark:bg-slate-900 flex flex-col items-center justify-center p-8 text-slate-600 dark:text-slate-400">
+        <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <FileEdit className="w-8 h-8 stroke-[1.5]" />
+        </div>
+        <h3 className="text-sm font-semibold text-purple-950 dark:text-purple-200">Private Draft</h3>
+        <p className="text-xs text-purple-700/70 dark:text-purple-400 mt-1 max-w-xs text-center mb-4">
+          This draft has not been published yet and is only visible to its author.
+        </p>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 rounded-xl bg-purple-800 hover:bg-purple-900 text-white text-xs font-semibold cursor-pointer"
+        >
+          Back to Feed
+        </button>
+      </div>
+    );
+  }
 
   if (report.status === 'pending-review' && role !== 'admin' && !isAuthor) {
     return (
@@ -201,6 +246,19 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
       </div>
     );
   }
+
+  const authorUser = !report.isAnonymous && allUsers.length > 0
+    ? allUsers.find(
+        (u) =>
+          (report.authorEmail && u.email.toLowerCase() === report.authorEmail.toLowerCase()) ||
+          u.name === report.author
+      )
+    : undefined;
+  const showAuthorBirthday = !report.isAnonymous && (
+    authorUser
+      ? authorUser.status === 'approved' && isBirthdayToday(authorUser.birthday)
+      : Boolean(currentUser?.name === report.author && isBirthdayToday(currentUser?.birthday))
+  );
 
   const sla = calculateSlaInfo(report.createdAt, report.urgency, report.status);
 
@@ -330,7 +388,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         {/* Toolbar Controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 flex-wrap">
           {/* Admin Pin Toggle */}
-          {role === 'admin' && onTogglePin && (
+          {role === 'admin' && onTogglePin && report.status !== 'draft' && (
             <button
               onClick={() => onTogglePin(report.id)}
               className={`flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
@@ -346,18 +404,20 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           )}
 
           {/* Upvote button */}
-          <button
-            onClick={(e) => onToggleUpvote(report.id, e)}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all border cursor-pointer touch-manipulation ${
-              hasUserUpvoted
-                ? 'bg-purple-100/90 dark:bg-purple-950/60 border-purple-400 text-purple-900 dark:text-purple-200 shadow-xs hover:bg-purple-200'
-                : 'bg-white dark:bg-slate-800 border-purple-200 dark:border-slate-700 text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-700'
-            }`}
-            title={hasUserUpvoted ? "Click to undo/retract support" : "Support this report"}
-          >
-            <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-purple-700 fill-purple-600' : 'text-purple-600 dark:text-purple-400'}`} />
-            <span>{hasUserUpvoted ? 'Supported (Undo)' : 'Support'} ({report.upvotes})</span>
-          </button>
+          {report.status !== 'draft' && (
+            <button
+              onClick={(e) => onToggleUpvote(report.id, e)}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all border cursor-pointer touch-manipulation ${
+                hasUserUpvoted
+                  ? 'bg-purple-100/90 dark:bg-purple-950/60 border-purple-400 text-purple-900 dark:text-purple-200 shadow-xs hover:bg-purple-200'
+                  : 'bg-white dark:bg-slate-800 border-purple-200 dark:border-slate-700 text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-700'
+              }`}
+              title={hasUserUpvoted ? "Click to undo/retract support" : "Support this report"}
+            >
+              <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-purple-700 fill-purple-600' : 'text-purple-600 dark:text-purple-400'}`} />
+              <span>{hasUserUpvoted ? 'Supported (Undo)' : 'Support'} ({report.upvotes})</span>
+            </button>
+          )}
 
           {/* Delete button */}
           {canDelete && onDeleteReport && (
@@ -402,6 +462,43 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 pb-28 sm:pb-12 momentum-scroll">
+        {/* Saved Draft Action Banner */}
+        {report.status === 'draft' && isAuthor && (
+          <div className="p-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 flex items-center justify-between flex-wrap gap-3 animate-in slide-in-from-top-1">
+            <div className="flex items-center gap-2.5">
+              <FileEdit className="w-5 h-5 text-purple-700 dark:text-purple-400 shrink-0" />
+              <div>
+                <h3 className="font-bold text-sm text-purple-950 dark:text-purple-100">
+                  Saved Draft
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Only visible to you until you publish it to Students&apos; Council.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {onEditReport && (
+                <button
+                  type="button"
+                  onClick={() => onEditReport(report)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-purple-50 dark:hover:bg-slate-700 text-purple-900 dark:text-purple-200 font-semibold text-xs border border-purple-200 dark:border-slate-600 shadow-2xs cursor-pointer"
+                >
+                  <FileEdit className="w-3.5 h-3.5" /> Edit Draft
+                </button>
+              )}
+              {onPublishDraft && (
+                <button
+                  type="button"
+                  onClick={() => onPublishDraft(report.id)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-900 hover:to-indigo-800 text-white font-bold text-xs shadow-xs cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" /> Publish Now
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Initiative Council Review Alert Banner */}
         {report.status === 'pending-review' && (
           <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2 animate-in slide-in-from-top-1">
@@ -442,15 +539,26 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         )}
 
         {report.status === 'rejected' && (
-          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-900 dark:text-rose-200 space-y-1">
-            <div className="flex items-center gap-1.5 font-bold">
-              <XCircle className="w-4 h-4 text-rose-600" />
-              <span>Initiative Declined by Council</span>
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-900 dark:text-rose-200 flex items-center justify-between flex-wrap gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <XCircle className="w-4 h-4 text-rose-600" />
+                <span>Initiative Declined by Council</span>
+              </div>
+              {report.rejectionReason && (
+                <p className="text-[11px] text-rose-800 dark:text-rose-300 pt-0.5">
+                  Reason: {report.rejectionReason}
+                </p>
+              )}
             </div>
-            {report.rejectionReason && (
-              <p className="text-[11px] text-rose-800 dark:text-rose-300 pt-0.5">
-                Reason: {report.rejectionReason}
-              </p>
+            {isAuthor && onEditReport && (
+              <button
+                type="button"
+                onClick={() => onEditReport(report)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-rose-100/60 dark:hover:bg-slate-800 text-rose-800 dark:text-rose-300 font-bold text-xs border border-rose-300 dark:border-rose-800 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Revise & Resubmit
+              </button>
             )}
           </div>
         )}
@@ -499,8 +607,8 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
             <div className="bg-purple-50/50 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl border border-purple-100/80 dark:border-slate-700">
               <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block mb-0.5">Location</span>
-              <span className="font-semibold text-purple-950 dark:text-purple-200 truncate block" title={report.location}>
-                {report.location}
+              <span className="font-semibold text-purple-950 dark:text-purple-200 truncate block" title={report.location || 'Not specified'}>
+                {report.location || 'Not specified'}
               </span>
             </div>
 
@@ -514,7 +622,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               ) : (
                 <span className="font-semibold text-purple-950 dark:text-purple-200 truncate flex items-center gap-1" title={`${report.author} (${report.authorRole})`}>
                   <span className="truncate">{report.author}</span>
-                  {((currentUser?.name === report.author && isBirthdayToday(currentUser?.birthday)) || (report.author === 'Dylon Ocha')) && (
+                  {showAuthorBirthday && (
                     <span className="text-[10px] bg-amber-200 text-purple-950 px-1.5 py-0.5 rounded-full font-bold shrink-0 shadow-2xs">
                       🎂 Birthday!
                     </span>
@@ -586,9 +694,22 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             Description & Details
           </h2>
           <div className="p-4 rounded-2xl bg-purple-50/30 dark:bg-slate-800/50 border border-purple-100 dark:border-slate-800 text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line font-normal">
-            {report.description}
+            {report.description || 'No description added yet.'}
           </div>
         </div>
+
+        {/* Official Resolution Notes */}
+        {report.resolutionNotes && (
+          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Official Resolution Summary</span>
+            </div>
+            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed whitespace-pre-line">
+              {report.resolutionNotes}
+            </p>
+          </div>
+        )}
 
         {/* Photos & Videos Evidence Attachments */}
         {((report.photos && report.photos.length > 0) || (report.videos && report.videos.length > 0)) && (
@@ -634,6 +755,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         )}
 
         {/* Student Supporters Roster */}
+        {report.status !== 'draft' && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -668,7 +790,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           </div>
 
           {showEndorsersSection && (
-            <div className="rounded-2xl border border-purple-100 dark:border-slate-800 bg-[#faf8fc] dark:bg-slate-850 p-3.5 space-y-3">
+            <div className="rounded-2xl border border-purple-100 dark:border-slate-800 bg-[#faf8fc] dark:bg-slate-800/60 p-3.5 space-y-3">
               {(!report.endorsers || report.endorsers.length === 0) ? (
                 <div className="p-3 text-center text-[11px] text-purple-600/70 dark:text-purple-400">
                   No registered supporters yet. Click "Support" at the top to back this proposal!
@@ -722,6 +844,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             </div>
           )}
         </div>
+        )}
 
         {/* Activity & Response Feed with Threaded Replies */}
         <div className="space-y-4 pt-2">
@@ -739,6 +862,9 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             {(report.activities || []).map((act) => {
               const isAdmin = act.role === 'admin';
               const isSystem = act.role === 'system';
+              const parentAct = act.parentId
+                ? (report.activities || []).find((a) => a.id === act.parentId)
+                : undefined;
 
               return (
                 <div key={act.id} className="relative flex items-start gap-3 pl-8 group">
@@ -759,7 +885,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                       isAdmin
                         ? 'bg-purple-50/80 dark:bg-slate-800/80 border border-purple-200/90 dark:border-slate-700 text-purple-950 dark:text-purple-200'
                         : isSystem
-                        ? 'bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+                        ? 'bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
                         : 'bg-white dark:bg-slate-800 border border-purple-100 dark:border-slate-700 shadow-xs text-slate-800 dark:text-slate-200'
                     }`}
                   >
@@ -767,12 +893,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-xs">{act.author}</span>
                         {act.badgeText && (
-                          <span className="bg-purple-800 text-purple-200 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                          <span className="bg-purple-800 text-purple-200 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                             {act.badgeText}
                           </span>
                         )}
                         {act.statusChange && (
-                          <span className="text-[10px] font-mono bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-1.5 py-0.2 rounded">
+                          <span className="text-[10px] font-mono bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded">
                             Status → {act.statusChange}
                           </span>
                         )}
@@ -781,17 +907,28 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                         <span className="text-[10px] text-purple-400 font-mono">
                           {formatFullDate(act.timestamp)}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReplyingToItem({ id: act.id, author: act.author });
-                          }}
-                          className="opacity-100 sm:opacity-0 group-hover:opacity-100 text-[10px] font-semibold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-0.5 cursor-pointer transition-opacity min-h-[32px]"
-                        >
-                          <CornerDownRight className="w-3 h-3" /> Reply
-                        </button>
+                        {report.status !== 'draft' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyingToItem({ id: act.id, author: act.author });
+                            }}
+                            className="opacity-100 sm:opacity-0 group-hover:opacity-100 text-[10px] font-semibold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-0.5 cursor-pointer transition-opacity min-h-[32px]"
+                          >
+                            <CornerDownRight className="w-3 h-3" /> Reply
+                          </button>
+                        )}
                       </div>
                     </div>
+
+                    {parentAct && (
+                      <div className="flex items-start gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-100/50 dark:bg-slate-900/60 border-l-2 border-purple-500 text-[11px] text-purple-800/80 dark:text-purple-300/80">
+                        <CornerDownRight className="w-3 h-3 mt-0.5 shrink-0 text-purple-600 dark:text-purple-400" />
+                        <span className="truncate">
+                          Replying to <strong>{parentAct.author}</strong>: {parentAct.message}
+                        </span>
+                      </div>
+                    )}
 
                     <p className="leading-relaxed whitespace-pre-line text-slate-700 dark:text-slate-300 text-sm sm:text-xs">
                       {act.message}
@@ -830,8 +967,9 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
         </div>
 
         {/* Reply & Official Action Composer */}
+        {report.status !== 'draft' && (
         <div className="pt-2 pb-safe">
-          <form onSubmit={handleSendReply} className="bg-purple-50/40 dark:bg-slate-850 p-4 rounded-3xl border border-purple-100 dark:border-slate-800 space-y-3">
+          <form onSubmit={handleSendReply} className="bg-purple-50/40 dark:bg-slate-800/60 p-4 rounded-3xl border border-purple-100 dark:border-slate-800 space-y-3">
             {replyingToItem && (
               <div className="flex items-center justify-between bg-purple-100/70 dark:bg-slate-800 px-3 py-1.5 rounded-xl text-xs text-purple-900 dark:text-purple-200">
                 <span className="flex items-center gap-1">
@@ -867,10 +1005,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                     className="text-base sm:text-xs py-1.5 px-2 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium text-purple-950 dark:text-purple-200 min-h-[36px]"
                   >
                     <option value="">Keep Current Status ({report.status})</option>
+                    <option value="pending-review">Pending Review</option>
                     <option value="open">Open</option>
                     <option value="in-review">In Review</option>
                     <option value="in-progress">In Progress</option>
                     <option value="resolved">Resolved</option>
+                    <option value="rejected">Declined</option>
                   </select>
                 </div>
               )}
@@ -948,6 +1088,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             </div>
           </form>
         </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -1021,7 +1162,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <button
                 type="button"
                 onClick={() => setIsRejectModalOpen(false)}
-                className="px-4 py-2 min-h-[36px] rounded-xl border border-purple-200 dark:border-slate-700 text-xs font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-850 cursor-pointer"
+                className="px-4 py-2 min-h-[36px] rounded-xl border border-purple-200 dark:border-slate-700 text-xs font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancel
               </button>

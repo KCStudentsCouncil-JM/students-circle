@@ -1,5 +1,6 @@
 import React from 'react';
-import { FeedbackReport, CampusEvent, UserProfile, FeedbackStatus, Category } from '../types';
+import { FeedbackReport, CampusEvent, UserProfile, Category } from '../types';
+import { calculateSlaInfo } from '../utils';
 import { 
   X, 
   BarChart3, 
@@ -64,29 +65,35 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
     safety: <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />,
   };
 
+  const activeSlaReports = publishedReports.filter(r => r.status !== 'rejected');
+  const compliantCount = activeSlaReports.filter(r => !calculateSlaInfo(r.createdAt, r.urgency, r.status).isBreached).length;
+  const slaCompliancePct = activeSlaReports.length > 0 ? Math.round((compliantCount / activeSlaReports.length) * 100) : 100;
+
   const handleExportCSV = () => {
     const headers = ['Report ID', 'Type', 'Title', 'Category', 'Urgency', 'Status', 'Author', 'Created At', 'Upvotes', 'Location'];
-    const rows = reports.map(r => [
+    const rows = publishedReports.map(r => [
       `"${r.id}"`,
       `"${r.type}"`,
       `"${r.title.replace(/"/g, '""')}"`,
       `"${r.category}"`,
       `"${r.urgency}"`,
       `"${r.status}"`,
-      `"${(r.authorRealName || r.author).replace(/"/g, '""')}"`,
+      `"${(r.isAnonymous ? 'Anonymous Student' : (r.authorRealName || r.author)).replace(/"/g, '""')}"`,
       `"${r.createdAt}"`,
       r.upvotes,
       `"${r.location.replace(/"/g, '""')}"`
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvString = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', `Campus_Feedback_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -190,7 +197,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
           {/* Breakdown Rows */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Reports by Category Progress Bars */}
-            <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-purple-100 dark:border-slate-800 space-y-3">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-purple-100 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-purple-100 dark:border-slate-800">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
                   <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -227,7 +234,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
             </div>
 
             {/* Status Breakdown & SLA Monitoring */}
-            <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-purple-100 dark:border-slate-800 space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-purple-100 dark:border-slate-800 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-purple-100 dark:border-slate-800">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -269,7 +276,9 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
                     <span>Registered Students</span>
                     <Users className="w-3.5 h-3.5 text-slate-500" />
                   </div>
-                  <div className="text-xl font-extrabold mt-1 text-slate-900 dark:text-slate-100">{allUsers.length}</div>
+                  <div className="text-xl font-extrabold mt-1 text-slate-900 dark:text-slate-100">
+                    {allUsers.filter(u => u.status === 'approved').length}
+                  </div>
                   <p className="text-[10px] text-slate-500">Verified campus directory</p>
                 </div>
               </div>
@@ -277,10 +286,10 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
               <div className="p-3 rounded-xl bg-purple-900/5 dark:bg-slate-800/50 border border-purple-200/70 dark:border-slate-700 text-xs text-purple-950 dark:text-purple-200 space-y-1">
                 <div className="font-bold flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>SLA Compliance Target: 94.2% on-time resolution</span>
+                  <span>Live SLA Compliance: {slaCompliancePct}% within target window</span>
                 </div>
                 <p className="text-[11px] text-purple-700/80 dark:text-purple-400">
-                  Priority urgent tickets maintain an authoritative 24-hour response clock to prevent student safety escalations.
+                  Priority urgent tickets maintain a 24-hour response target to prevent student safety escalations.
                 </p>
               </div>
             </div>
@@ -288,7 +297,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:px-6 bg-slate-50 dark:bg-slate-850 border-t border-purple-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:px-6 bg-slate-50 dark:bg-slate-800/80 border-t border-purple-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <span className="text-xs text-purple-700/70 dark:text-purple-400 font-mono">
             Generated from authoritative university data records
           </span>

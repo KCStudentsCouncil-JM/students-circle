@@ -146,7 +146,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search reports..."
-            className="w-full bg-purple-50/70 dark:bg-slate-800/80 hover:bg-purple-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-850 text-base sm:text-xs pl-7 sm:pl-8 pr-6 sm:pr-7 py-1.5 rounded-xl border border-purple-200/80 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 text-purple-950 dark:text-purple-100 placeholder:text-purple-400/80 transition-all"
+            className="w-full bg-purple-50/70 dark:bg-slate-800/80 hover:bg-purple-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 text-base sm:text-xs pl-7 sm:pl-8 pr-6 sm:pr-7 py-1.5 rounded-xl border border-purple-200/80 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 text-purple-950 dark:text-purple-100 placeholder:text-purple-400/80 transition-all"
           />
           {searchQuery && (
             <button
