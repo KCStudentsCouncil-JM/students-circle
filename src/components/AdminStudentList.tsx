@@ -52,7 +52,7 @@ export const AdminStudentList: React.FC<AdminStudentListProps> = ({
           </button>
           <div>
             <h1 className="text-base sm:text-lg font-bold text-purple-950 dark:text-purple-100 flex items-center gap-2">
-              <Users className="w-5 h-5 text-purple-600 dark:text-pink-400" /> 
+              <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" /> 
               <span>Student Account Verification</span>
             </h1>
             <p className="text-xs text-purple-600 dark:text-purple-400">

@@ -62,7 +62,7 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
         <div className="p-6 pb-4 border-b border-purple-100 dark:border-slate-800 flex items-start justify-between bg-gradient-to-r from-purple-50/60 to-white dark:from-slate-800/80 dark:to-slate-900">
           <div className="space-y-1">
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-purple-600 dark:text-pink-400" />
+              <ShieldCheck className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               {targetRole === 'admin' ? 'Admin Access Verification' : 'Student Access Verification'}
             </h2>
             <p className="text-xs text-purple-900/70 dark:text-purple-300">
@@ -119,7 +119,7 @@ export const GoogleAccountPickerModal: React.FC<GoogleAccountPickerModalProps> =
                     <img 
                       src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&q=80" 
                       alt="Dylon" 
-                      className="w-9 h-9 rounded-full object-cover border border-amber-300 ring-2 ring-pink-400"
+                      className="w-9 h-9 rounded-full object-cover border border-amber-300 ring-2 ring-amber-400"
                     />
                     <div>
                       <div className="font-bold text-xs text-purple-950 dark:text-purple-100 flex items-center gap-1.5">

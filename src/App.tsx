@@ -7,7 +7,7 @@ import {
 } from './utils';
 import { 
   auth, isFirebaseConfigured, subscribeToReports, subscribeToEvents, saveReportToDb, updateReportInDb, 
-  deleteReportFromDb, saveEventToDb, updateEventInDb, deleteEventFromDb,
+  appendActivityToReportInDb, deleteReportFromDb, saveEventToDb, updateEventInDb, deleteEventFromDb,
   subscribeToUsers, createUserProfile, approveUserInDb, rejectUserInDb, removeUserInDb,
   getUserProfile, signOutReal, signInWithGoogleReal, updateUserLastActive
 } from './firebase';
@@ -23,10 +23,11 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { PortalPage } from './components/PortalPage';
 import { OnboardingScreen } from './components/OnboardingScreen';
 import { AdminStudentList } from './components/AdminStudentList';
+import { AdminApprovalQueue } from './components/AdminApprovalQueue';
 import { GoogleAccountPickerModal } from './components/GoogleAccountPickerModal';
 import { AdminAnalyticsModal } from './components/AdminAnalyticsModal';
 import { HomeScreen } from './components/HomeScreen';
-import { CheckCircle2, Calendar, Plus, User as UserIcon, LogOut, Inbox, Home } from 'lucide-react';
+import { CheckCircle2, Calendar, Plus, User as UserIcon, Inbox, Home } from 'lucide-react';
 
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
@@ -120,14 +121,25 @@ export default function App() {
     }
   }, [allUsers, userProfile?.email]);
 
-  // Online presence heartbeat (every 60s)
+  // Online presence heartbeat (every 60s & on tab visibility change)
   useEffect(() => {
     if (!userProfile?.email) return;
     updateUserLastActive(userProfile.email);
     const interval = setInterval(() => {
       updateUserLastActive(userProfile.email);
     }, 60_000);
-    return () => clearInterval(interval);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && userProfile?.email) {
+        updateUserLastActive(userProfile.email);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [userProfile?.email]);
 
   // Keyboard detection (Optimized for Mobile Bottom Nav)
@@ -249,7 +261,7 @@ export default function App() {
     setReports(prev => prev.map(rep => rep.id === id ? { 
       ...rep, status: newStatus, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-    await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
+    await appendActivityToReportInDb(id, newActivity, newStatus);
     showToast(`Status updated to ${newStatus}.`);
   };
 
@@ -271,7 +283,7 @@ export default function App() {
     setReports(prev => prev.map(rep => rep.id === id ? { 
       ...rep, status: nextStatus, activities: [...(rep.activities || []), newActivity] 
     } : rep));
-    await updateReportInDb(id, { status: nextStatus, activities: [...(r.activities || []), newActivity] });
+    await appendActivityToReportInDb(id, newActivity, statusChange);
     showToast(activityRole === 'admin' ? 'Official response published.' : 'Reply posted.');
   };
 
@@ -294,7 +306,7 @@ export default function App() {
           message: `Report bulk-updated to ${newStatus.toUpperCase()}.`,
           timestamp: nowIso, statusChange: newStatus,
         };
-        await updateReportInDb(id, { status: newStatus, activities: [...(r.activities || []), newActivity] });
+        await appendActivityToReportInDb(id, newActivity, newStatus);
       }
     }
     showToast(`Bulk updated ${ids.length} reports.`);
@@ -344,22 +356,94 @@ export default function App() {
     let prefix = newReportData.type === 'initiative' ? 'KCIS' : newReportData.status === 'open' ? 'KCOI' : 'KCIRV';
     const newId = `${prefix}-${Math.floor(1050 + Math.random() * 8900)}`;
     const nowIso = new Date().toISOString();
+    const initialStatus: FeedbackStatus = newReportData.type === 'initiative' ? 'pending-review' : (newReportData.status || 'open');
+
     const createdReport: FeedbackReport = {
-      ...newReportData, id: newId,
+      ...newReportData, 
+      id: newId,
+      status: initialStatus,
       author: newReportData.author || userProfile?.name || 'Student', 
       authorEmail: userProfile?.email,
       authorRole: newReportData.authorRole || userProfile?.title || 'Student',
       authorRealName: userProfile?.name,
       authorStudentId: userProfile?.id,
-      createdAt: nowIso, upvotes: 1,
+      createdAt: nowIso, 
+      upvotes: 1,
       endorsers: [{ id: `end-${Date.now()}`, name: userProfile?.name || 'Student', role: userProfile?.role || 'Student', email: userProfile?.email || '', timestamp: nowIso }],
-      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: 'Submitted report.', timestamp: nowIso }],
+      activities: [{ id: `act-${Date.now()}`, author: userProfile?.name || 'Student', role: 'student', message: newReportData.type === 'initiative' ? 'Submitted proposal for Students\' Council review.' : 'Submitted report.', timestamp: nowIso }],
     };
     setReports((prev) => [createdReport, ...prev]);
     await saveReportToDb(createdReport);
     setSelectedId(newId); 
     setPageView('detail');
-    showToast(`Report ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
+    if (createdReport.type === 'initiative') {
+      showToast('Initiative proposal submitted for council review!');
+    } else {
+      showToast(`Report ${formatReportId(newId, createdReport.type, createdReport.status)} submitted!`);
+    }
+  };
+
+  const handleApproveInitiative = async (id: string) => {
+    if (role !== 'admin') return;
+    const nowIso = new Date().toISOString();
+    const targetReport = reports.find(r => r.id === id);
+    if (!targetReport) return;
+    const newActivity: ActivityItem = {
+      id: `act-${Date.now()}`,
+      author: userProfile?.name || 'Council Staff',
+      role: 'admin',
+      message: 'Initiative proposal approved for Students\' Council action.',
+      timestamp: nowIso,
+      statusChange: 'open',
+      badgeText: 'Official Council'
+    };
+    const updatedActivities = [...(targetReport.activities || []), newActivity];
+    setReports(prev => prev.map(rep => rep.id === id ? {
+      ...rep,
+      status: 'open',
+      reviewedBy: userProfile?.name || 'Council Staff',
+      reviewedAt: nowIso,
+      activities: updatedActivities
+    } : rep));
+    await appendActivityToReportInDb(id, newActivity, 'open', {
+      reviewedBy: userProfile?.name || 'Council Staff',
+      reviewedAt: nowIso,
+    });
+    showToast('Initiative proposal approved!');
+  };
+
+  const handleRejectInitiative = async (id: string, reason?: string) => {
+    if (role !== 'admin') return;
+    const nowIso = new Date().toISOString();
+    const targetReport = reports.find(r => r.id === id);
+    if (!targetReport) return;
+    const rejectionMsg = reason?.trim() 
+      ? `Initiative proposal declined. Reason: "${reason.trim()}"`
+      : 'Initiative proposal declined by council administration.';
+    const newActivity: ActivityItem = {
+      id: `act-${Date.now()}`,
+      author: userProfile?.name || 'Council Staff',
+      role: 'admin',
+      message: rejectionMsg,
+      timestamp: nowIso,
+      statusChange: 'rejected',
+      badgeText: 'Official Council'
+    };
+    const updatedActivities = [...(targetReport.activities || []), newActivity];
+    setReports(prev => prev.map(rep => rep.id === id ? {
+      ...rep,
+      status: 'rejected',
+      rejectionReason: reason?.trim() || undefined,
+      reviewedBy: userProfile?.name || 'Council Staff',
+      reviewedAt: nowIso,
+      activities: updatedActivities
+    } : rep));
+    await appendActivityToReportInDb(id, newActivity, 'rejected', {
+      rejectionReason: reason?.trim() || undefined,
+      reviewedBy: userProfile?.name || 'Council Staff',
+      reviewedAt: nowIso,
+    });
+    showToast('Initiative proposal declined.');
   };
 
   const handleApproveUser = async (email: string) => {
@@ -412,6 +496,18 @@ export default function App() {
 
   const filteredReports = useMemo(() => {
     return reports.filter(item => {
+      // Pending council approvals view (admin only)
+      if (currentFilter === 'pending-approvals') {
+        return item.status === 'pending-review';
+      }
+
+      // Hide pending-review reports from general feed unless author or admin
+      if (item.status === 'pending-review') {
+        const isAuthor = userProfile && (item.authorEmail === userProfile.email || item.author === userProfile.name);
+        const isAdmin = role === 'admin';
+        if (!isAuthor && !isAdmin) return false;
+      }
+
       if (currentFilter === 'open' && item.status !== 'open') return false;
       if (currentFilter === 'in-review' && !(item.status === 'in-review' || item.status === 'in-progress')) return false;
       if (currentFilter === 'resolved' && item.status !== 'resolved') return false;
@@ -433,7 +529,7 @@ export default function App() {
       if (searchQuery.trim() && !matchesExactWords(`${item.title} ${item.description}`, searchQuery)) return false;
       return true;
     });
-  }, [reports, currentFilter, searchQuery, userProfile]);
+  }, [reports, currentFilter, searchQuery, userProfile, role]);
 
   // --- RENDER LOGIC ---
   if (isLoadingAuth) {
@@ -508,6 +604,7 @@ export default function App() {
             onOpenNewModal={() => setIsNewFeedbackModalOpen(true)} 
             reports={reports} 
             role={role} 
+            currentUser={userProfile}
             eventsCount={events.length} 
             onClose={() => setIsSidebarOpen(false)} 
             onSignOut={handleSignOut} 
@@ -544,6 +641,13 @@ export default function App() {
             onToggleRsvp={handleToggleEventRsvp} onAddEvent={handleAddEvent} 
             onDeleteEvent={handleDeleteEvent} onBackToReports={() => { setCurrentFilter('all'); setPageView('home'); }} 
           />
+        ) : currentFilter === 'pending-approvals' && role === 'admin' && pageView === 'main' ? (
+          <AdminApprovalQueue
+            pendingReports={filteredReports}
+            onApprove={handleApproveInitiative}
+            onReject={handleRejectInitiative}
+            onSelectReport={(id) => { setSelectedId(id); setPageView('detail'); }}
+          />
         ) : pageView === 'main' ? (
           <FeedbackList 
             reports={filteredReports} selectedId={selectedId} 
@@ -552,6 +656,7 @@ export default function App() {
             onToggleUpvote={handleToggleUpvote} 
             activeFilterTitle={
               currentFilter === 'all' ? 'All Reports' :
+              currentFilter === 'pending-approvals' ? 'Pending Council Approvals' :
               currentFilter === 'open' ? 'Open Issues' :
               currentFilter === 'in-review' ? 'In Review & Active' :
               currentFilter === 'resolved' ? 'Resolved Reports' :
@@ -572,8 +677,8 @@ export default function App() {
             onToggleUpvote={handleToggleUpvote} 
             onBack={() => setPageView('main')} 
             onDeleteReport={handleDeleteReport} 
-            otherReports={reports.filter(r => r.id !== selectedId).slice(0, 5)} 
-            onSelectOtherReport={(id) => { setSelectedId(id); }} 
+            onApproveInitiative={handleApproveInitiative}
+            onRejectInitiative={handleRejectInitiative}
           />
         )}
       </div>
@@ -601,14 +706,14 @@ export default function App() {
           </button>
           <button
             onClick={() => setIsNewFeedbackModalOpen(true)}
-            className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-gradient-to-r from-purple-800 to-pink-600 text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
+            className="flex flex-col items-center justify-center -mt-5 w-12 h-12 rounded-full bg-gradient-to-r from-purple-800 to-indigo-700 text-white shadow-lg active:scale-95 transition-transform cursor-pointer"
           >
             <Plus className="w-6 h-6" />
           </button>
           <button
             onClick={() => { setCurrentFilter('events'); setPageView('main'); }}
             className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] gap-1 text-[10px] font-semibold transition-colors cursor-pointer ${
-              currentFilter === 'events' ? 'text-pink-600 dark:text-pink-400' : 'text-purple-400'
+              currentFilter === 'events' ? 'text-purple-900 dark:text-purple-200' : 'text-purple-400'
             }`}
           >
             <Calendar className="w-5 h-5" />
@@ -664,7 +769,7 @@ export default function App() {
       {/* TOAST - Adjusted for Mobile Bottom Nav */}
       {toastMessage && (
         <div className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-50 bg-purple-950 dark:bg-purple-900 text-white text-xs px-4 py-3 rounded-xl shadow-lg border border-purple-800 dark:border-purple-700 flex items-center gap-2 animate-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0" />
+          <CheckCircle2 className="w-4 h-4 text-purple-300 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}

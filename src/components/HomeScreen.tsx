@@ -4,7 +4,7 @@ import { calculateSlaInfo, formatReportId, formatEventId } from '../utils';
 import {
   Sparkles, Calendar, ThumbsUp, Cake, PartyPopper, Inbox,
   ArrowRight, Plus, MessageSquare, Flame, MapPin, Users,
-  Clock, CheckCircle2, ChevronRight, Zap, Activity, User,
+  Clock, CheckCircle2, ChevronRight, Zap, Activity, User, Phone, BookOpen
 } from 'lucide-react';
 
 interface HomeScreenProps {
@@ -55,7 +55,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const trendingReports = useMemo(
     () =>
       [...reports]
-        .filter((r) => r.status !== 'resolved' && r.status !== 'draft')
+        .filter((r) => r.status !== 'resolved' && r.status !== 'draft' && r.status !== 'pending-review' && r.status !== 'rejected')
         .sort((a, b) => b.upvotes - a.upvotes)
         .slice(0, 3),
     [reports]
@@ -101,11 +101,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* ========== HERO ========== */}
         <div className={`rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden ${
           isMyBirthday
-            ? 'bg-gradient-to-br from-amber-400 via-pink-500 to-purple-700'
-            : 'bg-gradient-to-br from-purple-700 via-purple-800 to-pink-600'
+            ? 'bg-gradient-to-br from-amber-400 via-purple-600 to-indigo-800'
+            : 'bg-gradient-to-br from-purple-800 via-purple-900 to-indigo-900'
         }`}>
           <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-pink-300/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-300/20 rounded-full blur-2xl pointer-events-none" />
 
           <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   src={currentUser.photo}
                   alt={currentUser.name}
                   className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 shadow-md ${
-                    isMyBirthday ? 'border-amber-300 ring-4 ring-pink-300/50' : 'border-white/40'
+                    isMyBirthday ? 'border-amber-300 ring-4 ring-purple-300/50' : 'border-white/40'
                   }`}
                 />
               ) : (
@@ -183,8 +183,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               label: 'Events',
               value: events.length,
               icon: <Calendar className="w-4 h-4" />,
-              color: 'text-pink-700 dark:text-pink-300',
-              bg: 'bg-pink-50 dark:bg-pink-950/40',
+              color: 'text-violet-700 dark:text-violet-300',
+              bg: 'bg-violet-50 dark:bg-violet-950/40',
             },
             {
               label: 'Students',
@@ -291,7 +291,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         {endorsed && (
                           <>
                             <span>·</span>
-                            <span className="text-pink-600 dark:text-pink-400 font-bold">Supported</span>
+                            <span className="text-purple-600 dark:text-purple-400 font-bold">Supported</span>
                           </>
                         )}
                       </div>
@@ -306,7 +306,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs flex flex-col">
             <div className="p-4 border-b border-purple-50 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center">
                   <Flame className="w-4 h-4" />
                 </div>
                 <div>
@@ -324,7 +324,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 return (
                   <div
                     key={r.id}
-                    className="p-2.5 rounded-2xl bg-gradient-to-br from-pink-50/70 to-purple-50/70 dark:from-slate-800 dark:to-purple-950/30 border border-pink-200/60 dark:border-slate-700 hover:border-pink-400 transition-colors group"
+                    className="p-2.5 rounded-2xl bg-gradient-to-br from-purple-50/70 to-indigo-50/70 dark:from-slate-800 dark:to-purple-950/30 border border-purple-200/60 dark:border-slate-700 hover:border-purple-400 transition-colors group"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <div className="flex items-center gap-1.5">
@@ -345,11 +345,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         onClick={(e) => onToggleUpvote(r.id, e)}
                         className={`flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
                           hasUpvoted
-                            ? 'bg-pink-200 dark:bg-pink-900 text-pink-800 dark:text-pink-200'
-                            : 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 hover:bg-pink-100'
+                            ? 'bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
+                            : 'bg-white dark:bg-slate-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100'
                         }`}
                       >
-                        <ThumbsUp className={`w-2.5 h-2.5 ${hasUpvoted ? 'fill-pink-500 text-pink-500' : ''}`} />
+                        <ThumbsUp className={`w-2.5 h-2.5 ${hasUpvoted ? 'fill-purple-600 text-purple-600' : ''}`} />
                         {r.upvotes}
                       </button>
                     </div>
@@ -357,7 +357,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       onClick={() => onSelectReport(r.id)}
                       className="w-full text-left cursor-pointer"
                     >
-                      <div className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate group-hover:text-pink-600">
+                      <div className="text-xs font-bold text-purple-950 dark:text-purple-100 truncate group-hover:text-purple-700">
                         {r.title}
                       </div>
                       <div className="text-[10px] text-purple-600 dark:text-purple-400 truncate mt-0.5 capitalize">
@@ -398,7 +398,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {todaysBirthdays.map((u) => (
                     <div
                       key={u.email}
-                      className="flex items-center gap-2 p-2 rounded-2xl bg-gradient-to-r from-amber-50 to-pink-50 dark:from-amber-950/30 dark:to-pink-950/30 border border-amber-200 dark:border-amber-900"
+                      className="flex items-center gap-2 p-2 rounded-2xl bg-gradient-to-r from-amber-50 to-purple-50 dark:from-amber-950/30 dark:to-purple-950/30 border border-amber-200 dark:border-amber-900"
                     >
                       {u.photo ? (
                         <img
@@ -489,7 +489,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs">
           <div className="p-4 border-b border-purple-50 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center">
                 <Calendar className="w-4 h-4" />
               </div>
               <div>
@@ -501,7 +501,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
             <button
               onClick={onNavigateToEvents}
-              className="text-[11px] font-bold text-pink-700 dark:text-pink-300 hover:text-pink-950 flex items-center gap-0.5 cursor-pointer"
+              className="text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:text-purple-950 flex items-center gap-0.5 cursor-pointer"
             >
               All events <ChevronRight className="w-3 h-3" />
             </button>
@@ -539,7 +539,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           {formatEventId(e.id)}
                         </div>
                         {isGoing && (
-                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300 px-1.5 py-0.5 rounded">
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="w-2.5 h-2.5" /> Going
                           </span>
                         )}
@@ -560,6 +560,91 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 );
               })
             )}
+          </div>
+        </div>
+
+        {/* ========== BELL SCHEDULE, TERM DATES & CONTACTS ========== */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+          {/* Bell Schedule & Key Academic Dates */}
+          <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs flex flex-col">
+            <div className="p-4 border-b border-purple-50 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">Bell Schedule & Term Dates</h2>
+                  <p className="text-[10px] text-purple-500 dark:text-purple-400">
+                    North Street & Melbourne Campus Daily Periods
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                Regular Day
+              </span>
+            </div>
+
+            <div className="p-3.5 space-y-3 flex-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { period: 'Devotion', time: '7:45 – 8:05 AM' },
+                  { period: 'Periods 1–2', time: '8:05 – 9:35 AM' },
+                  { period: 'Break', time: '9:35 – 9:55 AM' },
+                  { period: 'Periods 3–4', time: '9:55 – 11:25 AM' },
+                  { period: 'Lunch', time: '11:25 – 12:20 PM' },
+                  { period: 'Periods 5–6', time: '12:20 – 2:30 PM' },
+                ].map((slot) => (
+                  <div
+                    key={slot.period}
+                    className="p-2 rounded-xl bg-purple-50/50 dark:bg-slate-800/60 border border-purple-100 dark:border-slate-800"
+                  >
+                    <div className="text-[11px] font-bold text-purple-950 dark:text-purple-100">{slot.period}</div>
+                    <div className="text-[10px] font-mono text-purple-600 dark:text-purple-400">{slot.time}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-2.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900 flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-indigo-950 dark:text-indigo-200">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>Midterm Report Cards: Dec 15 · Finals: May 20</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Important Campus Contacts */}
+          <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xs flex flex-col">
+            <div className="p-4 border-b border-purple-50 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-purple-950 dark:text-purple-100">Important Campus Contacts</h2>
+                  <p className="text-[10px] text-purple-500 dark:text-purple-400">
+                    Direct administrative & support extensions
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1">
+              {[
+                { office: "Principal's Office", detail: 'Main Admin Block · Ext. 101' },
+                { office: 'Dean of Discipline', detail: 'Student Affairs · Ext. 114' },
+                { office: 'Guidance & Nurse', detail: 'Sickbay & Counselling · Ext. 122' },
+                { office: 'IT Helpdesk & Bursar', detail: 'Computer Lab 1 · Ext. 135' },
+              ].map((contact) => (
+                <div
+                  key={contact.office}
+                  className="p-2.5 rounded-2xl bg-purple-50/50 dark:bg-slate-800/60 border border-purple-100 dark:border-slate-800 flex flex-col justify-center"
+                >
+                  <div className="text-xs font-bold text-purple-950 dark:text-purple-100">{contact.office}</div>
+                  <div className="text-[11px] text-purple-600 dark:text-purple-400 mt-0.5">{contact.detail}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

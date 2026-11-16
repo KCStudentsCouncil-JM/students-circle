@@ -1,7 +1,7 @@
 export type FeedbackType = 'issue' | 'initiative';
 export type Category = 'facilities' | 'technology' | 'academics' | 'student-life' | 'safety';
 export type UrgencyLevel = 'low' | 'medium' | 'high';
-export type FeedbackStatus = 'open' | 'in-review' | 'in-progress' | 'resolved' | 'draft';
+export type FeedbackStatus = 'open' | 'pending-review' | 'in-review' | 'in-progress' | 'resolved' | 'rejected' | 'draft';
 
 export interface ActivityItem {
   id: string;
@@ -45,15 +45,18 @@ export interface FeedbackReport {
   upvotes: number;
   hasUpvoted?: boolean;
   photos?: string[];
-  videos?: string[]; // Gallery video attachments (up to 20MB)
+  videos?: string[]; // Gallery video attachments (up to 15MB)
   endorsers?: Endorser[];
   activities: ActivityItem[];
   resolutionNotes?: string;
+  rejectionReason?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
   pinned?: boolean; // Admin pinned priority notice
 }
 
 export type RoleMode = 'student' | 'admin';
-export type EventCategory = 'bca-awareness' | 'academic' | 'student-life' | 'career' | 'athletics' | 'arts';
+export type EventCategory = 'school-spirit' | 'academic' | 'student-life' | 'career' | 'athletics' | 'arts';
 export type EventType = 'single-day' | 'multi-day';
 
 export interface CampusEvent {
@@ -81,7 +84,7 @@ export interface CampusEvent {
 }
 
 export type NavFilter = 
-  | 'all' | 'my-activity' | 'open' | 'in-review' | 'in-progress' | 'resolved' | 'drafts'
+  | 'all' | 'my-activity' | 'pending-approvals' | 'open' | 'in-review' | 'in-progress' | 'resolved' | 'drafts'
   | 'events' | 'initiatives' | 'issues' | 'facilities' | 'technology' 
   | 'academics' | 'student-life' | 'safety';
 

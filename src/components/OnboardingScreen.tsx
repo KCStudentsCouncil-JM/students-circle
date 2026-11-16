@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserProfile } from '../types';
-import { Ribbon, ArrowRight, ShieldAlert } from 'lucide-react';
+import { ArrowRight, ShieldAlert } from 'lucide-react';
 
 interface Props {
   firebaseUser: any;
@@ -34,7 +34,7 @@ export const OnboardingScreen: React.FC<Props> = ({ firebaseUser, onSubmit, onSi
         <div className="text-center space-y-2">
           <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-md border border-purple-100 p-1 overflow-hidden">
             <img 
-              src={`${import.meta.env.BASE_URL}KCBCALogo.png`} 
+              src={`${import.meta.env.BASE_URL}KCLogo.png`} 
               alt="KC Logo" 
               className="w-full h-full object-contain rounded-xl" 
             />

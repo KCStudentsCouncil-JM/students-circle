@@ -112,10 +112,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-pink-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0 rounded-t-3xl sm:rounded-t-3xl pt-safe">
+        <div className="p-4 sm:p-5 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50 via-indigo-50/40 to-white dark:from-slate-850 dark:via-purple-950/20 dark:to-slate-900 shrink-0 rounded-t-3xl sm:rounded-t-3xl pt-safe">
           <div className="flex items-center gap-3">
             <div className={`relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0 ${
-              isToday ? 'border-amber-400 ring-2 ring-pink-400 ring-offset-2 animate-pulse' : 'border-purple-200 dark:border-slate-700'
+              isToday ? 'border-amber-400 ring-2 ring-amber-400 ring-offset-2 animate-pulse' : 'border-purple-200 dark:border-slate-700'
             }`}>
               {photo ? (
                 <img src={photo} alt={name} className="w-full h-full object-cover" />
@@ -135,7 +135,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-base text-purple-950 dark:text-purple-100">Student Profile</h3>
                 {isToday && (
-                  <span className="text-[10px] bg-gradient-to-r from-amber-400 to-pink-500 text-white font-extrabold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
+                  <span className="text-[10px] bg-gradient-to-r from-amber-500 to-purple-700 text-white font-extrabold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
                     Birthday Today!
                   </span>
@@ -159,10 +159,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto momentum-scroll">
           {/* Birthday Highlight Banner if active */}
           {isToday && (
-            <div className="p-3 bg-gradient-to-r from-pink-50 via-amber-50 to-purple-50 dark:from-pink-950/40 dark:via-amber-950/40 dark:to-purple-950/40 rounded-2xl border border-pink-200 dark:border-pink-800 text-xs text-purple-950 dark:text-purple-200 flex items-start gap-2.5">
+            <div className="p-3 bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 dark:from-amber-950/40 dark:via-purple-950/40 dark:to-indigo-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs text-purple-950 dark:text-purple-200 flex items-start gap-2.5">
               <span className="text-xl">🎂</span>
               <div>
-                <p className="font-bold text-pink-800 dark:text-pink-300">Birthday Highlight Activated!</p>
+                <p className="font-bold text-amber-800 dark:text-amber-300">Birthday Highlight Activated!</p>
                 <p className="text-[11px] text-purple-800 dark:text-purple-300">
                   You are prominently highlighted with a celebratory halo and birthday cake badge across school reports, comments, and the top bar today!
                 </p>
@@ -283,13 +283,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="space-y-1.5 p-3 rounded-2xl bg-purple-50/60 dark:bg-slate-800/60 border border-purple-100 dark:border-slate-700">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <label className="text-xs font-semibold text-purple-950 dark:text-purple-200 flex items-center gap-1">
-                <Cake className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                <Cake className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Birthday</span>
               </label>
               <button
                 type="button"
                 onClick={handleSetTodayBirthday}
-                className="text-[11px] font-bold text-pink-700 dark:text-pink-300 bg-pink-100 dark:bg-pink-950/60 hover:bg-pink-200 px-3 py-1.5 rounded-lg border border-pink-300 dark:border-pink-800 transition-colors cursor-pointer flex items-center gap-1 min-h-[36px]"
+                className="text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 px-3 py-1.5 rounded-lg border border-amber-300 dark:border-amber-800 transition-colors cursor-pointer flex items-center gap-1 min-h-[36px]"
               >
                 <span>🎂 Set to Today!</span>
               </button>
@@ -318,7 +318,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Data Vault & Backup</span>
               </span>
             </div>
@@ -332,14 +332,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   onClick={onExportBackup}
                   className="w-full flex justify-center items-center gap-1.5 px-3 py-2.5 min-h-[44px] bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                 >
-                  <Download className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
+                  <Download className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Download Backup</span>
                 </button>
               )}
 
               {onImportBackup && (
                 <label className="w-full flex justify-center items-center gap-1.5 px-3 py-2.5 min-h-[44px] bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold transition-all cursor-pointer shadow-2xs">
-                  <Upload className="w-3.5 h-3.5 text-purple-600 dark:text-pink-400" />
+                  <Upload className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Restore Backup</span>
                   <input
                     type="file"
@@ -377,7 +377,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 sm:flex-none px-5 py-3 min-h-[44px] rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-pink-600 hover:from-purple-900 hover:to-pink-700 text-white shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 sm:flex-none px-5 py-3 min-h-[44px] rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-900 hover:to-indigo-800 text-white shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Check className="w-4 h-4" />
                   <span>Save Profile</span>

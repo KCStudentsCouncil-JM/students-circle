@@ -37,7 +37,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
         <div className="text-center space-y-2">
           <div className="w-36 h-36 sm:w-40 sm:h-40 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center mx-auto shadow-xl overflow-hidden border border-purple-100 dark:border-slate-800 p-1.5 transition-transform hover:scale-105 duration-200">
             <img 
-              src={`${import.meta.env.BASE_URL}KCBCALogo.png`} 
+              src={`${import.meta.env.BASE_URL}KCLogo.png`} 
               alt="Kingston College Logo" 
               className="w-full h-full object-contain rounded-2xl" 
             />
@@ -68,7 +68,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
                 <p className="text-xs text-purple-600 dark:text-purple-400">Submit reports, support ideas & RSVP</p>
               </div>
             </div>
-            <span className="text-xs font-bold text-purple-700 dark:text-pink-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-xs font-bold text-purple-700 dark:text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity">
               Continue →
             </span>
           </button>
@@ -151,7 +151,7 @@ export const PortalPage: React.FC<PortalPageProps> = ({
           </div>
           <div className="h-6 w-px bg-purple-200 dark:bg-slate-800" />
           <div>
-            <span className="block font-bold text-pink-600 dark:text-pink-400 font-mono">
+            <span className="block font-bold text-purple-700 dark:text-purple-300 font-mono">
               {reports.filter(r => r.type === 'initiative').length}
             </span>
             <span className="text-[10px] text-purple-600 dark:text-purple-400">School Ideas</span>

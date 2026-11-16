@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, User as FirebaseUser, Auth, signOut } from 'firebase/auth';
-import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { FeedbackReport, CampusEvent, UserProfile } from './types';
+import { getFirestore, Firestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc, arrayUnion } from 'firebase/firestore';
+import { FeedbackReport, CampusEvent, UserProfile, ActivityItem, FeedbackStatus } from './types';
 import { INITIAL_REPORTS, INITIAL_EVENTS, INITIAL_USERS } from './mockData';
 import { safeLocalStorageSet } from './utils';
 
@@ -321,6 +321,44 @@ export async function updateReportInDb(id: string, updates: Partial<FeedbackRepo
   }
   const reports = getLocalReports();
   const next = reports.map(r => r.id === id ? { ...r, ...updates } : r);
+  safeLocalStorageSet(STORAGE_KEY_REPORTS, next);
+  notifyReportListeners();
+}
+
+export async function appendActivityToReportInDb(
+  id: string,
+  activity: ActivityItem,
+  status?: FeedbackStatus,
+  extraUpdates?: Partial<FeedbackReport>
+) {
+  const cleanActivity = sanitizeData(activity);
+  const firestorePayload: Record<string, any> = {
+    ...sanitizeData(extraUpdates || {}),
+    activities: arrayUnion(cleanActivity),
+  };
+  if (status) {
+    firestorePayload.status = status;
+  }
+
+  if (db) {
+    try {
+      await updateDoc(doc(db, 'reports', id), firestorePayload);
+    } catch (e) {
+      console.warn('Firestore appendActivityToReportInDb error:', e);
+    }
+  }
+
+  const reports = getLocalReports();
+  const next = reports.map(r =>
+    r.id === id
+      ? {
+          ...r,
+          ...(extraUpdates || {}),
+          ...(status ? { status } : {}),
+          activities: [...(r.activities || []), activity],
+        }
+      : r
+  );
   safeLocalStorageSet(STORAGE_KEY_REPORTS, next);
   notifyReportListeners();
 }

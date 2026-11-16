@@ -28,6 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
     try {
       localStorage.removeItem('campus_feedback_reports');
       localStorage.removeItem('campus_events');
+      localStorage.removeItem('school_poll_voted');
     } catch {
       // ignore
     }
@@ -43,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-[#faf8fc] text-slate-800 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white rounded-2xl border border-purple-200/90 shadow-lg p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
             

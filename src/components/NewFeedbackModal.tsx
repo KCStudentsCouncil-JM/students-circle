@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { VideoPlayer } from './VideoPlayer';
 import { 
   FeedbackType, 
@@ -23,11 +23,10 @@ import {
   Trash2,
   Image as ImageIcon,
   CheckCircle2,
-  Ribbon,
   ThumbsUp,
   Video,
   Play,
-  Bot
+  Zap
 } from 'lucide-react';
 
 interface NewFeedbackModalProps {
@@ -62,13 +61,24 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
   const [aiTriageMessage, setAiTriageMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [debouncedTitle, setDebouncedTitle] = useState(title);
+  const [debouncedDescription, setDebouncedDescription] = useState(description);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTitle(title);
+      setDebouncedDescription(description);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [title, description]);
+
   const potentialDuplicates = useMemo(() => {
-    return findPotentialDuplicates(title, description, existingReports);
-  }, [title, description, existingReports]);
+    return findPotentialDuplicates(debouncedTitle, debouncedDescription, existingReports);
+  }, [debouncedTitle, debouncedDescription, existingReports]);
 
   if (!isOpen) return null;
 
-  const handleAiAutoTriage = () => {
+  const handleSmartTriage = () => {
     const combined = `${title} ${description}`.toLowerCase();
     let suggestedCategory: Category = category;
     let suggestedUrgency: UrgencyLevel = urgency;
@@ -87,7 +97,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
     } else if (/teacher|form|grade|grading|exam|syllabus|course|credit|tutor|advising|lecture|homework/.test(combined)) {
       suggestedCategory = 'academics';
       matchedReason = 'Detected academic & class keywords';
-    } else if (/event|fundraiser|bca|walk|club|social|tuck shop|dining|food|recreation|gym|champs|football/.test(combined)) {
+    } else if (/event|fundraiser|club|social|tuck shop|dining|food|recreation|gym|champs|football/.test(combined)) {
       suggestedCategory = 'student-life';
       matchedReason = 'Detected clubs, sports & school life keywords';
     }
@@ -100,7 +110,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
 
     setCategory(suggestedCategory);
     setUrgency(suggestedUrgency);
-    setAiTriageMessage(`AI Auto-Triage: Categorized as ${suggestedCategory.toUpperCase()} (${suggestedUrgency.toUpperCase()} priority). ${matchedReason}`);
+    setAiTriageMessage(`Smart Triage: Categorized as ${suggestedCategory.toUpperCase()} (${suggestedUrgency.toUpperCase()} priority). ${matchedReason}`);
     setTimeout(() => setAiTriageMessage(null), 6000);
   };
 
@@ -196,7 +206,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
       type: feedbackType,
       category,
       urgency,
-      status: 'open',
+      status: feedbackType === 'initiative' ? 'pending-review' : 'open',
       description: description.trim(),
       location: location.trim(),
       photos: photos.length > 0 ? photos : undefined,
@@ -223,8 +233,8 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         {/* Header */}
         <div className="px-4 sm:px-6 py-4 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0 pt-safe">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-700 to-pink-600 text-white flex items-center justify-center shadow-xs shrink-0">
-              <Sparkles className="w-4 h-4 text-pink-200" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-r from-purple-800 to-indigo-700 text-white flex items-center justify-center shadow-xs shrink-0">
+              <Sparkles className="w-4 h-4 text-purple-200" />
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-purple-950 dark:text-purple-100 tracking-tight">
@@ -248,7 +258,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
           
           {aiTriageMessage && (
             <div className="p-3 bg-purple-100/90 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-700 rounded-2xl flex items-center gap-2.5 text-xs text-purple-950 dark:text-purple-200 animate-in fade-in slide-in-from-top-1">
-              <Bot className="w-4 h-4 text-pink-600 dark:text-pink-400 shrink-0" />
+              <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
               <span>{aiTriageMessage}</span>
             </div>
           )}
@@ -274,9 +284,9 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                       <button
                         type="button"
                         onClick={() => { onSelectExistingReport(dup.id); onClose(); }}
-                        className="text-[10px] font-bold text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/50 hover:bg-pink-100 px-2.5 py-1 rounded-md border border-pink-200 dark:border-pink-800 shrink-0 cursor-pointer flex items-center gap-1"
+                        className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 px-2.5 py-1 rounded-md border border-purple-200 dark:border-purple-800 shrink-0 cursor-pointer flex items-center gap-1"
                       >
-                        <ThumbsUp className="w-3 h-3 text-pink-600" />
+                        <ThumbsUp className="w-3 h-3 text-purple-600" />
                         <span>Support Existing</span>
                       </button>
                     )}
@@ -303,7 +313,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                 <input type="radio" name="feedbackType" value="initiative" checked={feedbackType === 'initiative'} onChange={() => setFeedbackType('initiative')} className="mt-0.5 w-4 h-4 text-purple-600 focus:ring-purple-500 cursor-pointer" />
                 <div>
                   <div className="font-bold text-sm text-purple-950 dark:text-purple-100 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-pink-600 dark:text-pink-400" /> Propose School Idea
+                    <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Propose School Idea
                   </div>
                   <p className="text-xs text-purple-800/70 dark:text-purple-400 mt-0.5 leading-snug">Propose events, club fundraisers, or new amenities.</p>
                 </div>
@@ -318,11 +328,11 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               {(title.trim().length > 3 || description.trim().length > 5) && (
                 <button
                   type="button"
-                  onClick={handleAiAutoTriage}
-                  className="flex items-center gap-1 text-[11px] font-bold text-pink-700 dark:text-pink-300 hover:text-pink-900 bg-pink-50 dark:bg-pink-950/60 px-2 py-0.5 rounded-lg border border-pink-200 dark:border-pink-800 cursor-pointer transition-colors"
+                  onClick={handleSmartTriage}
+                  className="flex items-center gap-1 text-[11px] font-bold text-purple-700 dark:text-purple-300 hover:text-purple-900 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-lg border border-purple-200 dark:border-purple-800 cursor-pointer transition-colors"
                 >
-                  <Bot className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
-                  <span>AI Auto-Triage</span>
+                  <Zap className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Smart Triage</span>
                 </button>
               )}
             </div>
@@ -365,7 +375,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
                     className={`flex-1 py-2.5 px-2 text-sm rounded-xl font-semibold capitalize border transition-all cursor-pointer ${
                       urgency === lvl 
                         ? lvl === 'high' 
-                          ? 'bg-pink-50 dark:bg-pink-950/50 border-pink-400 text-pink-700 dark:text-pink-300 shadow-xs' 
+                          ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-700 dark:text-rose-300 shadow-xs' 
                           : 'bg-purple-100/80 dark:bg-purple-950/60 border-purple-400 text-purple-900 dark:text-purple-200 shadow-xs' 
                         : 'bg-white dark:bg-slate-800 border-purple-100 dark:border-slate-700 text-purple-700/80 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-slate-700'
                     }`}
@@ -488,7 +498,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
             />
             <div className="flex-1">
               <label htmlFor="anon-toggle" className="font-bold text-sm text-purple-950 dark:text-purple-100 cursor-pointer flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-pink-600" /> Submit Anonymously to Peers
+                <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Submit Anonymously to Peers
               </label>
               <p className="text-xs text-purple-800/70 dark:text-purple-400 leading-snug mt-0.5">
                 Your public author identity will be masked as "Anonymous Student".
@@ -500,7 +510,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
         {/* Footer */}
         <div className="px-4 sm:px-6 py-4 bg-white dark:bg-slate-900 border-t border-purple-100 dark:border-slate-800 flex items-center justify-between shrink-0 pb-safe">
           <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-1.5 hidden sm:flex">
-            <Ribbon className="w-4 h-4 text-pink-500" /> Fortis Cadere Cedere Non Potest
+            <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Fortis Cadere Cedere Non Potest
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button 
@@ -514,7 +524,7 @@ export const NewFeedbackModal: React.FC<NewFeedbackModalProps> = ({
               type="button" 
               onClick={handleSubmit} 
               disabled={isProcessingMedia}
-              className="flex-[2] sm:flex-none px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-700 via-purple-800 to-pink-600 hover:from-purple-800 hover:to-pink-700 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="flex-[2] sm:flex-none px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-800 to-indigo-700 hover:from-purple-900 hover:to-indigo-800 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer disabled:opacity-50"
             >
               {isProcessingMedia ? 'Processing...' : 'Submit Report'}
             </button>

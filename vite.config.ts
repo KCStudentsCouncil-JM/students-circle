@@ -23,12 +23,12 @@ export default defineConfig(({ command }) => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['KCBCALogo.png'],
+        includeAssets: ['KCLogo.png', 'favicon.svg'],
         manifest: {
-          name: 'KC Students Circle',
+          name: "KC Students' Circle",
           short_name: 'KC Circle',
-          description: 'Kingston College Student Feedback & Campus Request Assistant',
-          theme_color: '#6b21a8',
+          description: 'Kingston College Student Feedback & School Request Assistant',
+          theme_color: '#581c87',
           background_color: '#faf8fc',
           display: 'standalone',
           orientation: 'portrait',

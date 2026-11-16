@@ -37,29 +37,30 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const totalReports = reports.length;
-  const openReports = reports.filter(r => r.status === 'open').length;
-  const inReviewReports = reports.filter(r => r.status === 'in-review' || r.status === 'in-progress').length;
-  const resolvedReports = reports.filter(r => r.status === 'resolved').length;
+  const publishedReports = reports.filter(r => r.status !== 'draft');
+  const totalReports = publishedReports.length;
+  const openReports = publishedReports.filter(r => r.status === 'open').length;
+  const inReviewReports = publishedReports.filter(r => r.status === 'in-review' || r.status === 'in-progress').length;
+  const resolvedReports = publishedReports.filter(r => r.status === 'resolved').length;
   const resolutionRate = totalReports > 0 ? Math.round((resolvedReports / totalReports) * 100) : 0;
 
-  const totalEndorsements = reports.reduce((acc, r) => acc + (r.upvotes || 0), 0);
+  const totalEndorsements = publishedReports.reduce((acc, r) => acc + (r.upvotes || 0), 0);
   const totalRsvps = events.reduce((acc, e) => acc + (e.rsvps || 0), 0);
 
   // Categories count
   const categoryCounts: Record<Category, number> = {
-    facilities: reports.filter(r => r.category === 'facilities').length,
-    technology: reports.filter(r => r.category === 'technology').length,
-    academics: reports.filter(r => r.category === 'academics').length,
-    'student-life': reports.filter(r => r.category === 'student-life').length,
-    safety: reports.filter(r => r.category === 'safety').length,
+    facilities: publishedReports.filter(r => r.category === 'facilities').length,
+    technology: publishedReports.filter(r => r.category === 'technology').length,
+    academics: publishedReports.filter(r => r.category === 'academics').length,
+    'student-life': publishedReports.filter(r => r.category === 'student-life').length,
+    safety: publishedReports.filter(r => r.category === 'safety').length,
   };
 
   const categoryIcons: Record<Category, React.ReactNode> = {
     facilities: <Wrench className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />,
     technology: <Wifi className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
     academics: <GraduationCap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-    'student-life': <Sparkles className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />,
+    'student-life': <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />,
     safety: <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />,
   };
 
@@ -95,10 +96,10 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50/80 via-white to-pink-50/40 dark:from-slate-900 dark:to-slate-800">
+        <div className="p-4 sm:p-6 border-b border-purple-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-purple-50/80 via-white to-indigo-50/40 dark:from-slate-900 dark:to-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-800 dark:bg-purple-700 text-white flex items-center justify-center shadow-xs">
-              <BarChart3 className="w-5 h-5 text-pink-300" />
+              <BarChart3 className="w-5 h-5 text-purple-200" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -161,14 +162,14 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
               </span>
             </div>
 
-            <div className="bg-pink-50/70 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-pink-100 dark:border-slate-700">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-pink-600 dark:text-pink-400 block mb-1">
+            <div className="bg-indigo-50/70 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-indigo-100 dark:border-slate-700">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1">
                 Student Endorsements
               </span>
-              <div className="text-2xl font-extrabold text-pink-950 dark:text-pink-200 tabular-nums">
+              <div className="text-2xl font-extrabold text-indigo-950 dark:text-indigo-200 tabular-nums">
                 {totalEndorsements}
               </div>
-              <span className="text-[11px] text-pink-700/70 dark:text-pink-300 font-medium">
+              <span className="text-[11px] text-indigo-700/70 dark:text-indigo-300 font-medium">
                 Community backing votes
               </span>
             </div>
@@ -215,7 +216,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
                       </div>
                       <div className="w-full h-2 rounded-full bg-purple-100 dark:bg-slate-800 overflow-hidden">
                         <div 
-                          className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-500"
+                          className="h-full rounded-full bg-gradient-to-r from-purple-700 to-indigo-600 transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -229,7 +230,7 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
             <div className="bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-purple-100 dark:border-slate-800 space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-purple-100 dark:border-slate-800">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-purple-950 dark:text-purple-200 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                  <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <span>Pipeline & Triage Health</span>
                 </h3>
                 <span className="text-[11px] font-mono text-purple-500">Live Status</span>
@@ -245,13 +246,13 @@ export const AdminAnalyticsModal: React.FC<AdminAnalyticsModalProps> = ({
                   <p className="text-[10px] text-purple-600/80 dark:text-purple-400">Awaiting technician assignment</p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-pink-50/70 dark:bg-slate-800 border border-pink-200/80 dark:border-slate-700">
-                  <div className="flex items-center justify-between text-xs font-bold text-pink-950 dark:text-pink-200">
+                <div className="p-3 rounded-xl bg-indigo-50/70 dark:bg-slate-800 border border-indigo-200/80 dark:border-slate-700">
+                  <div className="flex items-center justify-between text-xs font-bold text-indigo-950 dark:text-indigo-200">
                     <span>Active in Review</span>
-                    <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                   </div>
-                  <div className="text-xl font-extrabold mt-1 text-pink-950 dark:text-pink-100">{inReviewReports}</div>
-                  <p className="text-[10px] text-pink-600/80 dark:text-pink-400">In work with maintenance</p>
+                  <div className="text-xl font-extrabold mt-1 text-indigo-950 dark:text-indigo-100">{inReviewReports}</div>
+                  <p className="text-[10px] text-indigo-600/80 dark:text-indigo-400">In work with maintenance</p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-slate-800 border border-emerald-200/80 dark:border-slate-700">

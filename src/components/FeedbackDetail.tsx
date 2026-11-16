@@ -15,7 +15,6 @@ import {
   MessageSquare,
   Sparkles,
   ChevronDown,
-  Ribbon,
   Download,
   Mail,
   BadgeCheck,
@@ -30,7 +29,9 @@ import {
   Video,
   Play,
   CornerDownRight,
-  UploadCloud
+  UploadCloud,
+  Check,
+  XCircle
 } from 'lucide-react';
 
 interface FeedbackDetailProps {
@@ -51,8 +52,8 @@ interface FeedbackDetailProps {
   onBack: () => void;
   onDeleteReport?: (id: string) => void;
   onTogglePin?: (id: string) => void;
-  otherReports: FeedbackReport[];
-  onSelectOtherReport: (id: string) => void;
+  onApproveInitiative?: (id: string) => void;
+  onRejectInitiative?: (id: string, reason?: string) => void;
 }
 
 export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
@@ -65,14 +66,16 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
   onBack,
   onDeleteReport,
   onTogglePin,
-  otherReports,
-  onSelectOtherReport,
+  onApproveInitiative,
+  onRejectInitiative,
 }) => {
   const [replyMessage, setReplyMessage] = useState('');
   const [selectedStatusChange, setSelectedStatusChange] = useState<FeedbackStatus | ''>('');
   const [replyingToItem, setReplyingToItem] = useState<{ id: string; author: string } | null>(null);
   const [showEndorsersSection, setShowEndorsersSection] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
 
   // Media attachments for replies from device gallery (Max 15MB)
@@ -173,13 +176,33 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
     );
   }
 
-  const sla = calculateSlaInfo(report.createdAt, report.urgency, report.status);
-
   const isAuthor = 
     currentUser?.name === report.author || 
     currentUser?.name === report.authorRealName || 
     (currentUser?.email && report.authorEmail === currentUser.email);
   const canDelete = role === 'admin' || isAuthor;
+
+  if (report.status === 'pending-review' && role !== 'admin' && !isAuthor) {
+    return (
+      <div className="flex-1 bg-white dark:bg-slate-900 flex flex-col items-center justify-center p-8 text-slate-600 dark:text-slate-400">
+        <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mb-3 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+          <AlertCircle className="w-8 h-8 stroke-[1.5]" />
+        </div>
+        <h3 className="text-sm font-semibold text-purple-950 dark:text-purple-200">Proposal Under Council Review</h3>
+        <p className="text-xs text-purple-700/70 dark:text-purple-400 mt-1 max-w-xs text-center mb-4">
+          This initiative proposal is awaiting Students&apos; Council review and is currently visible only to the author and council staff.
+        </p>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 rounded-xl bg-purple-800 hover:bg-purple-900 text-white text-xs font-semibold cursor-pointer"
+        >
+          Back to Feed
+        </button>
+      </div>
+    );
+  }
+
+  const sla = calculateSlaInfo(report.createdAt, report.urgency, report.status);
 
   const hasUserUpvoted = currentUser?.email 
     ? report.endorsers?.some((e) => e.email === currentUser.email) 
@@ -211,17 +234,24 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
   const renderStatusBadge = (status: FeedbackStatus) => {
     switch (status) {
+      case 'pending-review':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-md border border-amber-200 dark:border-amber-800">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            Pending Council Review
+          </span>
+        );
       case 'open':
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-md border border-purple-200 dark:border-purple-800">
             <span className="w-2 h-2 rounded-full bg-purple-600" />
-            Open For Review
+            Open For Endorsements
           </span>
         );
       case 'in-review':
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/60 px-2.5 py-1 rounded-md border border-pink-200 dark:border-pink-800">
-            <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-md border border-indigo-200 dark:border-indigo-800">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
             Under Review
           </span>
         );
@@ -237,6 +267,13 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-200 dark:border-emerald-800">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             Resolved & Verified
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2.5 py-1 rounded-md border border-rose-200 dark:border-rose-800">
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            Declined / Rejected
           </span>
         );
       case 'draft':
@@ -313,12 +350,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             onClick={(e) => onToggleUpvote(report.id, e)}
             className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold transition-all border cursor-pointer touch-manipulation ${
               hasUserUpvoted
-                ? 'bg-pink-100/90 dark:bg-pink-950/60 border-pink-400 text-pink-800 dark:text-pink-300 shadow-xs hover:bg-pink-200'
+                ? 'bg-purple-100/90 dark:bg-purple-950/60 border-purple-400 text-purple-900 dark:text-purple-200 shadow-xs hover:bg-purple-200'
                 : 'bg-white dark:bg-slate-800 border-purple-200 dark:border-slate-700 text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-700'
             }`}
             title={hasUserUpvoted ? "Click to undo/retract support" : "Support this report"}
           >
-            <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-pink-600 fill-pink-500' : 'text-purple-600 dark:text-purple-400'}`} />
+            <ThumbsUp className={`w-3.5 h-3.5 ${hasUserUpvoted ? 'text-purple-700 fill-purple-600' : 'text-purple-600 dark:text-purple-400'}`} />
             <span>{hasUserUpvoted ? 'Supported (Undo)' : 'Support'} ({report.upvotes})</span>
           </button>
 
@@ -346,10 +383,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                   onChange={(e) => onUpdateStatus(report.id, e.target.value as FeedbackStatus)}
                   className="bg-purple-50 dark:bg-slate-800 hover:bg-purple-100/80 dark:hover:bg-slate-700 text-purple-950 dark:text-purple-200 font-semibold text-base sm:text-xs py-2 min-h-[44px] pl-2.5 pr-7 rounded-xl border border-purple-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-purple-500 cursor-pointer appearance-none touch-manipulation"
                 >
+                  <option value="pending-review">Pending Review</option>
                   <option value="open">Open</option>
                   <option value="in-review">In Review</option>
                   <option value="in-progress">In Progress</option>
                   <option value="resolved">Resolved</option>
+                  <option value="rejected">Declined</option>
                   <option value="draft">Draft</option>
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -363,6 +402,59 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 md:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6 pb-28 sm:pb-12 momentum-scroll">
+        {/* Initiative Council Review Alert Banner */}
+        {report.status === 'pending-review' && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 space-y-2 animate-in slide-in-from-top-1">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <h3 className="font-bold text-sm text-amber-950 dark:text-amber-100">
+                    Awaiting Students' Council Approval
+                  </h3>
+                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                    {role === 'admin' 
+                      ? 'Review this student proposal. Approving will open it for student upvotes and discussion.' 
+                      : 'This initiative proposal is currently in council review. It will open for voting once verified.'}
+                  </p>
+                </div>
+              </div>
+              {role === 'admin' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onApproveInitiative && onApproveInitiative(report.id)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <Check className="w-4 h-4" /> Approve Proposal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsRejectModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs cursor-pointer touch-manipulation"
+                  >
+                    <XCircle className="w-4 h-4" /> Decline
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {report.status === 'rejected' && (
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-900 dark:text-rose-200 space-y-1">
+            <div className="flex items-center gap-1.5 font-bold">
+              <XCircle className="w-4 h-4 text-rose-600" />
+              <span>Initiative Declined by Council</span>
+            </div>
+            {report.rejectionReason && (
+              <p className="text-[11px] text-rose-800 dark:text-rose-300 pt-0.5">
+                Reason: {report.rejectionReason}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Title & Metadata Card */}
         <div className="border-b border-purple-100 dark:border-slate-800 pb-5 space-y-3">
           <div className="flex items-start justify-between gap-3">
@@ -384,9 +476,9 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
             <div className="bg-purple-50/50 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl border border-purple-100/80 dark:border-slate-700">
               <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block mb-0.5">Urgency Level</span>
               <span className={`font-semibold capitalize flex items-center gap-1 ${
-                report.urgency === 'high' ? 'text-pink-600 dark:text-pink-400 font-bold' : 'text-purple-950 dark:text-purple-200'
+                report.urgency === 'high' ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-purple-950 dark:text-purple-200'
               }`}>
-                {report.urgency === 'high' && <AlertCircle className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400 shrink-0" />}
+                {report.urgency === 'high' && <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
                 <span className="truncate">{report.urgency === 'high' ? 'High / Immediate' : report.urgency}</span>
               </span>
             </div>
@@ -416,7 +508,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
               <span className="text-[10px] uppercase font-bold tracking-wider text-purple-400 block mb-0.5">Submitted By</span>
               {report.isAnonymous ? (
                 <span className="font-semibold text-purple-900 dark:text-purple-300 inline-flex items-center gap-1 truncate max-w-full">
-                  <Shield className="w-3.5 h-3.5 text-pink-500 shrink-0" />
+                  <Shield className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
                   <span className="truncate">Anonymous</span>
                 </span>
               ) : (
@@ -546,10 +638,10 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-purple-950/70 dark:text-purple-300 flex items-center gap-1.5">
-                <ThumbsUp className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                <ThumbsUp className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 <span>Student Supporters</span>
               </h2>
-              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
+              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                 {report.upvotes}
               </span>
             </div>
@@ -592,7 +684,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                         key={end.id}
                         className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 shadow-2xs ${
                           isCurrentUserEndorser 
-                            ? 'bg-pink-50/70 dark:bg-pink-950/40 border-pink-200 dark:border-pink-800' 
+                            ? 'bg-purple-100/70 dark:bg-purple-950/40 border-purple-300 dark:border-purple-800' 
                             : 'bg-white dark:bg-slate-800 border-purple-100 dark:border-slate-700'
                         }`}
                       >
@@ -604,7 +696,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-semibold text-xs text-purple-950 dark:text-purple-200 truncate">{end.name}</span>
                               {isCurrentUserEndorser && (
-                                <span className="text-[9px] bg-pink-200 dark:bg-pink-800 text-pink-800 dark:text-pink-100 font-bold px-1.5 rounded">You</span>
+                                <span className="text-[9px] bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 font-bold px-1.5 rounded">You</span>
                               )}
                             </div>
                             <div className="text-[10px] text-purple-700/80 dark:text-purple-400 truncate">
@@ -617,7 +709,7 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                           <button
                             type="button"
                             onClick={(e) => onToggleUpvote(report.id, e)}
-                            className="text-[10px] font-bold text-pink-700 dark:text-pink-300 hover:text-white bg-white dark:bg-slate-700 hover:bg-pink-600 px-2 py-1.5 rounded-lg border border-pink-300 dark:border-pink-700 transition-colors cursor-pointer shrink-0 min-h-[32px]"
+                            className="text-[10px] font-bold text-purple-700 dark:text-purple-300 hover:text-white bg-white dark:bg-slate-700 hover:bg-purple-700 px-2 py-1.5 rounded-lg border border-purple-300 dark:border-purple-700 transition-colors cursor-pointer shrink-0 min-h-[32px]"
                           >
                             Undo
                           </button>
@@ -653,10 +745,10 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                   <div
                     className={`absolute left-1.5 top-1 -translate-x-1/2 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shadow-xs ${
                       isAdmin
-                        ? 'bg-purple-800 text-pink-300'
+                        ? 'bg-purple-800 text-purple-200'
                         : isSystem
                         ? 'bg-slate-300 text-slate-700'
-                        : 'bg-pink-100 text-pink-700'
+                        : 'bg-purple-100 text-purple-700'
                     }`}
                   >
                     {isAdmin ? '★' : isSystem ? '⚙' : '•'}
@@ -675,12 +767,12 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-xs">{act.author}</span>
                         {act.badgeText && (
-                          <span className="bg-purple-800 text-pink-200 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                          <span className="bg-purple-800 text-purple-200 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
                             {act.badgeText}
                           </span>
                         )}
                         {act.statusChange && (
-                          <span className="text-[10px] font-mono bg-pink-100 dark:bg-pink-950 text-pink-800 dark:text-pink-300 px-1.5 py-0.2 rounded">
+                          <span className="text-[10px] font-mono bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300 px-1.5 py-0.2 rounded">
                             Status → {act.statusChange}
                           </span>
                         )}
@@ -895,6 +987,53 @@ export const FeedbackDetail: React.FC<FeedbackDetailProps> = ({
                 className="px-4 py-2.5 min-h-[44px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
               >
                 Confirm Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Initiative Proposal Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs select-none">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 max-w-sm w-full border border-purple-200 dark:border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95 text-slate-800 dark:text-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 flex items-center justify-center shrink-0">
+                <X className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-purple-950 dark:text-purple-100">Decline Proposal</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Provide feedback to the student on why this proposal cannot proceed.
+                </p>
+              </div>
+            </div>
+
+            <textarea
+              rows={3}
+              value={rejectionReasonInput}
+              onChange={(e) => setRejectionReasonInput(e.target.value)}
+              placeholder="State reason for declining proposal..."
+              className="w-full text-xs p-3 rounded-xl border border-purple-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-purple-950 dark:text-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            />
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setIsRejectModalOpen(false)}
+                className="px-4 py-2 min-h-[36px] rounded-xl border border-purple-200 dark:border-slate-700 text-xs font-semibold text-purple-800 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-slate-850 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onRejectInitiative) onRejectInitiative(report.id, rejectionReasonInput);
+                  setIsRejectModalOpen(false);
+                }}
+                className="px-4 py-2 min-h-[36px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Confirm Decline
               </button>
             </div>
           </div>

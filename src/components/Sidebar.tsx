@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavFilter, FeedbackReport, RoleMode, UserProfile } from '../types';
 import { 
   Inbox, 
@@ -12,14 +12,14 @@ import {
   GraduationCap, 
   Sparkles, 
   ShieldAlert, 
-  Ribbon, 
   Layers, 
   X,
   Calendar,
   Users,
   UserCheck,
   BarChart3,
-  Vote,
+  Megaphone,
+  CheckSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,24 +51,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenStudentList,
   onOpenAnalytics,
 }) => {
-  // Quick Poll state (School Pulse)
-  const [pollVoted, setPollVoted] = useState<'yes' | 'no' | null>(() => {
-    return (localStorage.getItem('school_poll_voted') as 'yes' | 'no') || null;
-  });
-  const [yesVotes, setYesVotes] = useState(148);
-  const [noVotes, setNoVotes] = useState(24);
-
-  const handleVote = (choice: 'yes' | 'no') => {
-    if (pollVoted) return;
-    if (choice === 'yes') setYesVotes(v => v + 1);
-    else setNoVotes(v => v + 1);
-    setPollVoted(choice);
-    localStorage.setItem('school_poll_voted', choice);
-  };
-
-  const totalPollVotes = yesVotes + noVotes;
-  const yesPct = Math.round((yesVotes / totalPollVotes) * 100);
-
   // Compute counts
   const myActivityCount = reports.filter((r) => {
     if (!currentUser?.email) return false;
@@ -77,9 +59,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return isAuthor || isEndorser;
   }).length;
 
+  const pendingApprovalsCount = reports.filter(r => r.type === 'initiative' && r.status === 'pending-review').length;
+
   const counts = {
-    all: reports.length,
+    all: reports.filter(r => r.status !== 'pending-review' || role === 'admin' || r.authorEmail === currentUser?.email).length,
     myActivity: myActivityCount,
+    pendingApprovals: pendingApprovalsCount,
     open: reports.filter((r) => r.status === 'open').length,
     inReview: reports.filter((r) => r.status === 'in-review' || r.status === 'in-progress').length,
     resolved: reports.filter((r) => r.status === 'resolved').length,
@@ -92,12 +77,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     safety: reports.filter((r) => r.category === 'safety').length,
   };
 
-  const navItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number; highlight?: boolean }> = [
+  const navItems: Array<{ id: NavFilter; label: string; icon: React.ReactNode; count: number }> = [
     { id: 'all', label: 'All Reports', icon: <Inbox className="w-5 h-5 sm:w-4 sm:h-4" />, count: counts.all },
-    { id: 'my-activity', label: 'My Activity & Supported', icon: <UserCheck className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-pink-400" />, count: counts.myActivity },
-    { id: 'events', label: 'School Events', icon: <Calendar className="w-5 h-5 sm:w-4 sm:h-4 text-pink-500" />, count: counts.events, highlight: true },
+    { id: 'my-activity', label: 'My Activity & Supported', icon: <UserCheck className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />, count: counts.myActivity },
+    ...(role === 'admin' ? [{ id: 'pending-approvals' as NavFilter, label: 'Pending Approvals', icon: <CheckSquare className="w-5 h-5 sm:w-4 sm:h-4 text-amber-500" />, count: counts.pendingApprovals }] : []),
+    { id: 'events', label: 'School Events', icon: <Calendar className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />, count: counts.events },
     { id: 'open', label: 'Open Issues', icon: <AlertCircle className="w-5 h-5 sm:w-4 sm:h-4 text-purple-600 dark:text-purple-400" />, count: counts.open },
-    { id: 'in-review', label: 'In Review & Active', icon: <Clock className="w-5 h-5 sm:w-4 sm:h-4 text-pink-600 dark:text-pink-400" />, count: counts.inReview },
+    { id: 'in-review', label: 'In Review & Active', icon: <Clock className="w-5 h-5 sm:w-4 sm:h-4 text-indigo-600 dark:text-indigo-400" />, count: counts.inReview },
     { id: 'resolved', label: 'Resolved', icon: <CheckCircle2 className="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400" />, count: counts.resolved },
     { id: 'drafts', label: 'Drafts', icon: <FileEdit className="w-5 h-5 sm:w-4 sm:h-4 text-slate-400" />, count: counts.drafts },
   ];
@@ -241,56 +227,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* School Pulse Quick Poll Widget */}
-          <div className="p-3 bg-gradient-to-br from-purple-50 to-pink-50/50 dark:from-slate-850 dark:to-purple-950/30 rounded-2xl border border-purple-200/80 dark:border-slate-800 space-y-2">
+          {/* Campus Announcements Widget (Replaced Quick Poll) */}
+          <div className="p-3 bg-gradient-to-br from-purple-50 to-indigo-50/60 dark:from-slate-850 dark:to-purple-950/40 rounded-2xl border border-purple-200/80 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-950 dark:text-purple-300 flex items-center gap-1">
-                <Vote className="w-3.5 h-3.5 text-pink-600" />
-                <span>School Pulse Poll</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-950 dark:text-purple-300 flex items-center gap-1.5">
+                <Megaphone className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
+                <span>Notice Board</span>
               </span>
-              <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400">{totalPollVotes} votes</span>
+              <span className="text-[9px] font-mono font-semibold text-purple-700 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-1.5 py-0.5 rounded">
+                Official
+              </span>
             </div>
 
-            <p className="text-xs font-semibold text-purple-950 dark:text-purple-200 leading-snug">
-              Should the library extend opening hours during exam week?
-            </p>
-
-            {pollVoted ? (
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-[11px] font-bold text-purple-900 dark:text-purple-200">
-                  <span>Yes, definitely</span>
-                  <span>{yesPct}% ({yesVotes})</span>
-                </div>
-                <div className="w-full h-2.5 bg-purple-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-pink-500 rounded-full transition-all" style={{ width: `${yesPct}%` }} />
-                </div>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block">
-                  ✓ Your vote has been recorded!
-                </span>
-              </div>
-            ) : (
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleVote('yes')}
-                  className="flex-1 py-2 min-h-[36px] bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-purple-950 dark:text-purple-200 cursor-pointer shadow-2xs transition-colors"
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleVote('no')}
-                  className="flex-1 py-2 min-h-[36px] bg-white dark:bg-slate-800 hover:bg-purple-100 border border-purple-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer shadow-2xs transition-colors"
-                >
-                  No
-                </button>
-              </div>
-            )}
+            <div className="space-y-1.5 text-xs text-purple-950 dark:text-purple-200">
+              <p className="font-semibold leading-snug">
+                Library extended study hours now open for Midterm preparation.
+              </p>
+              <p className="text-[11px] text-purple-700/80 dark:text-purple-400 leading-normal">
+                Quiet zones open until 6:00 PM. Senior Prefects on duty.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Bottom Actions & Controls (Fixed) */}
-        <div className="p-3 border-t border-purple-100/80 dark:border-slate-800 bg-gradient-to-b from-purple-50/40 to-pink-50/40 dark:from-slate-900 dark:to-slate-900 space-y-2 shrink-0">
+        <div className="p-3 border-t border-purple-100/80 dark:border-slate-800 bg-gradient-to-b from-purple-50/40 to-indigo-50/20 dark:from-slate-900 dark:to-slate-900 space-y-2 shrink-0">
           
           {/* Admin Management Buttons */}
           {role === 'admin' && (
@@ -314,7 +275,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenStudentList();
                     if (window.innerWidth < 1024 && onClose) onClose();
                   }}
-                  className="w-full py-2.5 min-h-[44px] px-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  className="w-full py-2.5 min-h-[44px] px-2 text-xs font-bold text-white bg-indigo-700 hover:bg-indigo-800 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                 >
                   <Users className="w-4 h-4" />
                   <span>Manage Student Roster</span>
@@ -348,13 +309,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          <div className="rounded-xl p-2.5 bg-white dark:bg-slate-800 border border-pink-200/70 dark:border-slate-700 shadow-2xs space-y-1 hidden sm:block">
-            <div className="flex items-center gap-1.5 text-pink-700 dark:text-pink-400 font-semibold text-xs">
-              <Ribbon className="w-3.5 h-3.5 text-pink-600 shrink-0" />
-              <span>Breast Cancer Awareness</span>
+          {/* School Motto Banner */}
+          <div className="rounded-xl p-2.5 bg-white dark:bg-slate-800 border border-purple-200/80 dark:border-slate-700 shadow-2xs space-y-1 hidden sm:block">
+            <div className="flex items-center gap-1.5 text-purple-900 dark:text-purple-300 font-bold text-xs">
+              <span className="w-2 h-2 rounded-full bg-purple-700 dark:bg-purple-400" />
+              <span>Kingston College</span>
             </div>
-            <p className="text-[11px] text-purple-900/70 dark:text-slate-400 leading-relaxed">
-              Honoring survivors, fighters, and advocates throughout October.
+            <p className="text-[11px] text-purple-900/80 dark:text-slate-400 italic font-medium leading-relaxed">
+              "Fortis Cadere Cedere Non Potest" — The brave may fall, but never yield.
             </p>
           </div>
         </div>
